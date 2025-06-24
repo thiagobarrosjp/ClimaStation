@@ -1,0 +1,37 @@
+{
+  // Your existing Copilot-related settings
+  "editor.quickSuggestions": {
+    "comments": "off",
+    "strings": "off",
+    "other": "off"
+  },
+  "editor.inlineSuggest.enabled": true,
+  "editor.inlineSuggest.showToolbar": "never",
+  // Python formatting with Black
+  "python.formatting.provider": "black",
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll": "explicit"
+  },
+  // Linting with flake8
+  "python.linting.enabled": true,
+  "python.linting.flake8Enabled": true,
+  "python.linting.flake8Args": [
+    "--max-line-length=88"
+  ],
+  // Testing with pytest
+  "python.testing.pytestEnabled": true,
+  "python.testing.unittestEnabled": false,
+  "python.testing.pytestArgs": [
+    "tests"
+  ],
+  // Cleaner file explorer
+  "files.exclude": {
+    "**/__pycache__": true,
+    "**/*.pyc": true
+  },
+  // Python env file for local dev secrets
+  "python.envFile": "${workspaceFolder}/.env",
+  // Light type-checking
+  "python.analysis.typeCheckingMode": "basic"
+}
