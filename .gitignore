@@ -3,5 +3,5 @@ venv/
 __pycache__/
 *.pyc
 .env
-DEVELOPMENT_LOG.md
+
     
