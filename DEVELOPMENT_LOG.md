@@ -77,32 +77,32 @@ GitHub Repository created.
 - Added and committed the initial README.md file.
 - Installed dir-tree to create tree diagrams in VS Code.
 - Created and committed the following backend folder structure:
-		CLIMASTATION-BACKEND
-		- .vscode/
-			-- settings.json
-		- app/
-			-- core/
-				--- __init__.py
-				--- config.py
-				--- database.py
-			-- features/
-				--- dwd/
-					---- __init__.py
-					---- dependencies.py
-					---- models.py
-					---- router.py
-					---- schemas.py
-					---- service.py
-					---- utils.py			
-				--- __init__.py
-			-- __init__.py
-			-- main.py
-		- tests/
-			-- test_dwd_service.py	
-		- .env
-		- .gitignore
-		- README.md
-		- requirements.txt
+  CLIMASTATION-BACKEND  
+    - .vscode/  
+      -- settings.json  
+    - app/  
+      -- core/  
+        --- __init__.py  
+        --- config.py  
+        --- database.py  
+      -- features/  
+        --- dwd/  
+          ---- __init__.py  
+          ---- dependencies.py  
+          ---- models.py  
+          ---- router.py  
+          ---- schemas.py  
+          ---- service.py  
+          ---- utils.py  	
+        --- __init__.py  
+      -- __init__.py  
+      -- main.py  
+    - tests/  
+      -- test_dwd_service.py  
+    - .env  
+    - .gitignore  
+    - README.md  
+    - requirements.txt  
 
 FastAPI development:
 - Tested FastAPI locally with Uvicorn.
