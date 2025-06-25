@@ -76,33 +76,33 @@ GitHub Repository created.
 - Created a new repository under my GitHub account: thiagobarrosjp/ClimaStation.
 - Added and committed the initial README.md file.
 - Installed dir-tree to create tree diagrams in VS Code.
-- Created and committed the following backend folder structure:  
-  CLIMASTATION-BACKEND  
-    - .vscode/  
-      -- settings.json  
-    - app/  
-      -- core/  
-        --- __init__.py  
-        --- config.py  
-        --- database.py  
-      -- features/  
-        --- dwd/  
-          ---- __init__.py  
-          ---- dependencies.py  
-          ---- models.py  
-          ---- router.py  
-          ---- schemas.py  
-          ---- service.py  
-          ---- utils.py  	
-        --- __init__.py  
-      -- __init__.py  
-      -- main.py  
-    - tests/  
-      -- test_dwd_service.py  
-    - .env  
-    - .gitignore  
-    - README.md  
-    - requirements.txt  
+- Created and committed the following backend folder structure:
+		CLIMASTATION-BACKEND
+		- .vscode/
+			-- settings.json
+		- app/
+			-- core/
+				--- __init__.py
+				--- config.py
+				--- database.py
+			-- features/
+				--- dwd/
+					---- __init__.py
+					---- dependencies.py
+					---- models.py
+					---- router.py
+					---- schemas.py
+					---- service.py
+					---- utils.py			
+				--- __init__.py
+			-- __init__.py
+			-- main.py
+		- tests/
+			-- test_dwd_service.py	
+		- .env
+		- .gitignore
+		- README.md
+		- requirements.txt
 
 FastAPI development:
 - Tested FastAPI locally with Uvicorn.
@@ -128,38 +128,40 @@ FastAPI development:
   "sensor": { "TT_10": "PT 100", "RF_10": "EE33" }
 }
 - Adapted Folder Structure:
-		CLIMASTATION-BACKEND		
-		- .vscode/
-			-- settings.json
-		- app/
-			-- core/
-				--- __init__.py
-				--- config.py
-				--- database.py
-			-- features/
-				--- dwd/
-					---- __init__.py
-					---- dependencies.py
-					---- downloader.py
-					---- parser.py
-					---- models.py
-					---- router.py
-					---- schemas.py
-					---- service.py
-					---- utils.py			
-				--- __init__.py
-			-- __init__.py
-			-- main.py
-		- data/
-			-- raw/
-			-- processed/
-		- tests/
-			-- test_dwd_service.py	
-		- .env
-		- .gitignore
-		- README.md
-		- DEVELOPMENT_LOG.md
-		- requirements.txt
+<pre>
+CLIMASTATION-BACKEND		
+    - .vscode/
+        -- settings.json
+    - app/
+        -- core/
+            --- __init__.py
+            --- config.py
+            --- database.py
+        -- features/
+            --- dwd/
+                ---- __init__.py
+                ---- dependencies.py
+                ---- downloader.py
+                ---- parser.py
+                ---- models.py
+                ---- router.py
+                ---- schemas.py
+                ---- service.py
+                ---- utils.py			
+            --- __init__.py
+        -- __init__.py
+        -- main.py
+    - data/
+        -- raw/
+        -- processed/
+    - tests/
+        -- test_dwd_service.py	
+    - .env
+    - .gitignore
+    - README.md
+    - DEVELOPMENT_LOG.md
+    - requirements.txt
+</pre>
 - Decided to start downloading and parsing data from this path:
 https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/air_temperature/now/
 - Started implementing code for downloader.py to download the .zip files.
