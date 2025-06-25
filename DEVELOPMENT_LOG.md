@@ -76,7 +76,7 @@ GitHub Repository created.
 - Created a new repository under my GitHub account: thiagobarrosjp/ClimaStation.
 - Added and committed the initial README.md file.
 - Installed dir-tree to create tree diagrams in VS Code.
-- Created and committed the following backend folder structure:
+- Created and committed the following backend folder structure:  
   CLIMASTATION-BACKEND  
     - .vscode/  
       -- settings.json  
