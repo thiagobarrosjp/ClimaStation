@@ -171,3 +171,11 @@ https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_
 - Decided on the upfront parsing strategy. I would download and parse all data upfront, storing results in a readily queryable form.
 - The timestamp-centric record format must be designed and optimized to accomodate all current and future data types.
 This must happen before I start downloading and parsing raw data en masse.
+
+Next Step:
+- Design a timestamp-centric universal record format.
+- Collect and classify data samples (1 or 2 files) from each DWD data type.
+- Collect from historical and recent sources.
+- Classify them by frequency (10min, hourly, etc.), parameters (TT_10, RF_10, etc.), or format variation (column names, deilimiters, encoding)
+- Design a record schema that handles the superset.
+- Create a record format spec document.
