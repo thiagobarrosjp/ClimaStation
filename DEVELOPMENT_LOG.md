@@ -225,4 +225,5 @@ CLIMASTATION-BACKEND
     - DEVELOPMENT_LOG.md
     - requirements.txt
 </pre>
-- Installed Git Bash
+- Installed Git Bash.
+- Installed Scoop and used that to install wget.
