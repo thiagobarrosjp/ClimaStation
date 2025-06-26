@@ -1,4 +1,4 @@
-2025-06-18:
+2025-06-18:  
 Today I purchased the domain "climatestation.com" for the platform. I ordered it from www.united-domains.de. 
 For the first year I'll pay 12€ and for the second year and beyond it will cost 27€ per year.
 This is a summary of the current state of the project:
@@ -15,23 +15,23 @@ Unlike existing datasets that are often fragmented, poorly documented, or diffic
 The long-term vision is to make ClimaStation a go-to resource mentioned alongside trusted platforms like Meteostat, Copernicus, or NOAA, offering both depth and simplicity in climate data access.
 
 
-2025-06-21:
-Backend server setup.
-Provider: Hetzner Cloud
-Location: Nuremberg (Germany)
-Server Type: CPX21 (3 vCPU, 4GB RAM, 80GB SSD)
-OS: Ubuntu 24.04 LTS (64-bit)
-Networking: Public IPv4 & IPv6 enabled
-SSH Access: Enabled via RSA key (climastation)
-Volumes: None
-Firewall: Not yet configured
-Backups: Disabled
-Cloud Config: Not used
-Server Name: climastation-backend
-Status: Running
+2025-06-21:  
+Backend server setup.  
+Provider: Hetzner Cloud  
+Location: Nuremberg (Germany)  
+Server Type: CPX21 (3 vCPU, 4GB RAM, 80GB SSD)  
+OS: Ubuntu 24.04 LTS (64-bit)  
+Networking: Public IPv4 & IPv6 enabled  
+SSH Access: Enabled via RSA key (climastation)  
+Volumes: None  
+Firewall: Not yet configured  
+Backups: Disabled  
+Cloud Config: Not used  
+Server Name: climastation-backend  
+Status: Running  
 
 
-2025-06-22:
+2025-06-22:  
 Local development environment:
 - Installed Python 3 locally on Windows, verified that both pip and venv work.
 - Installed Visual Studio Code and configured it for Python development.
@@ -62,7 +62,7 @@ Replaced `screen` with a `systemd` service to run the FastAPI backend.
 - Verified that the backend is now running reliably under `systemd` and starts automatically on reboot.
 
 
-2025-06-23:
+2025-06-23:  
 VS Code - Core Plugins for Python  + FastAPI
 - Installed and authenticated Windsurf (formerly known as Codeium).
 - Installed Continue and linked to OpenAI.
@@ -71,7 +71,7 @@ VS Code - Core Plugins for Python  + FastAPI
 - Created new API key from OpenAI and linked with Continue (name of API key is "continue-dev").
 
 
-2025-06-24:
+2025-06-24:  
 GitHub Repository created.
 - Created a new repository under my GitHub account: thiagobarrosjp/ClimaStation.
 - Added and committed the initial README.md file.
@@ -114,7 +114,7 @@ FastAPI development:
 - Verified that both the root endpoint (`/`) and the router endpoint (`/dwd/test`) are working correctly.
 
 
-2025-06-25:
+2025-06-25:  
 - Decided on a timestamp-centric record format.
 - Record format needs to be flexible and ready to evolve as new parameters, edge cases, or formats appear.
 - Record format Version 1 Schema:
@@ -181,7 +181,7 @@ Next Step:
 - Create a record format spec document.
 
 
-2025-06-26:
+2025-06-26:  
 - Extended the folder structure to add a recurring DWD repository crawler as a built-in feature.
 <pre>
 CLIMASTATION-BACKEND		
