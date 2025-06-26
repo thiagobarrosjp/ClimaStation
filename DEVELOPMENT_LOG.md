@@ -149,12 +149,12 @@ CLIMASTATION-BACKEND
                 ---- schemas.py
                 ---- service.py
                 ---- utils.py			
-            --- __init__.py
+            --- __init__.py        
         -- __init__.py
         -- main.py
     - data/
         -- raw/
-        -- processed/
+        -- processed/        
     - tests/
         -- test_dwd_service.py	
     - .env
@@ -179,3 +179,50 @@ Next Step:
 - Classify them by frequency (10min, hourly, etc.), parameters (TT_10, RF_10, etc.), or format variation (column names, deilimiters, encoding)
 - Design a record schema that handles the superset.
 - Create a record format spec document.
+
+
+2025-06-26:
+- Extended the folder structure to add a recurring DWD repository crawler as a built-in feature.
+<pre>
+CLIMASTATION-BACKEND		
+    - .vscode/
+        -- settings.json
+    - app/
+        -- core/
+            --- __init__.py
+            --- config.py
+            --- database.py
+        -- features/
+            --- dwd/
+                ---- __init__.py
+                ---- dependencies.py
+                ---- downloader.py
+                ---- parser.py
+                ---- models.py
+                ---- router.py
+                ---- schemas.py
+                ---- service.py
+                ---- utils.py			
+            --- __init__.py
+        -- tools/
+            --- dwd_crawler/
+                ---- __init__.py
+                ---- crawl_dwd.sh
+                ---- README.md
+        -- __init__.py
+        -- main.py
+    - data/
+        -- raw/
+        -- processed/
+        -- dwd_structure_logs/
+            --- [timestamp]_tree.txt
+            --- [timestamp]_urls.txt
+    - tests/
+        -- test_dwd_service.py	
+    - .env
+    - .gitignore
+    - README.md
+    - DEVELOPMENT_LOG.md
+    - requirements.txt
+</pre>
+- Installed Git Bash

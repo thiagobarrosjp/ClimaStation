@@ -1,0 +1,147 @@
+Spider mode enabled. Check if remote file exists.
+--2025-06-26 09:45:49--  https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/
+Resolving opendata.dwd.de (opendata.dwd.de)... 141.38.2.164
+Connecting to opendata.dwd.de (opendata.dwd.de)|141.38.2.164|:443... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: unspecified [text/html]
+Remote file exists and could contain links to other resources -- retrieving.
+
+--2025-06-26 09:45:50--  https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/
+Reusing existing connection to opendata.dwd.de:443.
+HTTP request sent, awaiting response... 200 OK
+Length: unspecified [text/html]
+Saving to: 'index.html.tmp.tmp'
+
+     0K .                                                       325M=0s
+
+2025-06-26 09:45:50 (325 MB/s) - 'index.html.tmp.tmp' saved [1293]
+
+Loading robots.txt; please ignore errors.
+--2025-06-26 09:45:51--  https://opendata.dwd.de/robots.txt
+Reusing existing connection to opendata.dwd.de:443.
+HTTP request sent, awaiting response... 404 Not Found
+2025-06-26 09:45:51 ERROR 404: Not Found.
+
+Removing index.html.tmp.tmp.
+
+Spider mode enabled. Check if remote file exists.
+--2025-06-26 09:45:52--  https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/
+Reusing existing connection to opendata.dwd.de:443.
+HTTP request sent, awaiting response... 200 OK
+Length: unspecified [text/html]
+Remote file exists and could contain links to other resources -- retrieving.
+
+--2025-06-26 09:45:54--  https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/
+Reusing existing connection to opendata.dwd.de:443.
+HTTP request sent, awaiting response... 200 OK
+Length: unspecified [text/html]
+Saving to: 'index.html.tmp.tmp'
+
+     0K .                                                       229M=0s
+
+2025-06-26 09:45:54 (229 MB/s) - 'index.html.tmp.tmp' saved [1103]
+
+Removing index.html.tmp.tmp.
+
+Spider mode enabled. Check if remote file exists.
+--2025-06-26 09:45:55--  https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/1_minute/
+Reusing existing connection to opendata.dwd.de:443.
+HTTP request sent, awaiting response... 200 OK
+Length: unspecified [text/html]
+Remote file exists and could contain links to other resources -- retrieving.
+
+--2025-06-26 09:45:55--  https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/1_minute/
+Reusing existing connection to opendata.dwd.de:443.
+HTTP request sent, awaiting response... 200 OK
+Length: unspecified [text/html]
+Saving to: 'index.html.tmp.tmp'
+
+     0K                                                         107M=0s
+
+2025-06-26 09:45:55 (107 MB/s) - 'index.html.tmp.tmp' saved [381]
+
+Removing index.html.tmp.tmp.
+
+Spider mode enabled. Check if remote file exists.
+--2025-06-26 09:45:57--  https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/5_minutes/
+Reusing existing connection to opendata.dwd.de:443.
+HTTP request sent, awaiting response... 200 OK
+Length: unspecified [text/html]
+Remote file exists and could contain links to other resources -- retrieving.
+
+--2025-06-26 09:45:57--  https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/5_minutes/
+Reusing existing connection to opendata.dwd.de:443.
+HTTP request sent, awaiting response... 200 OK
+Length: unspecified [text/html]
+Saving to: 'index.html.tmp.tmp'
+
+     0K                                                         174M=0s
+
+2025-06-26 09:45:57 (174 MB/s) - 'index.html.tmp.tmp' saved [383]
+
+Removing index.html.tmp.tmp.
+
+Spider mode enabled. Check if remote file exists.
+--2025-06-26 09:45:59--  https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/annual/
+Reusing existing connection to opendata.dwd.de:443.
+HTTP request sent, awaiting response... 200 OK
+Length: unspecified [text/html]
+Remote file exists and could contain links to other resources -- retrieving.
+
+--2025-06-26 09:45:59--  https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/annual/
+Reusing existing connection to opendata.dwd.de:443.
+HTTP request sent, awaiting response... 200 OK
+Length: unspecified [text/html]
+Saving to: 'index.html.tmp.tmp'
+
+     0K                                                         171M=0s
+
+2025-06-26 09:45:59 (171 MB/s) - 'index.html.tmp.tmp' saved [736]
+
+Removing index.html.tmp.tmp.
+
+Spider mode enabled. Check if remote file exists.
+--2025-06-26 09:46:01--  https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/daily/
+Reusing existing connection to opendata.dwd.de:443.
+HTTP request sent, awaiting response... 200 OK
+Length: unspecified [text/html]
+Remote file exists and could contain links to other resources -- retrieving.
+
+--2025-06-26 09:46:01--  https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/daily/
+Reusing existing connection to opendata.dwd.de:443.
+HTTP request sent, awaiting response... 200 OK
+Length: unspecified [text/html]
+Saving to: 'index.html.tmp.tmp'
+
+     0K .                                                       210M=0s
+
+2025-06-26 09:46:01 (210 MB/s) - 'index.html.tmp.tmp' saved [1100]
+
+Removing index.html.tmp.tmp.
+
+Spider mode enabled. Check if remote file exists.
+--2025-06-26 09:46:02--  https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/
+Reusing existing connection to opendata.dwd.de:443.
+HTTP request sent, awaiting response... 200 OK
+Length: unspecified [text/html]
+Remote file exists and could contain links to other resources -- retrieving.
+
+--2025-06-26 09:46:03--  https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/
+Reusing existing connection to opendata.dwd.de:443.
+HTTP request sent, awaiting response... 200 OK
+Length: unspecified [text/html]
+Saving to: 'index.html.tmp.tmp'
+
+     0K .                                                       926M=0s
+
+2025-06-26 09:46:03 (926 MB/s) - 'index.html.tmp.tmp' saved [2040]
+
+Removing index.html.tmp.tmp.
+
+Spider mode enabled. Check if remote file exists.
+--2025-06-26 09:46:04--  https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/monthly/
+Reusing existing connection to opendata.dwd.de:443.
+HTTP request sent, awaiting response... 200 OK
+Length: unspecified [text/html]
+Remote file exists and could contain links to other resources -- retrieving.
+
