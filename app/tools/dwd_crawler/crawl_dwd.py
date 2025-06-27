@@ -1,12 +1,12 @@
 # crawl_dwd.py
 
 import requests
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 from urllib.parse import urljoin
 import time
 import os
 
-BASE_URL = "https://opendata.dwd.de/climate_environment/CDC/"
+BASE_URL = "https://opendata.dwd.de/climate_environment/CDC/observations_germany/"
 VALID_EXTENSIONS = [".zip", ".gz"]
 VISITED = set()
 FOLDER_HITS = []
@@ -30,7 +30,8 @@ def crawl(url, depth=0, max_depth=10):
         response = requests.get(url, timeout=10)
         response.raise_for_status()
         soup = BeautifulSoup(response.text, "html.parser")
-        hrefs = [a.get("href") for a in soup.find_all("a") if a.get("href")]
+        hrefs = [a.get("href") for a in soup.find_all("a") if isinstance(a, Tag) and a.get("href")]
+
     except Exception as e:
         print(f"[ERROR] Failed at {url}: {e}")
         return
@@ -42,7 +43,7 @@ def crawl(url, depth=0, max_depth=10):
 
     for href in hrefs:
         if is_folder(href):
-            sub_url = urljoin(url, href)
+            sub_url = urljoin(url, str(href))
             if is_within_base(sub_url, BASE_URL):  # <--- Prevents going outside base
                 crawl(sub_url, depth + 1, max_depth)
 

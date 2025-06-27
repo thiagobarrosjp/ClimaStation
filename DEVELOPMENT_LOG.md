@@ -230,7 +230,7 @@ CLIMASTATION-BACKEND
 
 2025-06-27:  
 - Replaced the original shell-based crawler (`crawl_dwd.sh`) with a Python-based crawler (`crawl_dwd.py`) that recursively identifies DWD folders containing raw `.zip` or `.gz` datasets.  
-- The crawler is now restricted to the official DWD climate data path: `/climate_environment/CDC/`, avoiding unrelated datasets like CAP alerts or metadata directories.  
+- The crawler is now restricted to the official DWD climate data path: `/climate_environment/CDC/observations_germany/`, avoiding unrelated datasets like CAP alerts or metadata directories.  
 - Output is a clean, timestamped folder list saved to `data/dwd_structure_logs/`.  
 - Updated folder structure to reflect the new crawler design and upcoming automation:  
 <pre>
@@ -259,6 +259,7 @@ CLIMASTATION-BACKEND
             --- dwd_crawler/
                 ---- __init__.py
                 ---- crawl_dwd.py
+                ---- download_samples.py  
                 ---- analyze_samples.py  
                 ---- record_validator.py  
                 ---- README.md
