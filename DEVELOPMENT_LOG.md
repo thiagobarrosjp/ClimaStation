@@ -117,7 +117,7 @@ FastAPI development:
 2025-06-25:  
 - Decided on a timestamp-centric record format.
 - Record format needs to be flexible and ready to evolve as new parameters, edge cases, or formats appear.
-- Record format Version 1 Schema:
+- Record format Version 1 Schema which is saved in file schemas.py :
 {
   "station_id": 44,
   "station_name": "Großenkneten",
@@ -227,3 +227,65 @@ CLIMASTATION-BACKEND
 </pre>
 - Installed Git Bash.
 - Installed Scoop and used that to install wget.
+
+2025-06-27:  
+- Replaced the original shell-based crawler (`crawl_dwd.sh`) with a Python-based crawler (`crawl_dwd.py`) that recursively identifies DWD folders containing raw `.zip` or `.gz` datasets.  
+- The crawler is now restricted to the official DWD climate data path: `/climate_environment/CDC/`, avoiding unrelated datasets like CAP alerts or metadata directories.  
+- Output is a clean, timestamped folder list saved to `data/dwd_structure_logs/`.  
+- Updated folder structure to reflect the new crawler design and upcoming automation:  
+<pre>
+CLIMASTATION-BACKEND		
+    - .vscode/
+        -- settings.json
+    - app/
+        -- core/
+            --- __init__.py
+            --- config.py
+            --- database.py
+        -- features/
+            --- dwd/
+                ---- __init__.py
+                ---- dependencies.py
+                ---- downloader.py
+                ---- parser.py
+                ---- record_format_spec.md  
+                ---- models.py
+                ---- router.py
+                ---- schemas.py
+                ---- service.py
+                ---- utils.py			
+            --- __init__.py
+        -- tools/
+            --- dwd_crawler/
+                ---- __init__.py
+                ---- crawl_dwd.py
+                ---- analyze_samples.py  
+                ---- record_validator.py  
+                ---- README.md
+        -- __init__.py
+        -- main.py
+    - data/
+        -- raw/
+        -- processed/
+        -- dwd_structure_logs/
+            --- [timestamp]_tree.txt
+            --- [timestamp]_urls.txt
+        -- dwd_structure_samples/
+            --- [folder_name_1]/
+            --- [folder_name_2]/
+    - tests/
+        -- test_dwd_service.py	
+    - .env
+    - .gitignore
+    - README.md
+    - DEVELOPMENT_LOG.md
+    - requirements.txt
+</pre>
+  
+Next Step: Automate the sample–analyze–adapt pipeline  
+- Download representative samples from each identified folder  
+- Unzip and extract the raw files  
+- Parse header and data rows  
+- Attempt to map parsed rows to the current `AirTemperatureRecord`  
+- Log whether each sample fits the schema or highlights structural mismatches  
+- Use this process to iteratively evolve a universal timestamp-centric record format compatible with all relevant DWD datasets
