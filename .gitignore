@@ -2,6 +2,17 @@
 venv/
 __pycache__/
 *.pyc
+
+# Environment
 .env
 
-    
+# Temporary folders
+tmp/
+extracted_temp/
+
+# Ignore all downloaded data and samples
+data/air_temperature_10min/historical/
+data/air_temperature_10min/recent/
+data/air_temperature_10min/now/
+data/air_temperature_10min/meta_data/
+data/air_temperature_10min/docs/

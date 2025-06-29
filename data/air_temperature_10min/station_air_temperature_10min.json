@@ -1,0 +1,12 @@
+[
+  {
+    "station_id": 3,
+    "name": "Aachen",
+    "latitude": 50.7827,
+    "longitude": 6.0941,
+    "elevation_m": 202.0,
+    "active_from": "2008-10-08",
+    "active_to": "2012-04-06",
+    "sensors": {}
+  }
+]

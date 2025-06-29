@@ -1,0 +1,10 @@
+[{"station_id":3,"timestamp":"1993-04-28T12:30:00","TT_10":24.9,"TM5_10":28.4,"TD_10":2.4,"RF_10":23.0,"PP_10":987.3,"quality_flag":null},
+{"station_id":3,"timestamp":"1993-04-28T12:40:00","TT_10":24.9,"TM5_10":28.6,"TD_10":1.2,"RF_10":21.0,"PP_10":987.2,"quality_flag":null},
+{"station_id":3,"timestamp":"1993-04-28T12:50:00","TT_10":25.5,"TM5_10":28.7,"TD_10":0.7,"RF_10":20.0,"PP_10":987.2,"quality_flag":null},
+{"station_id":3,"timestamp":"1993-04-28T13:00:00","TT_10":25.8,"TM5_10":28.8,"TD_10":1.0,"RF_10":20.0,"PP_10":987.0,"quality_flag":null},
+{"station_id":3,"timestamp":"1993-04-28T13:10:00","TT_10":25.8,"TM5_10":29.6,"TD_10":0.9,"RF_10":20.0,"PP_10":986.9,"quality_flag":null},
+{"station_id":3,"timestamp":"1993-04-28T13:20:00","TT_10":25.7,"TM5_10":29.7,"TD_10":0.2,"RF_10":19.0,"PP_10":986.7,"quality_flag":null},
+{"station_id":3,"timestamp":"1993-04-28T13:30:00","TT_10":26.0,"TM5_10":29.8,"TD_10":1.5,"RF_10":20.0,"PP_10":986.8,"quality_flag":null},
+{"station_id":3,"timestamp":"1993-04-28T13:40:00","TT_10":26.1,"TM5_10":29.7,"TD_10":0.2,"RF_10":18.0,"PP_10":986.8,"quality_flag":null},
+{"station_id":3,"timestamp":"1993-04-28T13:50:00","TT_10":27.0,"TM5_10":29.7,"TD_10":1.4,"RF_10":19.0,"PP_10":986.7,"quality_flag":null},
+{"station_id":3,"timestamp":"1993-04-28T14:00:00","TT_10":26.5,"TM5_10":29.2,"TD_10":-0.4,"RF_10":17.0,"PP_10":986.6,"quality_flag":null}]

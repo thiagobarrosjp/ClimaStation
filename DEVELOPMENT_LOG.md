@@ -302,3 +302,48 @@ Next Step: Automate the sample–analyze–adapt pipeline
 - The downloaded samples exceeded the file size limit from GitHub and I ran into difficulties pushing the changes to the repository.  
 - Many changes from today and yesterday had to be reverted.  
 
+
+2025-06-29:  
+- Changed the approach to develop and implement the automated pipeline.  
+- We are now focusing on implementing the pipeline for only this small part of the DWD repository:  
+https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/air_temperature/  
+- We removed every folder and file that is not necessary to implement this new version of the pipeline.
+<pre>
+CLIMASTATION-BACKEND		
+    - .vscode/
+        -- settings.json
+    - app/
+        -- features/
+            --- dwd/
+                ---- __init__.py
+                ---- downloader.py
+                ---- parser.py
+                ---- record_format_spec.md  
+                ---- schemas.py		
+            --- __init__.py
+        -- __init__.py
+    - data/  
+        -- air_temperature_10min/
+            --- docs/  
+            --- historical/  
+            --- meta_data/  
+            --- now/  
+            --- recent/  
+    - tests/
+        -- test_air_temperature_parser.py	
+    - .env
+    - .gitignore
+    - README.md
+    - DEVELOPMENT_LOG.md
+    - requirements.txt
+</pre>
+- Created downloader.py from scratch. This time it will only download a small subset of files from this DWD path:  
+https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/air_temperature/  
+- To be specific, we downloaded one or two zip files from the raw data foldrs as well as from the metadata folder.  
+- Updated record_format_spec.md to reflect the changes to the pipeline.  
+- Created new version of parser.py to unzip, extract text files, read and parse the first few rows to the record format defined in schemas.py.  
+- Record format in schemas.py was also updated.
+- Updated .gitignore to avoid uploading unnecessary data to GitHub.  
+- Created parse_station_metadata.py to parse the metadata files from the folder defined above.  
+- Parsed metadata is stored in data/air_temperature_10min/station_air_temperature_metadata.json.  
+
