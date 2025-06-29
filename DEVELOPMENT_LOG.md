@@ -247,6 +247,7 @@ CLIMASTATION-BACKEND
                 ---- __init__.py
                 ---- dependencies.py
                 ---- downloader.py
+                ---- models.py
                 ---- parser.py
                 ---- record_format_spec.md  
                 ---- models.py
@@ -257,12 +258,13 @@ CLIMASTATION-BACKEND
             --- __init__.py
         -- tools/
             --- dwd_crawler/
-                ---- __init__.py
-                ---- crawl_dwd.py
-                ---- download_samples.py  
+                ---- __init__.py  
                 ---- analyze_samples.py  
-                ---- record_validator.py  
-                ---- README.md
+                ---- crawl_dwd.py  
+                ---- download_samples.py  
+                ---- README.md  
+                ---- record_validator.py                  
+            --- schema_pipeline/
         -- __init__.py
         -- main.py
     - data/
