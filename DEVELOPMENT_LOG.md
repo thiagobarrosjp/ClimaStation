@@ -290,3 +290,13 @@ Next Step: Automate the sample–analyze–adapt pipeline
 - Attempt to map parsed rows to the current `AirTemperatureRecord`  
 - Log whether each sample fits the schema or highlights structural mismatches  
 - Use this process to iteratively evolve a universal timestamp-centric record format compatible with all relevant DWD datasets
+
+2025-06-28:  
+- Started implementing and testing a pipeline that automates the sample–analyze–adapt process.  
+- Added components to parse and validate header and data rows, as well as metadata.  
+- Downloaded one sample from each folder and extracted the raw files.  
+- However the generated record formats were not matching the current schema.  
+- I also noticed that the pipeline was not parsing and validating the metadata correctly.  
+- The downloaded samples exceeded the file size limit from GitHub and I ran into difficulties pushing the changes to the repository.  
+- Many changes from today and yesterday had to be reverted.  
+
