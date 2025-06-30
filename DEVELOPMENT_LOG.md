@@ -347,3 +347,58 @@ https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_
 - Created parse_station_metadata.py to parse the metadata files from the folder defined above.  
 - Parsed metadata is stored in data/air_temperature_10min/station_air_temperature_metadata.json.  
 
+2025-06-30:
+- Unfortunately, I had to revert the progress we made in the last few days, again, due to problems with GitHub.  
+- After a bit of brainstorming, we decided again to describe the iterative process to design the universal record format.  
+- Step 1: Discovery Phase  
+- Use the crawler to identify all relevant folders across the DWD repository.  
+- Download one or two representative files (raw + metadata) from each folder.  
+- Focus on broad variation coverage: frequencies, parameters, formats, encoding.  
+- Step 2: Validation Loop  
+- Attempt to parse each sample into the current version of the record schema.  
+- Log parsing results (successfully mapped fields, missing or unmatched fields, format/encoding inconsistencies).  
+- Iteratively evolve the schema (add new fields or nested structures, refactor field types or units, make fields optional if incosistently present).  
+- Step 3: Stability Check  
+- When all representative samples parse without critical mismatches, freeze the schema.  
+- This frozen schema becomes the universal record format (Version 1).  
+- From this point, large-scale parsing and storage can begin.  
+- Additional Notes:  
+- Schema versions are stored in a dedicated folder (record_schemas/) to track evolution over time.  
+- This approach ensures backward- and forward-compatibility and avoids costly re-parsing.  
+- This new structure is the starting point for the iterative pipeline.
+<pre>
+CLIMASTATION-BACKEND		
+    - .vscode/
+        -- settings.json
+    - app/
+        -- features/
+            --- dwd/  
+                ---- record_schemas/ 
+                    ----- README.md   
+                    ----- v0_initial_schema.json  
+                ---- __init__.py
+                ---- metadata_parser.py  
+                ---- record_validator.py  
+                ---- schemas.py	            
+            --- tools/
+                ---- dwd_crawler/ 
+                    ---- __init__.py 
+                    ---- analyze_samples.py                       
+                    ---- crawl_dwd.py  
+                    ---- download_samples.py                       
+                    ---- README.md                      
+            --- __init__.py  
+        -- __init__.py
+    - data/          
+        -- dwd_structure_logs/  
+        -- dwd_validation_logs/ 
+        -- raw/      
+        -- README.md       
+    - tests/
+        -- test_dwd_pipeline.py	
+    - .env
+    - .gitignore
+    - DEVELOPMENT_LOG.md  
+    - README.md  
+    - requirements.txt
+</pre>

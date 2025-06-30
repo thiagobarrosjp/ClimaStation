@@ -1,18 +1,25 @@
-# Python virtual environment
-venv/
+# Byte-compiled / cache files
 __pycache__/
-*.pyc
+*.py[cod]
+*.pyo
 
-# Environment
+# Virtual environment
+.venv/
+env/
+venv/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# VS Code
+.vscode/
+
+# Environment variables
 .env
 
-# Temporary folders
-tmp/
-extracted_temp/
+# Data files
+data/raw/
+data/dwd_structure_logs/
+data/dwd_validation_logs/
 
-# Ignore all downloaded data and samples
-data/air_temperature_10min/historical/
-data/air_temperature_10min/recent/
-data/air_temperature_10min/now/
-data/air_temperature_10min/meta_data/
-data/air_temperature_10min/docs/
