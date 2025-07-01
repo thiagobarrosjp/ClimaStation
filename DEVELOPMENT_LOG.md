@@ -433,3 +433,7 @@ https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/
       }
     ]
   },
+  - Created the concept of a dataset_key, joining dataset and classification.  
+  - Adapted inspection_archives.py so that the output includes the dataset_key.  
+  - The output of inspect_archives.py also includes [timestamp]_dataset_summary.pretty.json and [timestamp]_station_summary.pretty.json files.  
+  
