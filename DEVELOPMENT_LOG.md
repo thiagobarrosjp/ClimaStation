@@ -368,20 +368,20 @@ https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_
 - This new structure is the starting point for the iterative pipeline.
 <pre>
 CLIMASTATION-BACKEND		
-    - .vscode/
+    - .vscode\
         -- settings.json
-    - app/
-        -- features/
-            --- dwd/  
-                ---- record_schemas/ 
+    - app\
+        -- features\
+            --- dwd\  
+                ---- record_schemas\ 
                     ----- README.md   
                     ----- v0_initial_schema.json  
                 ---- __init__.py
                 ---- metadata_parser.py  
                 ---- record_validator.py  
                 ---- schemas.py	            
-            --- tools/
-                ---- dwd_crawler/ 
+            --- tools\
+                ---- dwd_crawler\ 
                     ---- __init__.py 
                     ---- analyze_samples.py                       
                     ---- crawl_dwd.py  
@@ -389,12 +389,12 @@ CLIMASTATION-BACKEND
                     ---- README.md                      
             --- __init__.py  
         -- __init__.py
-    - data/          
-        -- dwd_structure_logs/  
-        -- dwd_validation_logs/ 
-        -- raw/      
+    - data\          
+        -- dwd_structure_logs\  
+        -- dwd_validation_logs\ 
+        -- raw\      
         -- README.md       
-    - tests/
+    - tests\
         -- test_dwd_pipeline.py	
     - .env
     - .gitignore
@@ -402,3 +402,9 @@ CLIMASTATION-BACKEND
     - README.md  
     - requirements.txt
 </pre>
+
+
+2025-07-01:  
+- Pipeline restricted to the DWD path:  
+https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/    
+- crawl_dwd.py has been modified to create a tree structure of the DWD repository.  
