@@ -1,4 +1,4 @@
-# Enhanced version with better tree visualization and progress tracking
+# Enhanced version with PDF support, better tree visualization, and progress tracking
 
 import os
 import requests
@@ -45,7 +45,7 @@ class DWDCrawler:
                     hrefs.append(href)
 
         subfolders = [h for h in hrefs if h.endswith("/")]
-        data_files = [h for h in hrefs if h.endswith((".zip", ".gz", ".txt"))]
+        data_files = [h for h in hrefs if h.endswith((".zip", ".gz", ".txt", ".pdf"))]
 
         # Build tree structure
         current_path = "/".join(path_segments) if path_segments else "root"
@@ -64,10 +64,12 @@ class DWDCrawler:
         # If this folder contains data files, record it
         if data_files:
             file_exts = list({os.path.splitext(f)[1] for f in data_files})
+            pdf_count = sum(1 for f in data_files if f.endswith(".pdf"))
             self.tree_structure[current_path]["has_data"] = True
             self.tree_structure[current_path]["data_info"] = {
                 "file_types": file_exts,
-                "file_count": len(data_files)
+                "file_count": len(data_files),
+                "pdf_count": pdf_count if pdf_count > 0 else None
             }
             
             record = {
