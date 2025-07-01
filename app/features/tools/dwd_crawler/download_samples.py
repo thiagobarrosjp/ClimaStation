@@ -1,100 +1,102 @@
 """
-download_samples.py — Step 2: Sample Downloader for 10-Minute DWD Subset
+download_samples.py
 
-This script downloads representative raw and metadata samples from each data type 
-found under the following DWD path:
+This script reads the output from `crawl_dwd.py` — specifically the `*_urls.jsonl` file —
+and downloads 1–2 representative raw data files (only zip files) from each directory
+that was identified to contain datasets.
 
-https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/
+Downloaded files are saved to the `data/raw/` directory using a *flattened naming scheme*:
+the original folder path is encoded into the filename by replacing slashes with underscores.
 
-Each subfolder (e.g., air_temperature, cloudiness) is expected to contain:
-- historical/
-- now/
-- recent/
-- meta_data/
+Example:
+    Original path:   climate/10_minutes/air_temperature/recent/station_xyz.zip
+    Saved as:        data/raw/10_minutes_air_temperature_recent_station_xyz.zip
 
-The script downloads up to 2 raw data files (.zip or .gz) from the raw folders, 
-and 1 file from the meta_data folder. All samples are saved under: data/raw/
+This avoids the need for subdirectories and keeps all sample files in one place for easier manual review.
 
-Author: [Your Name]
+A summary log of all downloaded files is saved to: data/raw/downloaded_files.txt
+
+Author: ClimaStation Team
+Date: 2025-07-01
 """
 
 import os
-import time
+import json
 import requests
-from bs4 import Tag
-from bs4 import BeautifulSoup
 from urllib.parse import urljoin
+from bs4 import BeautifulSoup
+from bs4.element import Tag
 
-BASE_URL = "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/"
-TARGET_FOLDERS = ["historical/", "now/", "recent/", "meta_data/"]
-VALID_RAW_EXTENSIONS = [".zip", ".gz"]
-VALID_META_EXTENSIONS = [".txt", ".xml", ".zip", ".gz"]
-SAMPLES_PER_FOLDER = 2
-RATE_LIMIT = 0.5  # seconds
+# === Configuration ===
+URLS_JSONL_PATH = "data/dwd_structure_logs/2025-07-01_*.jsonl"  # Replace with actual filename
+BASE_URL = "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/"
+RAW_DATA_DIR = "data/raw"
+MAX_FILES_PER_FOLDER = 2
+LOG_FILE_PATH = os.path.join(RAW_DATA_DIR, "downloaded_files.txt")
 
-def get_links(url):
+os.makedirs(RAW_DATA_DIR, exist_ok=True)
+
+def sanitize_filename(prefix: str, filename: str) -> str:
+    """Convert folder prefix + filename to safe flat name"""
+    prefix_clean = prefix.replace("/", "_")
+    return f"{prefix_clean}_{filename}"
+
+def download_file(url: str, output_path: str):
     try:
-        time.sleep(RATE_LIMIT)
-        response = requests.get(url, timeout=10)
-        response.raise_for_status()
-        soup = BeautifulSoup(response.text, "html.parser")
-        hrefs = []
-        for a in soup.find_all("a"):
-            if isinstance(a, Tag):  # 🛡️ Ensures `.get()` is valid
-                href = a.get("href")
-                if isinstance(href, str) and href:
-                    hrefs.append(href)
-
-        return hrefs
+        resp = requests.get(url, timeout=15)
+        resp.raise_for_status()
+        with open(output_path, "wb") as f:
+            f.write(resp.content)
+        print(f"✅ Downloaded: {output_path}")
+        return True
     except Exception as e:
-        print(f"[ERROR] Cannot access {url}: {e}")
-        return []
+        print(f"❌ Failed to download {url}: {e}")
+        return False
 
-def download_file(url, dest_path):
-    os.makedirs(os.path.dirname(dest_path), exist_ok=True)
-    if os.path.exists(dest_path):
-        print(f"[SKIP] Already exists: {dest_path}")
-        return
-    try:
-        print(f"[⬇️] Downloading: {url}")
-        with requests.get(url, stream=True, timeout=15) as r:
-            r.raise_for_status()
-            with open(dest_path, "wb") as f:
-                for chunk in r.iter_content(chunk_size=8192):
-                    f.write(chunk)
-    except Exception as e:
-        print(f"[ERROR] Failed to download {url}: {e}")
+def run():
+    matched_file = None
+    # Locate the actual *_urls.jsonl file if wildcard is present
+    if "*" in URLS_JSONL_PATH:
+        from glob import glob
+        matches = glob(URLS_JSONL_PATH)
+        if not matches:
+            print("❌ No matching *_urls.jsonl file found.")
+            return
+        matched_file = matches[0]
+    else:
+        matched_file = URLS_JSONL_PATH
 
-def get_sample_files(url, valid_exts, max_files):
-    links = get_links(url)
-    files = [link for link in links if any(link.endswith(ext) for ext in valid_exts)]
-    return files[:max_files]
+    with open(matched_file, "r", encoding="utf-8") as f:
+        for line in f:
+            record = json.loads(line)
+            url = record["url"]
+            prefix = record["prefix"]
 
-def sanitize_folder_name(url):
-    return url.strip("/").split("/")[-1]
+            try:
+                response = requests.get(url, timeout=10)
+                response.raise_for_status()
+                soup = BeautifulSoup(response.text, "html.parser")
 
-def main():
-    # Step 1: List all subfolders under 10_minutes/
-    subfolders = get_links(BASE_URL)
-    data_types = [f for f in subfolders if f.endswith("/") and f not in TARGET_FOLDERS]
+                links = []
+                for tag in soup.find_all("a", href=True):
+                    if isinstance(tag, Tag):
+                        href = tag.get("href")
+                        if isinstance(href, str) and href.endswith(".zip"):
+                            links.append(href)
 
-    for data_type in data_types:
-        full_type_url = urljoin(BASE_URL, data_type)
-        local_dir = os.path.join("data", "raw", sanitize_folder_name(data_type))
+                sample_files = links[:MAX_FILES_PER_FOLDER]
+            except Exception as e:
+                print(f"⚠️ Skipping folder {url}: {e}")
+                continue
 
-        for folder in TARGET_FOLDERS:
-            full_folder_url = urljoin(full_type_url, folder)
-            ext_filter = VALID_META_EXTENSIONS if folder == "meta_data/" else VALID_RAW_EXTENSIONS
-            max_files = 1 if folder == "meta_data/" else SAMPLES_PER_FOLDER
+            for fname in sample_files:
+                file_url = urljoin(url, str(fname))
+                flat_name = sanitize_filename(prefix, fname)
+                save_path = os.path.join(RAW_DATA_DIR, flat_name)
 
-            sample_files = get_sample_files(full_folder_url, ext_filter, max_files)
-
-            for filename in sample_files:
-                file_url = urljoin(full_folder_url, filename)
-                destination = os.path.join(local_dir, folder.strip("/"), filename)
-                download_file(file_url, destination)
-
-    print("\n✅ Sample download complete.")
+                if download_file(file_url, save_path):
+                    with open(LOG_FILE_PATH, "a", encoding="utf-8") as log_f:
+                        log_f.write(f"{prefix} -> {flat_name} -> {file_url}\n")
 
 if __name__ == "__main__":
-    main()
+    run()

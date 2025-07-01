@@ -385,13 +385,19 @@ CLIMASTATION-BACKEND
                     ---- __init__.py 
                     ---- analyze_samples.py                       
                     ---- crawl_dwd.py  
-                    ---- download_samples.py                       
+                    ---- download_samples.py   
+                    ---- inspect_archives.py                      
                     ---- README.md                      
             --- __init__.py  
         -- __init__.py
     - data\          
         -- dwd_structure_logs\  
+            --- [timestamp]_structure.json  
+            --- [timestamp]_tree.txt  
+            --- [timestamp]_urls.jsonl  
         -- dwd_validation_logs\ 
+            --- [timestamp]_archive_inspection.jsonl  
+            --- [timestamp]_archive_inspection.pretty.json  
         -- raw\      
         -- README.md       
     - tests\
@@ -408,3 +414,5 @@ CLIMASTATION-BACKEND
 - Pipeline restricted to the DWD path:  
 https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/    
 - crawl_dwd.py has been modified to create a tree structure of the DWD repository.  
+- download_samples.py has been created from scratch and it only download samples of zip files.  
+- inspect_archives.py has been created from scratch. This file outputs one [timestamp]_archive_inspection.jsonl file and one [timestamp]_archive_inspection.pretty.json file.  
