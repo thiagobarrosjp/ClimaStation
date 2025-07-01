@@ -416,3 +416,20 @@ https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/
 - crawl_dwd.py has been modified to create a tree structure of the DWD repository.  
 - download_samples.py has been created from scratch and it only download samples of zip files.  
 - inspect_archives.py has been created from scratch. This file outputs one [timestamp]_archive_inspection.jsonl file and one [timestamp]_archive_inspection.pretty.json file.  
+- Adapted inspect_archives.py so that the output identifies the dataset and the variant of each zip file. Besides, each text file classified as metadata or raw data.  
+- The example below shows how the output of inspect_archives.py looks like.  
+{
+    "zip_file": "10_minutes_air_temperature_historical_10minutenwerte_TU_00003_19930428_19991231_hist.zip",
+    "source_url_path": "10_minutes/air_temperature/historical",
+    "dataset": "10_minutes_air_temperature",
+    "variant": "historical",
+    "entries": [
+      {
+        "filename": "produkt_zehn_min_tu_19930428_19991231_00003.txt",
+        "lines": 3,
+        "header": "STATIONS_ID;MESS_DATUM;QN;PP_10;TT_10;TM5_10;RF_10;TD_10",
+        "sample_row": "3;199304281230;    1;  987.3;  24.9;  28.4;  23.0;   2.4",
+        "classification": "raw"
+      }
+    ]
+  },
