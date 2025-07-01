@@ -417,6 +417,9 @@ https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/
 - download_samples.py has been created from scratch and it only download samples of zip files.  
 - inspect_archives.py has been created from scratch. This file outputs one [timestamp]_archive_inspection.jsonl file and one [timestamp]_archive_inspection.pretty.json file.  
 - Adapted inspect_archives.py so that the output identifies the dataset and the variant of each zip file. Besides, each text file classified as metadata or raw data.  
+  - Created the concept of a dataset_key, joining dataset and classification.  
+  - Adapted inspection_archives.py so that the output includes the dataset_key. 
+  - The output of inspect_archives.py also includes [timestamp]_dataset_summary.pretty.json and [timestamp]_station_summary.pretty.json files.  
 - The example below shows how the output of inspect_archives.py looks like.  
 {
     "zip_file": "10_minutes_air_temperature_historical_10minutenwerte_TU_00003_19930428_19991231_hist.zip",
@@ -429,11 +432,44 @@ https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/
         "lines": 3,
         "header": "STATIONS_ID;MESS_DATUM;QN;PP_10;TT_10;TM5_10;RF_10;TD_10",
         "sample_row": "3;199304281230;    1;  987.3;  24.9;  28.4;  23.0;   2.4",
-        "classification": "raw"
+        "dataset": "10_minutes_air_temperature",
+        "classification": "raw",
+        "dataset_key": "10_minutes_air_temperature_raw",
+        "station_id": "3"
       }
     ]
   },
-  - Created the concept of a dataset_key, joining dataset and classification.  
-  - Adapted inspection_archives.py so that the output includes the dataset_key.  
-  - The output of inspect_archives.py also includes [timestamp]_dataset_summary.pretty.json and [timestamp]_station_summary.pretty.json files.  
-  
+  {
+    "zip_file": "10_minutes_air_temperature_historical_10minutenwerte_TU_00003_20000101_20091231_hist.zip",
+    "source_url_path": "10_minutes/air_temperature/historical",
+    "dataset": "10_minutes_air_temperature",
+    "variant": "historical",
+    "entries": [
+      {
+        "filename": "produkt_zehn_min_tu_20000101_20091231_00003.txt",
+        "lines": 3,
+        "header": "STATIONS_ID;MESS_DATUM;  QN;PP_10;TT_10;TM5_10;RF_10;TD_10;eor",
+        "sample_row": "3;199912312300;    1;  997.3;   4.1;   3.6;  87.0;   2.1;eor",
+        "dataset": "10_minutes_air_temperature",
+        "classification": "raw",
+        "dataset_key": "10_minutes_air_temperature_raw",
+        "station_id": "3"
+      }
+    ]
+  },
+  - The example below shows how the [timestamp]_dataset_summary.pretty.json file looks like.  
+  "3": {
+    "10_minutes_air_temperature": {
+      "10_minutes_air_temperature_raw": [
+        "produkt_zehn_min_tu_19930428_19991231_00003.txt",
+        "produkt_zehn_min_tu_20000101_20091231_00003.txt"
+      ],
+      "10_minutes_air_temperature_metadata": [
+        "Metadaten_Geographie_00003.txt",
+        "Metadaten_Geraete_Lufttemperatur_00003.txt",
+        "Metadaten_Geraete_Momentane_Temperatur_In_5cm_00003.txt",
+        "Metadaten_Geraete_Rel_Feuchte_00003.txt",
+        "Metadaten_Parameter_00003.txt",
+        "Metadaten_Stationsname_Betreibername_00003.txt"
+      ]
+    },
