@@ -1,22 +1,4 @@
-"""
-inspect_archives.py
-
-This script inspects each .zip file in the `data/raw/` directory, listing its internal .txt files
-and reading their first few lines to help classify them as raw data or metadata.
-
-It does NOT parse or extract the files — only reads headers and metadata in memory.
-
-URL source paths are inferred from `data/raw/downloaded_files.txt`, created by download_samples.py.
-
-Output:
-- JSONL file: `data/dwd_validation_logs/[timestamp]_archive_inspection.jsonl`
-- Pretty JSON file: `data/dwd_validation_logs/[timestamp]_archive_inspection.pretty.json`
-- Dataset Summary: `data/dwd_validation_logs/[timestamp]_dataset_summary.pretty.json`
-- Per-Station Dataset Summary: `data/dwd_validation_logs/[timestamp]_station_summary.pretty.json`
-
-Author: ClimaStation Team
-Date: 2025-07-01
-"""
+# enhanced_inspect_archives.py
 
 import os
 import zipfile
@@ -165,8 +147,11 @@ def generate_station_summary(results):
             station = entry.get("station_id", "unknown")
             dataset = entry.get("dataset", "unknown")
             dataset_key = entry.get("dataset_key", "unknown")
-            filename = entry.get("filename", "[no name]")
-            summary[station][dataset][dataset_key].append(filename)
+            summary[station][dataset][dataset_key].append({
+                "filename": entry.get("filename", "[no name]"),
+                "header": entry.get("header", ""),
+                "sample_row": entry.get("sample_row", "")
+            })
     return summary
 
 def run():
@@ -196,7 +181,7 @@ def run():
     print(f"\n✅ Archive inspection report saved to:\n{jsonl_path}")
     print(f"📄 Pretty-printed version saved to:\n{pretty_path}")
     print(f"📊 Dataset summary saved to:\n{summary_path}")
-    print(f"📊 Station summary saved to:\n{station_summary_path}")
+    print(f"📊 Enhanced station summary saved to:\n{station_summary_path}")
 
 if __name__ == "__main__":
     run()
