@@ -1,11 +1,35 @@
-# enhanced_inspect_archives.py
+# inspect_archives.py
+"""
+DWD Archive Inspector
+
+This script analyzes downloaded .zip archives from the DWD climate dataset,
+extracts metadata from contained .txt files (both raw data and metadata),
+and generates structured inspection reports.
+
+Features:
+- Identifies classification type: raw or metadata
+- Extracts key file info: header, sample row, station ID
+- Extracts time intervals (`from`, `to`) for raw data based on filename
+- Generates:
+  - archive_inspection.jsonl: line-based full output
+  - archive_inspection.pretty.json: formatted full output
+  - dataset_summary.pretty.json: grouped by dataset and classification
+  - station_summary.pretty.json: grouped by station and dataset
+
+Intended to support validation and schema evolution for ClimaStation.
+
+Author: [Your Name]
+Date: 2025-07-02
+"""
 
 import os
 import zipfile
+import re
 from datetime import datetime
 import json
 from collections import defaultdict
 
+# Constants and paths
 RAW_DATA_DIR = "data/raw"
 DOWNLOAD_LOG = os.path.join(RAW_DATA_DIR, "downloaded_files.txt")
 OUTPUT_DIR = "data/dwd_validation_logs"
@@ -19,6 +43,7 @@ jsonl_path = os.path.join(OUTPUT_DIR, f"{timestamp}_archive_inspection.jsonl")
 pretty_path = os.path.join(OUTPUT_DIR, f"{timestamp}_archive_inspection.pretty.json")
 summary_path = os.path.join(OUTPUT_DIR, f"{timestamp}_dataset_summary.pretty.json")
 station_summary_path = os.path.join(OUTPUT_DIR, f"{timestamp}_station_summary.pretty.json")
+
 
 def load_download_log():
     mapping = {}
@@ -37,6 +62,7 @@ def load_download_log():
                     mapping[filename] = path_only
     return mapping
 
+
 def extract_dataset_and_variant(source_path):
     if source_path == "unknown":
         return "unknown", "unknown"
@@ -49,6 +75,7 @@ def extract_dataset_and_variant(source_path):
             return dataset, variant
     dataset = "_".join(parts)
     return dataset, None
+
 
 def classify_content(lines, filename=""):
     fname = filename.lower()
@@ -65,6 +92,7 @@ def classify_content(lines, filename=""):
         return "raw"
     return "unknown"
 
+
 def extract_station_id_from_lines(lines):
     try:
         header = lines[0].split(";")
@@ -75,6 +103,7 @@ def extract_station_id_from_lines(lines):
     except Exception:
         pass
     return "unknown"
+
 
 def inspect_zip(zip_path, source_mapping):
     entries = []
@@ -92,9 +121,11 @@ def inspect_zip(zip_path, source_mapping):
                             for _ in range(3):
                                 line = f.readline().decode("utf-8", errors="ignore").strip()
                                 lines.append(line)
+
                             classification = classify_content(lines, filename=name)
                             station_id = extract_station_id_from_lines(lines)
-                            entries.append({
+
+                            record = {
                                 "filename": name,
                                 "lines": len(lines),
                                 "header": lines[0] if len(lines) > 0 else "",
@@ -103,7 +134,21 @@ def inspect_zip(zip_path, source_mapping):
                                 "classification": classification,
                                 "dataset_key": f"{dataset}_{classification}",
                                 "station_id": station_id
-                            })
+                            }
+
+                            # Extract from/to date range from filename
+                            if classification == "raw":
+                                match = re.search(r"_(\d{8})_(\d{8})_", name)
+                                if match:
+                                    from_str, to_str = match.groups()
+                                    try:
+                                        record["from"] = datetime.strptime(from_str, "%Y%m%d").strftime("%Y-%m-%d")
+                                        record["to"] = datetime.strptime(to_str, "%Y%m%d").strftime("%Y-%m-%d")
+                                    except ValueError:
+                                        pass
+
+                            entries.append(record)
+
                     except Exception as e:
                         entries.append({
                             "filename": name,
@@ -112,6 +157,7 @@ def inspect_zip(zip_path, source_mapping):
                             "dataset_key": f"{dataset}_unknown",
                             "station_id": "unknown"
                         })
+
     except Exception as e:
         return {
             "zip_file": zip_name,
@@ -130,6 +176,7 @@ def inspect_zip(zip_path, source_mapping):
         "entries": entries
     }
 
+
 def generate_dataset_summary(results):
     summary = defaultdict(lambda: defaultdict(list))
     for zip_entry in results:
@@ -139,6 +186,7 @@ def generate_dataset_summary(results):
             filename = entry.get("filename", "[no name]")
             summary[dataset][dataset_key].append(filename)
     return summary
+
 
 def generate_station_summary(results):
     summary = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
@@ -150,9 +198,12 @@ def generate_station_summary(results):
             summary[station][dataset][dataset_key].append({
                 "filename": entry.get("filename", "[no name]"),
                 "header": entry.get("header", ""),
-                "sample_row": entry.get("sample_row", "")
+                "sample_row": entry.get("sample_row", ""),
+                "from": entry.get("from", None),
+                "to": entry.get("to", None)
             })
     return summary
+
 
 def run():
     source_mapping = load_download_log()
@@ -182,6 +233,7 @@ def run():
     print(f"📄 Pretty-printed version saved to:\n{pretty_path}")
     print(f"📊 Dataset summary saved to:\n{summary_path}")
     print(f"📊 Enhanced station summary saved to:\n{station_summary_path}")
+
 
 if __name__ == "__main__":
     run()

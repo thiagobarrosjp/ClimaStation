@@ -494,7 +494,7 @@ https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/
         "from": "2000-01-01",
         "to": "2009-12-31"
         }
-    -- Metadata row matching: Instead of just listing metatada filenames, we could match which rows of those metadata files apply to each raw file (based on date). For example:
+-- Metadata row matching: Instead of just listing metatada filenames, we could match which rows of those metadata files apply to each raw file (based on date). For example:
         "Metadaten_Geographie_00003.txt": [
         {
             "from": "2000-01-01",
@@ -527,5 +527,13 @@ https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/
 <pre>       
 "station_name": "Aachen"
 </pre>
+- Updated inspect_archives.py to add "from" and "to" timestamps from the raw data files in the station_summary.json file.  
+- New file build_station_summary.py to unload functions from inspect_archives.py and add new features.  
+- Suggested Rule of Thumb: If it doesn't require opening and inspecting archive structure of filenames, it doesn't belong in inspect_archives.py.  
+- Suggested responsibilities: inspect_archives.py detects structure, saves raw inspection summaries. build_station_summary.py parses content of metadata files and aligns to raw data temporally.  
+- Important observation: The file Metadaten_Parameter_xxxxx.txt is not a simple list of time intervals for a station, but a multi-dimensional table, where each parameter (e.g. TT_10, RF_10, PP_10) has its own independent timeline and metadata.  
+- Any attempt to attach a single parameterbeschreibung, einheit, or datenquelle to a raw file based on time range alone will fail. Because there may be multiple parameters, each with their own intervals, overlapping within the same file.  
+- This requires a change in logic. Instead of matching just by time range per raw file, we must group the metadata entries by parameter. Then for each raw file, we look at its header and for each parameter in the raw file, we find the time-relevant metadata row. Finally, we match these parameter-specific metadata blocks separately.
+- I've noticed that the build_station_summary.py is not parsing metadata files correctly. I will look into this.
 
 
