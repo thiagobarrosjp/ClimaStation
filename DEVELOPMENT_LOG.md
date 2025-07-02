@@ -535,5 +535,51 @@ https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/
 - Any attempt to attach a single parameterbeschreibung, einheit, or datenquelle to a raw file based on time range alone will fail. Because there may be multiple parameters, each with their own intervals, overlapping within the same file.  
 - This requires a change in logic. Instead of matching just by time range per raw file, we must group the metadata entries by parameter. Then for each raw file, we look at its header and for each parameter in the raw file, we find the time-relevant metadata row. Finally, we match these parameter-specific metadata blocks separately.
 - I've noticed that the build_station_summary.py is not parsing metadata files correctly. I will look into this.
-
+- This is the current folder structure:
+<pre>
+CLIMASTATION-BACKEND		
+    - .vscode\
+        -- settings.json
+    - app\
+        -- features\
+            --- dwd\  
+                ---- record_schemas\ 
+                    ----- README.md   
+                    ----- v0_initial_schema.json  
+                ---- __init__.py
+                ---- metadata_parser.py  
+                ---- record_validator.py  
+                ---- schemas.py	            
+            --- tools\
+                ---- dwd_crawler\ 
+                    ---- __init__.py 
+                    ---- build_station_summary.py                       
+                    ---- crawl_dwd.py  
+                    ---- download_samples.py   
+                    ---- inspect_archives.py                      
+                    ---- README.md                      
+            --- __init__.py  
+        -- __init__.py
+    - data\          
+        -- dwd_structure_logs\  
+            --- [timestamp]_structure.json  
+            --- [timestamp]_tree.txt  
+            --- [timestamp]_urls.jsonl  
+        -- dwd_validation_logs\ 
+            --- [timestamp]_archive_inspection.jsonl  
+            --- [timestamp]_archive_inspection.pretty.json  
+            --- [timestamp]_dataset_summary.pretty.json  
+            --- [timestamp]_station_summary.pretty.json  
+            --- station_profile.pretty.json  
+        -- raw\  
+            --- downloaded_files.txt   
+        -- README.md       
+    - tests\
+        -- test_dwd_pipeline.py	
+    - .env
+    - .gitignore
+    - DEVELOPMENT_LOG.md  
+    - README.md  
+    - requirements.txt
+</pre>
 
