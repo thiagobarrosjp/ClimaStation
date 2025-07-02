@@ -582,4 +582,60 @@ CLIMASTATION-BACKEND
     - README.md  
     - requirements.txt
 </pre>
-
+- The output from build_station_summary.py seems to be correct.
+- Important observation: The union of all fields from the raw data header and the matched metadata fields from all relevant files forms the complete record format for that specific raw data file.  
+- Repeating this process for all raw files will reveal all unique field names that ever appear. This approach allow us to derive empirically the universal record schema for the DWD dataset. 
+- We are now expanding the folder structure to include a canonical mapping dictionary.  
+- This dictionary will act as a translation layer to clean up the raw metadata field names and unify them under a consistent schema. 
+- The map will be created using a two-level strategy. 
+- First, we manually create a static core map with the known fields. This file is called field_map.json.  
+- Then we implement an automatic method to identify and log unknown fields. These would be manually added to field_map.json or ignored.  
+- The current folder structure:
+<pre>
+CLIMASTATION-BACKEND		
+    - .vscode\
+        -- settings.json
+    - app\
+        -- features\
+            --- dwd\  
+                ---- record_schemas\ 
+                    ----- README.md   
+                    ----- field_map.json  
+                    ----- field_map.py  
+                    ----- v0_initial_schema.json  
+                ---- __init__.py
+                ---- metadata_parser.py  
+                ---- record_validator.py  
+                ---- schemas.py	            
+            --- tools\
+                ---- dwd_crawler\ 
+                    ---- __init__.py 
+                    ---- build_station_summary.py                       
+                    ---- crawl_dwd.py  
+                    ---- download_samples.py   
+                    ---- inspect_archives.py                      
+                    ---- README.md                      
+            --- __init__.py  
+        -- __init__.py
+    - data\          
+        -- dwd_structure_logs\  
+            --- [timestamp]_structure.json  
+            --- [timestamp]_tree.txt  
+            --- [timestamp]_urls.jsonl  
+        -- dwd_validation_logs\ 
+            --- [timestamp]_archive_inspection.jsonl  
+            --- [timestamp]_archive_inspection.pretty.json  
+            --- [timestamp]_dataset_summary.pretty.json  
+            --- [timestamp]_station_summary.pretty.json  
+            --- station_profile.pretty.json  
+        -- raw\  
+            --- downloaded_files.txt   
+        -- README.md       
+    - tests\
+        -- test_dwd_pipeline.py	
+    - .env
+    - .gitignore
+    - DEVELOPMENT_LOG.md  
+    - README.md  
+    - requirements.txt
+</pre>
