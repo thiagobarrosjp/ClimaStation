@@ -417,10 +417,11 @@ https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/
 - download_samples.py has been created from scratch and it only download samples of zip files.  
 - inspect_archives.py has been created from scratch. This file outputs one [timestamp]_archive_inspection.jsonl file and one [timestamp]_archive_inspection.pretty.json file.  
 - Adapted inspect_archives.py so that the output identifies the dataset and the variant of each zip file. Besides, each text file classified as metadata or raw data.  
-  - Created the concept of a dataset_key, joining dataset and classification.  
-  - Adapted inspection_archives.py so that the output includes the dataset_key. 
-  - The output of inspect_archives.py also includes [timestamp]_dataset_summary.pretty.json and [timestamp]_station_summary.pretty.json files.  
-- The example below shows how the output of inspect_archives.py looks like.  
+- Created the concept of a dataset_key, joining dataset and classification.  
+- Adapted inspection_archives.py so that the output includes the dataset_key. 
+- The output of inspect_archives.py also includes [timestamp]_dataset_summary.pretty.json and [timestamp]_station_summary.pretty.json files.  
+- The example below shows how the output of inspect_archives.py looks like.
+<pre>  
 {
     "zip_file": "10_minutes_air_temperature_historical_10minutenwerte_TU_00003_19930428_19991231_hist.zip",
     "source_url_path": "10_minutes/air_temperature/historical",
@@ -473,22 +474,22 @@ https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/
         "Metadaten_Stationsname_Betreibername_00003.txt"
       ]
     },
-
-
-    2025-07-02:  
-    - Fixed a bug in download_samples.py that prevented [timestamp]_archive_inspection.jsonl from being loaded.  
-    - Important note: each raw data file may correlate with multiple rows from each metadata file, based on timestamps and overlaps.  
-    - The goal of the station_summary.pretty.json is to allow to map the raw data files to the metadata files.  
-    - This mapping will become the foundation for automatic parsing and conversion.
-    - Instead of checking metadata row by row during parsing, we pre-split the metadata into time intervals, then we apply them in batches.
-    - Step-by-step strategy:
-    -- Before parsing the raw file, we build a sorted list of time intervals based on metadata.
-    -- Then we parse the raw data file line by line, but we only check metadata when the timestamp enters a new interval.
-    -- We also maintain a current active metadata block and we apply this block to all rows until the timestamp exceeds the interval.
-    -- The sorted list of time intervals (derived from the metadata) should ideally live in memory, and be constructed before parsing begins, as a per-station, per-metadata-type dictionary.  
-    - We should build and store the metadata intervals in the station_summary.pretty.json file. Then, we load them into memory once at the beginning of each parsing job.  
-    - Here are a points that can be improved in the station_summary.json file:
-    -- Time interval indexing: For each raw file, we can eventually annotate the covered time interval like the example below:
+</pre>
+2025-07-02:  
+- Fixed a bug in download_samples.py that prevented [timestamp]_archive_inspection.jsonl from being loaded.  
+- Important note: each raw data file may correlate with multiple rows from each metadata file, based on timestamps and overlaps.  
+- The goal of the station_summary.pretty.json is to allow to map the raw data files to the metadata files.  
+- This mapping will become the foundation for automatic parsing and conversion.
+- Instead of checking metadata row by row during parsing, we pre-split the metadata into time intervals, then we apply them in batches.
+- Step-by-step strategy:
+-- Before parsing the raw file, we build a sorted list of time intervals based on metadata.
+-- Then we parse the raw data file line by line, but we only check metadata when the timestamp enters a new interval.
+-- We also maintain a current active metadata block and we apply this block to all rows until the timestamp exceeds the interval.
+-- The sorted list of time intervals (derived from the metadata) should ideally live in memory, and be constructed before parsing begins, as a per-station, per-metadata-type dictionary.  
+- We should build and store the metadata intervals in the station_summary.pretty.json file. Then, we load them into memory once at the beginning of each parsing job.  
+- Here are a points that can be improved in the station_summary.json file:
+-- Time interval indexing: For each raw file, we can eventually annotate the covered time interval like the example below:
+<pre>
         "produkt_zehn_min_tu_20000101_20091231_00003.txt": {
         "from": "2000-01-01",
         "to": "2009-12-31"
@@ -510,14 +511,17 @@ https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/
             "elevation": 202.0
         }
         ]
-    -- Reverse lookup map: We can precompute this code below. This would speed up inspection or linking operations, especially if we process thousands of files in batch jobs.
+</pre>
+-- Reverse lookup map: We can precompute this code below. This would speed up inspection or linking operations, especially if we process thousands of files in batch jobs.
+<pre>
         "produkt_zehn_min_tu_20000101_20091231_00003.txt": {
         "station": "3",
         "dataset": "10_minutes_air_temperature"
         }
-    -- Standardized field lists: We can add parsed fields from the header like this:  
+</pre>
+-- Standardized field lists: We can add parsed fields from the header like this:  
         "fields": ["STATIONS_ID", "MESS_DATUM", "QN", "PP_10", "TT_10", ...]  
-    -- Optional field "station_name": We already have this in sample rows. We could extract once and include for clarity:
+-- Optional field "station_name": We already have this in sample rows. We could extract once and include for clarity:
         "station_name": "Aachen"
 
 
