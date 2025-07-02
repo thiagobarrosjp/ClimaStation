@@ -520,9 +520,12 @@ https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/
         }
 </pre>
 -- Standardized field lists: We can add parsed fields from the header like this:  
-        "fields": ["STATIONS_ID", "MESS_DATUM", "QN", "PP_10", "TT_10", ...]  
+<pre>
+"fields": ["STATIONS_ID", "MESS_DATUM", "QN", "PP_10", "TT_10", ...]  
+</pre>
 -- Optional field "station_name": We already have this in sample rows. We could extract once and include for clarity:
-        "station_name": "Aachen"
-
+<pre>       
+"station_name": "Aachen"
+</pre>
 
 
