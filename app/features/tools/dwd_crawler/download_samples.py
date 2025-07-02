@@ -31,7 +31,14 @@ from bs4.element import Tag
 from glob import glob
 
 # === Configuration ===
-URLS_JSONL_PATH = "data/dwd_structure_logs/2025-07-01_*.jsonl"  # Wildcard allowed
+# Dynamically select the most recent *_urls.jsonl file
+url_files = glob("data/dwd_structure_logs/*_urls.jsonl")
+if not url_files:
+    print("❌ No *_urls.jsonl files found.")
+    exit(1)
+
+URLS_JSONL_PATH = max(url_files, key=os.path.getmtime)
+print(f"✅ Using latest URL file: {URLS_JSONL_PATH}")
 BASE_URL = "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/"
 RAW_DATA_DIR = "data/raw"
 MAX_ZIP_FILES_PER_FOLDER = 2
