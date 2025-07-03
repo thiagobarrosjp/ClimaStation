@@ -1,25 +1,68 @@
-# Byte-compiled / cache files
+# =====================================
+# 💡 ClimaStation .gitignore
+# Exclude generated files, caches, secrets, and unnecessary large files
+# =====================================
+
+# === Python caches ===
 __pycache__/
 *.py[cod]
 *.pyo
 
-# Virtual environment
+# === Virtual environments ===
 .venv/
 env/
 venv/
 
-# OS files
+# === OS and IDE files ===
 .DS_Store
 Thumbs.db
-
-# VS Code
 .vscode/
 
-# Environment variables
+# === Environment files ===
 .env
 
-# Data files
-data/raw/
-data/dwd_structure_logs/
-data/dwd_validation_logs/
+# === Test artifacts ===
+*.log
+*.tmp
+*.bak
 
+# === Output from data pipeline ===
+# Ignore all generated data — keep only README.md or .gitkeep to preserve folder structure
+
+# Debug logs
+data/0_debug/*
+!data/0_debug/.gitkeep
+
+# Structure output
+data/1_structure/*
+!data/1_structure/.gitkeep
+
+# Sample downloads (can be regenerated)
+data/2_samples/*
+!data/2_samples/.gitkeep
+
+# Inspection results
+data/3_inspection/*
+!data/3_inspection/.gitkeep
+
+# Summaries
+data/4_summaries/*
+!data/4_summaries/.gitkeep
+
+# Matched metadata profiles
+data/5_matching/*
+!data/5_matching/.gitkeep
+
+# Extracted field sets
+data/6_fields/*
+!data/6_fields/.gitkeep
+
+# === Backup or development files ===
+*.old
+*.bak
+*.swp
+*.swo
+
+# === Optional: allow placeholder files to preserve empty dirs ===
+# Uncomment this if you're using README.md files instead of .gitkeep
+# !data/**/README.md
