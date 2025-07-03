@@ -8,6 +8,9 @@ from app.features.dwd.record_schemas.field_map import CANONICAL_FIELD_MAP, norma
 
 # Setup logging
 log_path = Path("data/dwd_validation_logs/station_summary_debug.log")
+if log_path.exists():
+    log_path.unlink()  # Delete existing log file before writing new one
+
 logging.basicConfig(
     filename=log_path,
     level=logging.DEBUG,
@@ -40,14 +43,24 @@ def build_zip_index_from_inspection():
         data = json.load(f)
 
     result = {}
+    headers_by_file = {}
     for entry in data:
         zip_path = Path("data/raw") / entry["zip_file"]
         for meta_entry in entry["entries"]:
             filename = meta_entry["filename"]
             result[filename] = zip_path
+            if "header" in meta_entry:
+                raw_fields = [h.strip() for h in meta_entry["header"].split(";")]
+                canonical_fields = [
+                    CANONICAL_FIELD_MAP.get(h.strip().lower(), h.strip()) for h in raw_fields
+                ]
+                headers_by_file[filename] = {
+                    "original": raw_fields,
+                    "canonical": canonical_fields
+                }
             logging.debug(f"Mapped {filename} -> {zip_path}")
     logging.info(f"Total metadata files indexed: {len(result)}")
-    return result
+    return result, headers_by_file
 
 
 def parse_metadata_lines(lines, station_id=None):
@@ -101,8 +114,6 @@ def parse_metadata_lines(lines, station_id=None):
     return rows
 
 
-
-
 def match_by_interval(rfrom, rto, metadata_rows):
     results = []
     for row in metadata_rows:
@@ -126,7 +137,7 @@ def match_by_interval(rfrom, rto, metadata_rows):
 def run():
     try:
         station_summary = load_latest_station_summary()
-        zip_index = build_zip_index_from_inspection()
+        zip_index, headers_by_file = build_zip_index_from_inspection()
         summary = {}
 
         for station_id, datasets in tqdm(station_summary.items(), desc="Processing stations"):
@@ -157,12 +168,6 @@ def run():
                                     lines = f.read().decode("utf-8", errors="ignore").splitlines()
                                     parsed_raw = parse_metadata_lines(lines, station_id=station_id)
                                     parsed = [normalize_metadata_row(row, CANONICAL_FIELD_MAP) for row in parsed_raw]
-                                    logging.debug(f"First parsed (normalized) row: {parsed[0]}")
-                                    logging.debug(f"Matching with rfrom={rfrom}, rto={rto}")
-                                    if parsed:
-                                        logging.debug(f"First parsed row (pre-match): from={parsed[0].get('from')}, to={parsed[0].get('to')}")
-                                    else:
-                                        logging.debug("No parsed metadata rows available for matching.")
                                     matches = match_by_interval(rfrom, rto, parsed)
                                     matched[meta_file] = matches
                                     logging.debug(f"{len(matches)} metadata rows matched from {meta_file}")
@@ -170,14 +175,24 @@ def run():
                             logging.exception(f"Error matching metadata file: {meta_file}")
                             continue
 
-                    if not any(matched.values()):
-                        logging.warning(f"No metadata matched for raw file: {filename}")
-
-                    result["raw_files"][filename] = {
+                    entry = {
                         "from": rfrom,
-                        "to": rto,
-                        "matched_metadata": matched
+                        "to": rto
                     }
+
+                    header_info = headers_by_file.get(filename)
+                    if header_info:
+                        logging.debug(f"Injecting header fields for: {filename}")
+                        entry["raw_fields_original"] = header_info.get("original", [])
+                        entry["raw_fields_canonical"] = header_info.get("canonical", [])
+                    else:
+                        logging.warning(f"No header fields found for: {filename}")
+
+                    entry["matched_metadata"] = matched
+
+
+                    logging.debug(f"ENTRY CONTENT ({filename}): " + json.dumps(entry, ensure_ascii=False))
+                    result["raw_files"][filename] = entry
 
                 summary[station_id][dataset_name] = result
 
@@ -186,7 +201,7 @@ def run():
             json.dump(summary, f, indent=2, ensure_ascii=False)
         logging.info(f"Written station summary to: {out_path}")
 
-        canonical_out_path = out_path.with_name(out_path.stem + "_canonical.pretty.json")
+        canonical_out_path = out_path.with_name("station_profile_canonical.pretty.json")
         with open(canonical_out_path, "w", encoding="utf-8") as f:
             json.dump(summary, f, indent=2, ensure_ascii=False)
         logging.info(f"Written canonical station summary to: {canonical_out_path}")
