@@ -1,0 +1,128 @@
+"""
+download_samples.py — ClimaStation Sample Downloader
+
+This script downloads a representative subset of raw climate data files from the DWD
+repository, based on the output of `crawl_dwd.py`.
+
+What it does:
+- Loads the most recent file: data/1_structure/[timestamp]_urls.jsonl
+- For each dataset folder listed, it downloads:
+    - Up to 2 `.zip` raw data files
+    - Any `DESCRIPTION_*.pdf` documentation files
+- All files are stored in: data/2_samples/raw/ using a flat filename format
+- A download log is saved to: data/2_samples/downloaded_files.txt
+- A debug log of download activity is saved to: data/0_debug/download_samples_debug.log
+
+This script supports downstream inspection, archive validation, and schema alignment
+by providing a manageable sample set for each dataset category.
+"""
+
+import os
+import json
+import requests
+from urllib.parse import urljoin
+from bs4 import BeautifulSoup
+from bs4.element import Tag
+from glob import glob
+import logging
+
+# === Paths and Config ===
+STRUCTURE_DIR = "data/1_structure"
+SAMPLES_DIR = "data/2_samples"
+RAW_DATA_DIR = os.path.join(SAMPLES_DIR, "raw")
+DEBUG_LOG_PATH = "data/0_debug/download_samples_debug.log"
+MAX_ZIP_FILES_PER_FOLDER = 2
+
+os.makedirs(RAW_DATA_DIR, exist_ok=True)
+os.makedirs("data/0_debug", exist_ok=True)
+
+# === Overwrite debug log ===
+if os.path.exists(DEBUG_LOG_PATH):
+    os.remove(DEBUG_LOG_PATH)
+
+# === Logging setup ===
+logging.basicConfig(
+    filename=DEBUG_LOG_PATH,
+    level=logging.DEBUG,
+    format="%(asctime)s - %(levelname)s - %(message)s"
+)
+logging.info("=== Starting download_samples.py ===")
+
+# === Select most recent urls.jsonl ===
+url_files = glob(os.path.join(STRUCTURE_DIR, "*_urls.jsonl"))
+if not url_files:
+    print("❌ No *_urls.jsonl files found in data/1_structure/")
+    exit(1)
+
+URLS_JSONL_PATH = max(url_files, key=os.path.getmtime)
+print(f"✅ Using latest URL file: {URLS_JSONL_PATH}")
+LOG_FILE_PATH = os.path.join(SAMPLES_DIR, "downloaded_files.txt")
+
+# Clear log from previous runs
+if os.path.exists(LOG_FILE_PATH):
+    os.remove(LOG_FILE_PATH)
+
+def sanitize_filename(prefix: str, filename: str) -> str:
+    """Convert folder prefix + filename to safe flat name"""
+    prefix_clean = prefix.replace("/", "_")
+    return f"{prefix_clean}_{filename}"
+
+def download_file(url: str, output_path: str) -> bool:
+    try:
+        resp = requests.get(url, timeout=15)
+        resp.raise_for_status()
+        with open(output_path, "wb") as f:
+            f.write(resp.content)
+        print(f"✅ Downloaded: {output_path}")
+        logging.info(f"Downloaded: {output_path}")
+        return True
+    except Exception as e:
+        print(f"❌ Failed to download {url}: {e}")
+        logging.warning(f"Failed to download {url}: {e}")
+        return False
+
+def run():
+    print(f"📥 Reading folder list from: {URLS_JSONL_PATH}")
+    with open(URLS_JSONL_PATH, "r", encoding="utf-8") as f:
+        for line in f:
+            try:
+                record = json.loads(line)
+                url = record["url"]
+                prefix = record["prefix"]
+
+                response = requests.get(url, timeout=10)
+                response.raise_for_status()
+                soup = BeautifulSoup(response.text, "html.parser")
+
+                zip_links = []
+                pdf_links = []
+
+                for tag in soup.find_all("a", href=True):
+                    if isinstance(tag, Tag):
+                        href = tag.get("href")
+                        if not isinstance(href, str):
+                            continue
+                        if href.endswith(".zip"):
+                            zip_links.append(href)
+                        elif href.startswith("DESCRIPTION_") and href.endswith(".pdf"):
+                            pdf_links.append(href)
+
+                sample_zips = zip_links[:MAX_ZIP_FILES_PER_FOLDER]
+                all_targets = [(fname, "zip") for fname in sample_zips] + [(fname, "pdf") for fname in pdf_links]
+
+                for fname, filetype in all_targets:
+                    file_url = urljoin(url, fname)
+                    flat_name = sanitize_filename(prefix, fname)
+                    save_path = os.path.join(RAW_DATA_DIR, flat_name)
+
+                    if download_file(file_url, save_path):
+                        with open(LOG_FILE_PATH, "a", encoding="utf-8") as log_f:
+                            log_f.write(f"{prefix} -> {flat_name} -> {file_url}\n")
+
+            except Exception as e:
+                print(f"⚠️ Skipping folder {record.get('url', '?')}: {e}")
+                logging.error(f"Failed to process folder: {e}")
+                continue
+
+if __name__ == "__main__":
+    run()
