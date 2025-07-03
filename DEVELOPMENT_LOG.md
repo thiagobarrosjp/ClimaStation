@@ -639,3 +639,8 @@ CLIMASTATION-BACKEND
     - README.md  
     - requirements.txt
 </pre>
+
+
+2025-07-03:
+- Bug with the missing metadata is finally fixed. The problem was in the stupid field_map.py script. 
+
