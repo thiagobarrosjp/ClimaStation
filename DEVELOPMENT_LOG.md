@@ -628,6 +628,7 @@ CLIMASTATION-BACKEND
             --- [timestamp]_dataset_summary.pretty.json  
             --- [timestamp]_station_summary.pretty.json  
             --- station_profile.pretty.json  
+            --- station_summary_debug.log  
         -- raw\  
             --- downloaded_files.txt   
         -- README.md       
@@ -643,4 +644,5 @@ CLIMASTATION-BACKEND
 
 2025-07-03:
 - Bug with the missing metadata is finally fixed. The problem was in the stupid field_map.py script. 
+- Added station_summary_debug.log to help with debugging.  
 
