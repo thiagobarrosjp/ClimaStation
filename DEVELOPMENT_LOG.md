@@ -613,6 +613,7 @@ CLIMASTATION-BACKEND
                     ---- build_station_summary.py                       
                     ---- crawl_dwd.py  
                     ---- download_samples.py   
+                    ---- extract_dataset_fields.py  
                     ---- inspect_archives.py                      
                     ---- README.md                      
             --- __init__.py  
@@ -628,6 +629,7 @@ CLIMASTATION-BACKEND
             --- [timestamp]_dataset_summary.pretty.json  
             --- [timestamp]_station_summary.pretty.json  
             --- station_profile_canonical_pretty.json  
+            --- dataset_fields.json  
             --- station_profile.pretty.json  
             --- station_summary_debug.log  
         -- raw\  
@@ -647,4 +649,6 @@ CLIMASTATION-BACKEND
 - Bug with the missing metadata is finally fixed. The problem was in the stupid field_map.py script. 
 - Added station_summary_debug.log to help with debugging.  
 - Updated field_map.json to include raw data fields.
+- Added extract-dataset_fields.py to automatically generate a dataset-specific field map.  
+- The field map is saved as dataset_fields.json.  
 
