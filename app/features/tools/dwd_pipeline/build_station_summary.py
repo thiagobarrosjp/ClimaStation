@@ -4,23 +4,16 @@ build_station_summary.py — Metadata Matcher for ClimaStation
 This script aligns raw DWD data files with their corresponding metadata records
 based on station ID and timestamp intervals.
 
-Inputs:
-- data/3_inspection/*_station_summary.pretty.json
+Input:
+- data/4_summaries/*_station_and_dataset_summary.pretty.json
 - data/3_inspection/*_archive_inspection.pretty.json
 - data/2_samples/raw/ (zip files)
 
-Outputs:
-- data/5_matching/station_profile.pretty.json
-- data/5_matching/station_profile_canonical.pretty.json
+Output:
+- data/5_matching/station_profile_merged.pretty.json
 
 Debug:
 - data/0_debug/station_summary_debug.log
-
-Key features:
-- Extracts normalized rows from metadata .txt files
-- Matches metadata to raw files based on station ID + date overlap
-- Uses field_map.py for canonical field alignment
-- Writes canonical and raw versions of matched profiles
 
 Author: ClimaStation Team
 """
@@ -32,9 +25,11 @@ from datetime import datetime
 from zipfile import ZipFile
 from tqdm import tqdm
 from app.features.dwd.record_schemas.field_map import CANONICAL_FIELD_MAP, normalize_metadata_row
+from app.features.tools.dwd_pipeline.utils import match_by_interval
 
 # === Config ===
-SUMMARY_DIR = Path("data/3_inspection")
+SUMMARY_DIR = Path("data/4_summaries")
+ARCHIVE_INSPECTION_DIR = Path("data/3_inspection")
 RAW_DATA_DIR = Path("data/2_samples/raw")
 OUT_DIR = Path("data/5_matching")
 DEBUG_LOG_PATH = Path("data/0_debug/station_summary_debug.log")
@@ -54,16 +49,26 @@ logging.info("=== Starting build_station_summary.py ===")
 
 
 def load_latest_station_summary():
-    summary_files = sorted(SUMMARY_DIR.glob("*_station_summary.pretty.json"))
-    if not summary_files:
-        raise FileNotFoundError("No *_station_summary.pretty.json file found.")
-    latest = summary_files[-1]
-    logging.info(f"Using station summary: {latest}")
-    return json.loads(latest.read_text(encoding="utf-8"))
+    merged_files = sorted(SUMMARY_DIR.glob("*_station_and_dataset_summary.pretty.json"))
+    if not merged_files:
+        raise FileNotFoundError("No *_station_and_dataset_summary.pretty.json file found.")
+    latest = merged_files[-1]
+    logging.info(f"Using merged station+dataset summary: {latest}")
+    merged_data = json.loads(latest.read_text(encoding="utf-8"))
+
+    # Extract and flatten station_summary
+    station_summary_flat = {}
+    for dataset, group in merged_data.items():
+        station_block = group.get("station_summary", {})
+        for station_id, datasets in station_block.items():
+            if station_id not in station_summary_flat:
+                station_summary_flat[station_id] = {}
+            station_summary_flat[station_id][dataset] = datasets
+    return station_summary_flat
 
 
 def build_zip_index():
-    inspection_files = sorted(SUMMARY_DIR.glob("*_archive_inspection.pretty.json"))
+    inspection_files = sorted(ARCHIVE_INSPECTION_DIR.glob("*_archive_inspection.pretty.json"))
     if not inspection_files:
         raise FileNotFoundError("No *_archive_inspection.pretty.json file found.")
 
@@ -101,13 +106,18 @@ def parse_metadata_lines(lines, station_id=None):
             header = [h.strip() for h in parts]
             continue
         if len(parts) != len(header):
+            logging.warning(f"⚠ Skipping malformed metadata row: {parts}")
             continue
 
         row = dict(zip(header, parts))
         norm = {k.strip().lower(): v.strip() for k, v in row.items()}
 
+        # Validate station ID
         sid = norm.get("stations_id") or norm.get("station_id")
         if station_id and sid and sid.lstrip("0") != str(station_id).lstrip("0"):
+            continue
+        if not sid or not sid.isdigit():
+            logging.warning(f"⚠ Invalid or missing stations_id: {norm}")
             continue
 
         def extract(fieldnames):
@@ -115,33 +125,19 @@ def parse_metadata_lines(lines, station_id=None):
                 if key in norm:
                     try:
                         return datetime.strptime(norm[key], "%Y%m%d").strftime("%Y-%m-%d")
-                    except:
+                    except Exception:
                         return None
             return None
 
         norm["from"] = extract(["von_datum", "metadata_valid_from", "valid_from"])
         norm["to"] = extract(["bis_datum", "metadata_valid_to", "valid_to"])
 
+        if not norm.get("from") or not norm.get("to"):
+            logging.warning(f"⚠ Missing or invalid from/to in row: {norm}")
+            continue
+
         rows.append(norm)
     return rows
-
-
-def match_by_interval(rfrom, rto, metadata_rows):
-    results = []
-    for row in metadata_rows:
-        f, t = row.get("from"), row.get("to")
-        if not f or not t:
-            continue
-        try:
-            mfrom = datetime.strptime(f, "%Y-%m-%d")
-            mto = datetime.strptime(t, "%Y-%m-%d")
-            r_start = datetime.strptime(rfrom, "%Y-%m-%d")
-            r_end = datetime.strptime(rto, "%Y-%m-%d")
-            if mfrom <= r_end and mto >= r_start:
-                results.append(row)
-        except:
-            continue
-    return results
 
 
 def run():
@@ -198,20 +194,12 @@ def run():
 
                 full_summary[station_id][dataset_name] = result
 
-        # Save outputs
-        profile_path = OUT_DIR / "station_profile.pretty.json"
-        canonical_path = OUT_DIR / "station_profile_canonical.pretty.json"
-
-        with open(profile_path, "w", encoding="utf-8") as f:
+        # Save merged profile
+        merged_path = OUT_DIR / "station_profile_merged.pretty.json"
+        with open(merged_path, "w", encoding="utf-8") as f:
             json.dump(full_summary, f, indent=2, ensure_ascii=False)
-
-        with open(canonical_path, "w", encoding="utf-8") as f:
-            json.dump(full_summary, f, indent=2, ensure_ascii=False)
-
-        logging.info(f"Saved station profile: {profile_path}")
-        logging.info(f"Saved canonical profile: {canonical_path}")
-
-        print(f"\n✅ Station summaries written to:\n- {profile_path}\n- {canonical_path}")
+        logging.info(f"Saved merged station profile: {merged_path}")
+        print(f"\n✅ Merged station profile written to:\n- {merged_path}")
 
     except Exception as e:
         logging.exception("💥 Fatal error in build_station_summary.py")

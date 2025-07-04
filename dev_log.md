@@ -753,3 +753,69 @@ CLIMASTATION-BACKEND
     - requirements.txt
 </pre>
 
+- 2025-07-04:  
+- Merge station_profile.pretty.json and station_profile_canonical.pretty.json into one file with two keys: "raw_fields" and "canonical_fields".  
+- Merge dataset_summary.pretty.json and station_summary.pretty.json into one station_and_dataset_summary.pretty.json file.
+- Added utils.py module to `dwd_pipeline/` to contain reusable functions for inspecting archives, extracting dataset fields, and matching metadata.
+- The current folder structure:
+<pre>
+CLIMASTATION-BACKEND		
+    - .vscode\
+        -- settings.json
+    - app\
+        -- features\
+            --- dwd\  
+                ---- record_schemas\ 
+                    ----- README.md   
+                    ----- field_map.json  
+                    ----- field_map.py  
+                    ----- v0_initial_schema.json  
+                ---- __init__.py
+                ---- metadata_parser.py  
+                ---- record_validator.py  
+                ---- schemas.py	            
+            --- tools\
+                ---- dwd_pipeline\ 
+                    ---- __init__.py 
+                    ---- build_station_summary.py                       
+                    ---- crawl_dwd.py  
+                    ---- download_samples.py   
+                    ---- extract_dataset_fields.py  
+                    ---- inspect_archives.py                      
+                    ---- README.md     
+                    ---- utils.py                   
+            --- __init__.py  
+        -- __init__.py
+    - data\          
+        -- 0_debug\  
+            --- crawl_dwd_debug.log  
+            --- download_samples_debug.log  
+            --- extract_dataset_fields_debug.log  
+            --- inspect_archives_debug.log  
+            --- station_summary_debug.log    
+        -- 1_structure\    
+            --- [timestamp]_structure.json  
+            --- [timestamp]_tree.txt  
+            --- [timestamp]_urls.jsonl    
+        -- 2_samples\    
+            --- raw\
+            --- downloaded_files.txt              
+        -- 3_inspection\ 
+            --- [timestamp]_archive_inspection.jsonl
+            --- [timestamp]_archive_inspection.pretty.json
+        -- 4_summaries\  
+            --- [timestamp]_station_and dataset_summary.pretty.json  
+        -- 5_matching\  
+            --- station_profile.merged.pretty.json  
+        -- 6_fields  
+            --- dataset_fields.json
+        -- README.md       
+    - tests\
+        -- test_dwd_pipeline.py	
+    - .env
+    - .gitignore
+    - dev_log.md  
+    - README.md  
+    - requirements.txt
+</pre>
+

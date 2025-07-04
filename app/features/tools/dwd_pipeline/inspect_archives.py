@@ -11,17 +11,10 @@ Inputs:
 Outputs:
 - data/3_inspection/[timestamp]_archive_inspection.jsonl
 - data/3_inspection/[timestamp]_archive_inspection.pretty.json
-- data/4_summaries/[timestamp]_dataset_summary.pretty.json
-- data/4_summaries/[timestamp]_station_summary.pretty.json
+- data/4_summaries/[timestamp]_station_and_dataset_summary.pretty.json
 
 Debug:
 - data/0_debug/inspect_archives_debug.log
-
-Main tasks:
-- Classify `.txt` files as raw or metadata
-- Extract headers, sample rows, and station IDs
-- Infer date ranges from filenames
-- Group results by dataset and station
 
 Author: ClimaStation Team
 """
@@ -33,6 +26,7 @@ import json
 import logging
 from datetime import datetime
 from collections import defaultdict
+from app.features.tools.dwd_pipeline.utils import classify_content, extract_dataset_and_variant
 
 # === Paths ===
 RAW_DATA_DIR = "data/2_samples/raw"
@@ -59,11 +53,9 @@ logging.info("=== Starting inspect_archives.py ===")
 timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M")
 jsonl_path = os.path.join(INSPECTION_DIR, f"{timestamp}_archive_inspection.jsonl")
 pretty_path = os.path.join(INSPECTION_DIR, f"{timestamp}_archive_inspection.pretty.json")
-summary_path = os.path.join(SUMMARY_DIR, f"{timestamp}_dataset_summary.pretty.json")
-station_summary_path = os.path.join(SUMMARY_DIR, f"{timestamp}_station_summary.pretty.json")
+merged_summary_path = os.path.join(SUMMARY_DIR, f"{timestamp}_station_and_dataset_summary.pretty.json")
 
 BASE_URL = "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/"
-KNOWN_VARIANTS = {"historical", "recent", "now", "meta_data", "metadata"}
 
 
 def load_download_log():
@@ -84,30 +76,8 @@ def load_download_log():
     return mapping
 
 
-def extract_dataset_and_variant(source_path):
-    if source_path == "unknown":
-        return "unknown", "unknown"
-
-    parts = source_path.strip("/").split("/")
-    for i in range(len(parts) - 1, -1, -1):
-        if parts[i].lower() in KNOWN_VARIANTS:
-            dataset = "_".join(parts[:i])
-            variant = parts[i].lower()
-            return dataset, variant
-    dataset = "_".join(parts)
-    return dataset, None
-
-
-def classify_content(lines, filename=""):
-    fname = filename.lower()
-    if fname.startswith(("metadaten_", "beschreibung", "stationen")):
-        return "metadata"
-    if "produkt_" in fname or "stundenwerte_" in fname or "zehn_min_" in fname:
-        return "raw"
-    joined = " ".join(lines).lower()
-    if "mess_datum" in joined and any(p in joined for p in ["tt_", "rf_", "pp_", "fx", "fm", "n", "sd", "sh", "qn", "rs"]):
-        return "raw"
-    return "unknown"
+def is_valid_station_id(station_id):
+    return isinstance(station_id, str) and station_id.isdigit() and len(station_id) == 5
 
 
 def extract_station_id_from_lines(lines):
@@ -138,6 +108,18 @@ def inspect_zip(zip_path, source_mapping):
 
                         classification = classify_content(lines, filename=name)
                         station_id = extract_station_id_from_lines(lines)
+
+                        # 🛡️ Validate station ID
+                        if not is_valid_station_id(station_id):
+                            logging.warning(f"⚠ Invalid station ID in file {name}: {station_id}")
+                            station_id = "invalid"
+
+                        # 🛡️ Validate header/sample row consistency
+                        if len(lines) >= 2:
+                            header_cols = len(lines[0].split(";"))
+                            row_cols = len(lines[1].split(";"))
+                            if header_cols != row_cols:
+                                logging.warning(f"⚠ Header/row mismatch in {name} (header: {header_cols}, row: {row_cols})")
 
                         record = {
                             "filename": name,
@@ -221,6 +203,22 @@ def generate_station_summary(results):
     return summary
 
 
+def merge_by_dataset(dataset_summary, station_summary):
+    merged = {}
+    dataset_keys = set(dataset_summary) | set(
+        ds for station in station_summary.values() for ds in station
+    )
+    for ds in sorted(dataset_keys):
+        merged[ds] = {
+            "dataset_summary": dataset_summary.get(ds, {}),
+            "station_summary": {}
+        }
+        for station_id, station_datasets in station_summary.items():
+            if ds in station_datasets:
+                merged[ds]["station_summary"][station_id] = station_datasets[ds]
+    return merged
+
+
 def run():
     source_mapping = load_download_log()
     all_results = []
@@ -237,18 +235,16 @@ def run():
     with open(pretty_path, "w", encoding="utf-8") as pretty_out:
         json.dump(all_results, pretty_out, indent=2, ensure_ascii=False)
 
-    summary = generate_dataset_summary(all_results)
-    with open(summary_path, "w", encoding="utf-8") as summary_out:
-        json.dump(summary, summary_out, indent=2, ensure_ascii=False)
-
+    dataset_summary = generate_dataset_summary(all_results)
     station_summary = generate_station_summary(all_results)
-    with open(station_summary_path, "w", encoding="utf-8") as station_out:
-        json.dump(station_summary, station_out, indent=2, ensure_ascii=False)
+    merged_summary = merge_by_dataset(dataset_summary, station_summary)
+
+    with open(merged_summary_path, "w", encoding="utf-8") as f:
+        json.dump(merged_summary, f, indent=2, ensure_ascii=False)
 
     print(f"\n✅ Archive inspection report saved to:\n{jsonl_path}")
     print(f"📄 Pretty-printed version saved to:\n{pretty_path}")
-    print(f"📊 Dataset summary saved to:\n{summary_path}")
-    print(f"📊 Station summary saved to:\n{station_summary_path}")
+    print(f"📊 Merged summary saved to:\n{merged_summary_path}")
     logging.info("✔ Inspection completed and all outputs written")
 
 
