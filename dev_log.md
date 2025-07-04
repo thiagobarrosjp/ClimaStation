@@ -757,6 +757,9 @@ CLIMASTATION-BACKEND
 - Merge station_profile.pretty.json and station_profile_canonical.pretty.json into one file with two keys: "raw_fields" and "canonical_fields".  
 - Merge dataset_summary.pretty.json and station_summary.pretty.json into one station_and_dataset_summary.pretty.json file.
 - Added utils.py module to `dwd_pipeline/` to contain reusable functions for inspecting archives, extracting dataset fields, and matching metadata.
+- Updated `build_station_summary.py` to sample only the header and one row from all metadata files **except** for `Metadaten_Parameter_*.txt`, which are still fully parsed.
+- Introduced `[COMMENTARY]` and `[STRUCTURE_SAMPLE]` log labels in `station_summary_debug.log` to distinguish ignorable rows from actual warnings.
+- Dramatically reduced log file size and improved parsing performance for large metadata archives.
 - The current folder structure:
 <pre>
 CLIMASTATION-BACKEND		
@@ -773,7 +776,7 @@ CLIMASTATION-BACKEND
                 ---- __init__.py
                 ---- metadata_parser.py  
                 ---- record_validator.py  
-                ---- schemas.py	            
+                ---- schemas.py            
             --- tools\
                 ---- dwd_pipeline\ 
                     ---- __init__.py 
@@ -818,4 +821,3 @@ CLIMASTATION-BACKEND
     - README.md  
     - requirements.txt
 </pre>
-

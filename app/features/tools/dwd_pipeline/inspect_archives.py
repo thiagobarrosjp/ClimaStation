@@ -110,7 +110,9 @@ def inspect_zip(zip_path, source_mapping):
                         station_id = extract_station_id_from_lines(lines)
 
                         # 🛡️ Validate station ID
-                        if not is_valid_station_id(station_id):
+                        if station_id.isdigit():
+                            station_id = station_id.zfill(5)
+                        else:
                             logging.warning(f"⚠ Invalid station ID in file {name}: {station_id}")
                             station_id = "invalid"
 
