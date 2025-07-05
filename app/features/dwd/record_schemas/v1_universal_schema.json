@@ -1,0 +1,85 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ClimaStation Universal Record Format V1",
+  "type": "object",
+  "required": [
+    "station_id",
+    "timestamp",
+    "parameters"
+  ],
+  "properties": {
+    "station_id": {
+      "type": "string"
+    },
+    "station_name": {
+      "type": "string"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "dataset": {
+      "type": "string"
+    },
+    "variant": {
+      "type": "string"
+    },
+    "parameters": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "number"
+      }
+    },
+    "quality_flag": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "integer"
+      }
+    },
+    "location": {
+      "type": "object",
+      "properties": {
+        "latitude": {
+          "type": "number"
+        },
+        "longitude": {
+          "type": "number"
+        },
+        "elevation_m": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "latitude",
+        "longitude",
+        "elevation_m"
+      ]
+    },
+    "sensor": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "unit": {
+            "type": "string"
+          },
+          "beschreibung": {
+            "type": "string"
+          },
+          "datenquelle": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "unit"
+        ]
+      }
+    }
+  }
+}

@@ -1,23 +1,37 @@
 """
-inspect_archives.py — DWD Archive Inspector for ClimaStation
+Script: inspect_archives.py
+Module: dwd_pipeline
 
-This script analyzes all `.zip` files downloaded from the DWD climate data repository,
-inspects their `.txt` contents, and produces structured reports for schema evolution.
+Purpose:
+    Analyze all downloaded `.zip` archives containing raw or metadata `.txt` files from the DWD repository.
+    Extracts structural metadata (headers, rows, file roles, date coverage) and produces machine-readable
+    inspection outputs for downstream schema generation and metadata matching.
 
 Inputs:
-- data/2_samples/raw/ → .zip files downloaded by download_samples.py
-- data/2_samples/downloaded_files.txt → maps filenames to original DWD URLs
+    - data/2_samples/raw/
+        → All downloaded `.zip` files from `download_samples.py`
+    - data/2_samples/downloaded_files.txt
+        → Maps each downloaded file to its original DWD URL and folder path
 
 Outputs:
-- data/3_inspection/[timestamp]_archive_inspection.jsonl
-- data/3_inspection/[timestamp]_archive_inspection.pretty.json
-- data/4_summaries/[timestamp]_station_and_dataset_summary.pretty.json
+    - data/3_inspection/[timestamp]_archive_inspection.jsonl
+        → Line-by-line inspection results per zip file
+    - data/3_inspection/[timestamp]_archive_inspection.pretty.json
+        → Full parsed output for human inspection
+    - data/4_summaries/[timestamp]_station_and_dataset_summary.pretty.json
+        → Combined summary by dataset and station ID
 
 Debug:
-- data/0_debug/inspect_archives_debug.log
+    - data/0_debug/inspect_archives_debug.log
+        → Includes station ID validation, header/row mismatch, and file access errors
 
-Author: ClimaStation Team
+Notes:
+    - Classifies each `.txt` as raw or metadata using naming patterns and content
+    - Extracts `station_id`, headers, and sample rows
+    - Parses valid time intervals from filenames when available
+    - Lays foundation for aligning metadata rows and generating record schemas
 """
+
 
 import os
 import zipfile

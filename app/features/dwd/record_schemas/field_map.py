@@ -1,3 +1,29 @@
+"""
+Script: field_map.py
+Module: dwd.record_schemas
+
+Purpose:
+    Provides access to the canonical field name mapping used across the ClimaStation pipeline
+    to standardize raw metadata keys into a unified schema.
+
+Functions:
+    - load_field_map():
+        → Loads `field_map.json`, skipping any internal keys like "_comment"
+
+    - normalize_metadata_row(metadata_row, field_map):
+        → Applies canonical field mapping to a single parsed metadata row
+        → Strips whitespace, renames keys, preserves 'from' and 'to' for interval logic
+
+Constants:
+    - CANONICAL_FIELD_MAP:
+        → The loaded mapping from raw field names to canonical equivalents
+
+Notes:
+    - Used by `build_station_summary.py` to normalize metadata rows
+    - Ensures consistent field names before schema generation and matching
+"""
+
+
 import json
 from pathlib import Path
 

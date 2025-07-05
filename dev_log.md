@@ -829,6 +829,7 @@ CLIMASTATION-BACKEND
   - Includes: title, citation, dataset ID, version, publication date, parameters, timestamp format, QN-levels, and description summary
 - Determined that many fields like quality flags, timestamp formats, and temporal coverage are common across datasets and don’t need individualized parsing
 - Validated 30+ DWD PDF files manually and excluded 4 special cases that don’t follow the standard structure (multi-annual mean datasets and subdaily template)
+- Created pdf_description_manual.pretty.json. 
 - Updated `README.md` in `tools/dwd_pipeline/` to reflect this final schema approach
 - The current folder structure:
 <pre>
@@ -839,10 +840,10 @@ CLIMASTATION-BACKEND
         -- features\
             --- dwd\  
                 ---- record_schemas\ 
-                    ----- README.md   
                     ----- field_map.json  
                     ----- field_map.py  
-                    ----- v0_initial_schema.json  
+                    ----- README.md  
+                    ----- v1_universal_schema.json  
                 ---- __init__.py
                 ---- metadata_parser.py  
                 ---- record_validator.py  

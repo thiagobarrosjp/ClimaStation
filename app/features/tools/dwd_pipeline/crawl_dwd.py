@@ -1,22 +1,35 @@
 """
-crawl_dwd.py — ClimaStation DWD Repository Crawler
+Script: crawl_dwd.py
+Module: dwd_pipeline
 
-This script recursively crawls the official DWD climate data repository:
+Purpose:
+    Recursively crawls the official DWD climate data repository:
     https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/
 
-It builds a structured tree of all directories and subdirectories, detects which folders
-contain downloadable data files (e.g., .zip, .gz, .txt, .pdf), and saves:
+    Identifies all folders and subfolders, determines which ones contain downloadable datasets
+    (.zip, .gz, .txt, .pdf), and produces a structured snapshot of the repository for downstream processing.
 
-- A human-readable directory tree with file type annotations → data/1_structure/[timestamp]_tree.txt
-- A list of dataset-relevant URLs with estimated file counts → data/1_structure/[timestamp]_urls.jsonl
-- A full JSON representation of the directory structure → data/1_structure/[timestamp]_structure.json
+Input:
+    - Remote: DWD climate repository (online URL)
+    - Local: None
 
-Debug output is written to:
-- data/0_debug/crawl_dwd_debug.log
+Output:
+    - data/1_structure/[timestamp]_tree.txt
+        → Human-readable tree with folder hierarchy and file type annotations
+    - data/1_structure/[timestamp]_urls.jsonl
+        → JSONL list of dataset-relevant folders and file stats
+    - data/1_structure/[timestamp]_structure.json
+        → Full JSON tree of the folder structure, with metadata
 
-This is the first step in ClimaStation’s pipeline to discover, map, and standardize
-DWD datasets for structured weather and climate data parsing.
+Debug:
+    - data/0_debug/crawl_dwd_debug.log
+        → Logs warnings, progress, and structural metadata
+
+Notes:
+    - This script is the **first step** of the ClimaStation pipeline.
+    - It enables the system to discover valid datasets and prepare sample downloads.
 """
+
 
 import os
 import requests

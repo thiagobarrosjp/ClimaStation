@@ -55,9 +55,9 @@ Open `.zip` archives, extract `.txt` files, classify as raw/metadata, and extrac
 - Debug: `data/0_debug/inspect_archives_debug.log`
 
 **Key features:**  
-- Classifies raw vs. metadata using filename patterns and content
-- Extracts headers, station ID, and sample rows
-- Extracts `from`/`to` dates (for raw files) from filename
+- Classifies raw vs. metadata using filename patterns and content  
+- Extracts headers, station ID, and sample rows  
+- Extracts `from`/`to` dates (for raw files) from filename  
 - Validates:  
   - Station ID format (must be 5-digit numeric)  
   - Header vs. sample row column count
@@ -84,10 +84,10 @@ Match raw data files to metadata files based on station ID and time interval ove
 - Validates metadata rows:  
   - `stations_id` is numeric  
   - `from` and `to` fields are present and well-formed  
-  - Header row matches row length
-- **Optimized metadata parsing**:
-  - Parses *all rows* only for `Metadaten_Parameter_*.txt`
-  - For all other metadata files, parses only the header and a single sample row
+  - Header row matches row length  
+- **Optimized metadata parsing**:  
+  - Parses *all rows* only for `Metadaten_Parameter_*.txt`  
+  - For all other metadata files, parses only the header and a single sample row  
   - Logs `[STRUCTURE_SAMPLE]` for these partial parses
 
 ---
@@ -111,76 +111,31 @@ Extract all canonical field names across datasets (raw + metadata), grouped by d
 
 ---
 
-### 6️⃣ `pdf_description_manual.pretty.json` — **Manually Curated Dataset Metadata**
+### 6️⃣ `pdf_description_manual.pretty.json` — **Curated Dataset Dictionary**
 
 **Purpose:**  
-Provide high-quality manual annotations of each dataset's core metadata, extracted from official DWD `DESCRIPTION_*.pdf` files.
+Provide a centralized, high-precision description of all DWD datasets using metadata from official `DESCRIPTION_*.pdf` files.
 
-**Content:**
-- `title`, `citation`, `dataset_id`, `version`, `publication_date`
-- `dataset_description`: extracted summary of statistical processing, spatial/temporal coverage, etc.
-- `parameters`: brief list of variables
-- `timestamp_note`, `qn_levels`: optional precision flags and quality levels
+**Input Sources:**  
+- Official DWD documentation PDFs (manual extraction)  
+- Human-curated format descriptions (unit, type, formatting, missing values)
 
-**Location:**  
-- Stored in `app/features/dwd/field_descriptions/pdf_description_manual.pretty.json`
+**Content:**  
+Each dataset includes:
+- `title`, `citation`, `dataset_id`, `version`, `publication_date`  
+- `dataset_description`: processing notes, coverage, etc.  
+- `parameters`: brief list of variable names  
+- `units`: list of distinct units  
+- `timestamp_note`, `qn_levels`: optional metadata  
+- `parameters_detailed`: structured block per field, e.g.:
 
-**Note:**
-- Replaces the need for the previous `extract_pdf_metadata.py` logic
-- Updated manually for accuracy, allows complex formatting that is not easily extracted automatically
-
----
-
-## 🛠 Shared Utilities
-
-Located at: `app/features/tools/dwd_pipeline/utils.py`
-
-Reusable functions include:
-- `classify_content()` — Determine whether a file is raw or metadata  
-- `extract_dataset_and_variant()` — Infer dataset type and variant from folder path  
-- `match_by_interval()` — Match rows based on overlapping date ranges  
-- `is_valid_station_id()` — Ensure station ID is numeric and 5 digits
-
----
-
-## ✅ Summary
-
-The ClimaStation pipeline transforms raw `.zip` files into structured, metadata-rich records. It enables:
-
-- Accurate schema inference
-- Sensor-context alignment via metadata
-- Schema evolution tracking (`record_schemas/`)
-- Dataset-specific field inventories for QA/QC
-- Manual dataset documentation via `pdf_description_manual.pretty.json`
-
-This pipeline is designed to support:
-- Schema validation
-- Parsing into unified record formats
-- Scaling to other countries' data repositories
-
----
-
-## 🔧 Completed Refactoring Tasks
-
-### ✅ 1. Consolidated Outputs
-- `station_profile.pretty.json` and `station_profile_canonical.pretty.json` were merged into:  
-  `station_profile_merged.pretty.json`
-- `dataset_summary.pretty.json` and `station_summary.pretty.json` were merged into:  
-  `station_and_dataset_summary.pretty.json`
-
-### ✅ 2. Extracted Shared Logic
-- All major utility functions were moved into `utils.py` for reuse and testability
-
-### ✅ 3. Added Early Validation
-- Station ID validation (5-digit numeric)
-- Header/sample row column consistency check
-- Metadata row validation (presence and parsing of `from`, `to`, `stations_id`)
-
-### ✅ 4. Efficient Metadata Sampling
-- `build_station_summary.py` now parses **only the structure** (header + one row) for all metadata files except `Metadaten_Parameter_*.txt`
-- Greatly improves performance and output file size
-- Ensures representative structure data while avoiding unnecessary bloat
-
-### ✅ 5. Manual Dataset Curation
-- Official DWD PDFs are now manually curated in `pdf_description_manual.pretty.json`
-- Redundant `extract_pdf_metadata.py` and its outputs were deprecated
+```json
+"parameters_detailed": {
+  "TT_TU": {
+    "description": "Air temperature at 2 m height",
+    "unit": "°C",
+    "type": "number",
+    "format": "9990.0",
+    "missing_value": -999
+  }
+}

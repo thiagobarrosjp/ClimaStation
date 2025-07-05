@@ -1,3 +1,28 @@
+"""
+Script: extract_dataset_fields.py
+Module: dwd_pipeline
+
+Purpose:
+    Extract all unique canonical field names per dataset from the merged station metadata profile.
+    Aggregates raw data fields and matched metadata fields to build a dataset-wise field inventory.
+
+Input:
+    - data/5_matching/station_profile_merged.pretty.json
+        → Output from `build_station_summary.py` containing raw and matched metadata info
+
+Output:
+    - data/6_fields/dataset_fields.json
+        → Dictionary of { dataset_name: [field_1, field_2, ...] } sorted alphabetically
+    - data/0_debug/extract_dataset_fields_debug.log
+        → Logs of fields discovered and grouped per dataset
+
+Notes:
+    - Handles both structure-sampled metadata (partial parse) and full metadata (parameter files)
+    - Excludes helper keys like `metadata_fields_original` and `metadata_fields_canonical`
+    - Final output is used to define the universal record schema (V1)
+"""
+
+
 import json
 import logging
 from pathlib import Path

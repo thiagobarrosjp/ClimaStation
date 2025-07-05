@@ -1,4 +1,26 @@
-# app/features/tools/dwd_pipeline/utils.py
+"""
+Script: utils.py
+Module: dwd_pipeline
+
+Purpose:
+    Shared utility functions used throughout the ClimaStation DWD pipeline.
+    Provides reusable logic for file classification, dataset labeling, and time interval matching.
+
+Functions:
+    - classify_content(lines, filename=""):
+        → Classifies `.txt` file as "raw", "metadata", or "unknown" based on filename and content patterns
+
+    - extract_dataset_and_variant(source_path):
+        → Extracts a normalized dataset name and variant (e.g. "10_minutes_air_temperature", "historical") from a DWD path
+
+    - match_by_interval(rfrom, rto, metadata_rows):
+        → Selects metadata rows whose time intervals overlap with a given raw data time range
+
+Notes:
+    - Used by `inspect_archives.py`, `build_station_summary.py`, and others
+    - Centralizes logic to keep pipeline modular and maintainable
+"""
+
 
 import re
 from datetime import datetime

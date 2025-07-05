@@ -1,3 +1,36 @@
+"""
+Script: build_station_summary.py
+Module: dwd_pipeline
+
+Purpose:
+    Align raw DWD data files with their corresponding metadata entries by station, dataset, and time interval.
+    Extracts relevant metadata fields, normalizes them using the canonical map, and prepares a merged summary
+    for each station and raw file.
+
+Inputs:
+    - data/3_inspection/[timestamp]_archive_inspection.pretty.json
+        → Parsed archive contents with file structure, headers, and station IDs
+    - data/4_summaries/[timestamp]_station_and_dataset_summary.pretty.json
+        → Combined mapping of datasets, stations, and metadata filenames
+    - data/2_samples/raw/
+        → All original .zip archives containing metadata files
+
+Output:
+    - data/5_matching/station_profile_merged.pretty.json
+        → Nested JSON structure with metadata-matched raw files and normalized field names
+
+Debug:
+    - data/0_debug/station_summary_debug.log
+        → Logs matched metadata, unmatched cases, invalid rows, and sample field structures
+
+Notes:
+    - Fully parses `Metadaten_Parameter_*.txt` to align sensor timelines per parameter
+    - All other metadata files are partially parsed (header + one sample row)
+    - Canonical field names are resolved via `field_map.json`
+    - Used to build the foundation for final record generation and field schema consolidation
+"""
+
+
 import json
 import logging
 from pathlib import Path
@@ -186,24 +219,11 @@ def run():
                                             }]
                                         continue
 
+
                                     raw_rows = parse_metadata_lines(lines, station_id=station_id)
                                     canonical_rows = [normalize_metadata_row(r, CANONICAL_FIELD_MAP) for r in raw_rows]
-
-                                    # Group by parameter_code
-                                    grouped = {}
-                                    for row in canonical_rows:
-                                        code = row.get("parameter_code")
-                                        if not code:
-                                            continue
-                                        grouped.setdefault(code, []).append(row)
-
-                                    # Match each parameter's timeline separately
-                                    param_matches = {}
-                                    for code, rows in grouped.items():
-                                        param_matches[code] = match_by_interval(rfrom, rto, rows)
-
-                                    matched[meta_file] = {"parameter_metadata": param_matches}
-
+                                    matches = match_by_interval(rfrom, rto, canonical_rows)
+                                    matched[meta_file] = matches
                         except Exception as e:
                             logging.warning(f"Failed reading {meta_file}: {e}")
                             continue

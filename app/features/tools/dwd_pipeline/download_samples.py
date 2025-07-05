@@ -1,21 +1,29 @@
 """
-download_samples.py — ClimaStation Sample Downloader
+Script: download_samples.py
+Module: dwd_pipeline
 
-This script downloads a representative subset of raw climate data files from the DWD
-repository, based on the output of `crawl_dwd.py`.
+Purpose:
+    Downloads a representative sample of raw dataset archives and metadata PDFs
+    from the DWD climate repository, based on the structure mapped by `crawl_dwd.py`.
 
-What it does:
-- Loads the most recent file: data/1_structure/[timestamp]_urls.jsonl
-- For each dataset folder listed, it downloads:
-    - Up to 2 `.zip` raw data files
-    - Any `DESCRIPTION_*.pdf` documentation files
-- All files are stored in: data/2_samples/raw/ using a flat filename format
-- A download log is saved to: data/2_samples/downloaded_files.txt
-- A debug log of download activity is saved to: data/0_debug/download_samples_debug.log
+Input:
+    - data/1_structure/[timestamp]_urls.jsonl
+        → List of dataset folders with download URLs and metadata
 
-This script supports downstream inspection, archive validation, and schema alignment
-by providing a manageable sample set for each dataset category.
+Output:
+    - data/2_samples/raw/
+        → Up to 2 `.zip` raw data archives per dataset folder
+        → All available `DESCRIPTION_*.pdf` files
+    - data/2_samples/downloaded_files.txt
+        → Log of downloaded files with source URL and filename
+    - data/0_debug/download_samples_debug.log
+        → Debug output including failed downloads
+
+Notes:
+    - File names are flattened to preserve dataset prefix and avoid directory nesting
+    - Used to generate a manageable sample set for downstream schema and structure analysis
 """
+
 
 import os
 import json
