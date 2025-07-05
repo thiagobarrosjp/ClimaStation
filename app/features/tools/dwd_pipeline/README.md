@@ -111,7 +111,27 @@ Extract all canonical field names across datasets (raw + metadata), grouped by d
 
 ---
 
-## 🧰 Shared Utilities
+### 6️⃣ `pdf_description_manual.pretty.json` — **Manually Curated Dataset Metadata**
+
+**Purpose:**  
+Provide high-quality manual annotations of each dataset's core metadata, extracted from official DWD `DESCRIPTION_*.pdf` files.
+
+**Content:**
+- `title`, `citation`, `dataset_id`, `version`, `publication_date`
+- `dataset_description`: extracted summary of statistical processing, spatial/temporal coverage, etc.
+- `parameters`: brief list of variables
+- `timestamp_note`, `qn_levels`: optional precision flags and quality levels
+
+**Location:**  
+- Stored in `app/features/dwd/field_descriptions/pdf_description_manual.pretty.json`
+
+**Note:**
+- Replaces the need for the previous `extract_pdf_metadata.py` logic
+- Updated manually for accuracy, allows complex formatting that is not easily extracted automatically
+
+---
+
+## 🛠 Shared Utilities
 
 Located at: `app/features/tools/dwd_pipeline/utils.py`
 
@@ -131,6 +151,7 @@ The ClimaStation pipeline transforms raw `.zip` files into structured, metadata-
 - Sensor-context alignment via metadata
 - Schema evolution tracking (`record_schemas/`)
 - Dataset-specific field inventories for QA/QC
+- Manual dataset documentation via `pdf_description_manual.pretty.json`
 
 This pipeline is designed to support:
 - Schema validation
@@ -159,3 +180,7 @@ This pipeline is designed to support:
 - `build_station_summary.py` now parses **only the structure** (header + one row) for all metadata files except `Metadaten_Parameter_*.txt`
 - Greatly improves performance and output file size
 - Ensures representative structure data while avoiding unnecessary bloat
+
+### ✅ 5. Manual Dataset Curation
+- Official DWD PDFs are now manually curated in `pdf_description_manual.pretty.json`
+- Redundant `extract_pdf_metadata.py` and its outputs were deprecated

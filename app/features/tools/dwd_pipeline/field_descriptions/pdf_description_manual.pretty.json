@@ -1,0 +1,985 @@
+{
+  "10_minutes_air_temperature": {
+    "title": "10-minute station observations of air temperature for Germany",
+    "citation": "10-minute station observations of air temperature for Germany, Version v24.03",
+    "dataset_id": "urn:x-wmo:md:de.dwd.cdc::obsgermany-climate-10min-air_temperature",
+    "version": "v24.03",
+    "publication_date": "2024-03-29",
+    "dataset_description": "Observations from DWD and partner networks; includes metadata on instruments, stations, and measurement algorithms.",
+    "parameters": [
+      "relative humidity",
+      "air pressure at station level",
+      "air temperature near ground",
+      "air temperature at 2 m",
+      "dew point temperature"
+    ],
+    "units": [
+      "hPa",
+      "°C",
+      "%"
+    ],
+    "statistical_processing": "10-minute value, time series",
+    "temporal_coverage": "1989-03-07 -- ...",
+    "spatial_coverage": "stations in Germany",
+    "projection": "WGS 84 (EPSG:4326)",
+    "timestamp_note": {
+      "before_2000": "MEZ",
+      "after_2000": "UTC"
+    },
+    "qn_levels": {
+      "1": "only formal control",
+      "2": "controlled with individually defined criteria",
+      "3": "automatic control and correction"
+    }
+  },
+  "10_minutes_extreme_temperature": {
+    "title": "10-minute station observations of extreme temperatures for Germany",
+    "citation": "10-minute station observations of extreme temperatures for Germany, Version v24.03",
+    "dataset_id": "urn:x-wmo:md:de.dwd.cdc::obsgermany-climate-10min-extreme_temperature",
+    "version": "v24.03",
+    "publication_date": "2024-03-29",
+    "dataset_description": "Observations from DWD and partner networks; includes metadata on instruments, stations, and measurement algorithms.",
+    "parameters": [
+      "air temperature near ground",
+      "air temperature at 2 m"
+    ],
+    "units": [
+      "°C"
+    ],
+    "statistical_processing": "time series, 10-minute maximum, 10-minute minimum",
+    "temporal_coverage": "1989-03-07 -- ...",
+    "spatial_coverage": "stations in Germany",
+    "projection": "WGS 84 (EPSG:4326)",
+    "timestamp_note": {
+      "before_2000": "MEZ",
+      "after_2000": "UTC"
+    },
+    "qn_levels": {
+      "1": "only formal control",
+      "2": "controlled with individually defined criteria",
+      "3": "automatic control and correction"
+    }
+  },
+  "10_minutes_extreme_wind": {
+    "title": "10-minute station observations of extreme wind for Germany",
+    "citation": "10-minute station observations of extreme wind for Germany, Version v24.03",
+    "dataset_id": "urn:x-wmo:md:de.dwd.cdc::obsgermany-climate-10min-extreme_wind",
+    "version": "v24.03",
+    "publication_date": "2024-03-29",
+    "dataset_description": "Observations from DWD and partner networks; includes metadata on instruments, stations, and measurement algorithms.",
+    "parameters": [
+      "wind gust",
+      "wind direction",
+      "wind velocity"
+    ],
+    "units": [
+      "m/s",
+      "degree"
+    ],
+    "statistical_processing": "time series, 10-minute mean, 10-minute maximum, 10-minute minimum",
+    "temporal_coverage": "1989-03-07 -- ...",
+    "spatial_coverage": "stations in Germany",
+    "projection": "WGS 84 (EPSG:4326)",
+    "timestamp_note": {
+      "before_2000": "MEZ",
+      "after_2000": "UTC"
+    },
+    "qn_levels": {
+      "1": "only formal control",
+      "2": "controlled with individually defined criteria",
+      "3": "automatic control and correction"
+    }
+  },
+  "10_minutes_precipitation": {
+    "title": "10-minute station observations of precipitation for Germany",
+    "citation": "10-minute station observations of precipitation for Germany, Version v24.03",
+    "dataset_id": "urn:x-wmo:md:de.dwd.cdc::obsgermany-climate-10min-precipitation",
+    "version": "v24.03",
+    "publication_date": "2024-03-29",
+    "dataset_description": "Observations from DWD and partner networks; includes metadata on instruments, stations, and measurement algorithms.",
+    "parameters": [
+      "precipitation height",
+      "precipitation parameters",
+      "duration of precipitation",
+      "precipitation fallen indicator"
+    ],
+    "units": [
+      "numerical code",
+      "mm",
+      "minutes"
+    ],
+    "statistical_processing": "time series, 10-minute sum, 10-minute value",
+    "temporal_coverage": "1989-10-14 -- ...",
+    "spatial_coverage": "stations in Germany",
+    "projection": "WGS 84 (EPSG:4326)",
+    "timestamp_note": {
+      "before_2000": "MEZ",
+      "after_2000": "UTC"
+    },
+    "qn_levels": {
+      "1": "only formal control",
+      "2": "controlled with individually defined criteria",
+      "3": "automatic control and correction"
+    }
+  },
+  "10_minutes_solar": {
+    "title": "10-minute station observations of solar and sunshine for Germany",
+    "citation": "10-minute station observations of solar and sunshine for Germany, Version v24.03",
+    "dataset_id": "urn:x-wmo:md:de.dwd.cdc::obsgermany-climate-10min-solar",
+    "version": "v24.03",
+    "publication_date": "2024-03-29",
+    "dataset_description": "Observations from DWD and partner networks; includes metadata on instruments, stations, and measurement algorithms.",
+    "parameters": [
+      "diffusion radiation",
+      "global radiation",
+      "sunshine radiation"
+    ],
+    "units": [
+      "hours",
+      "J/cm²"
+    ],
+    "statistical_processing": "10-minute sum, time series",
+    "temporal_coverage": "1989-07-03 -- ...",
+    "spatial_coverage": "stations in Germany",
+    "projection": "WGS 84 (EPSG:4326)",
+    "timestamp_note": {
+      "before_2000": "MEZ",
+      "after_2000": "UTC"
+    },
+    "qn_levels": {
+      "1": "only formal control",
+      "2": "controlled with individually defined criteria",
+      "3": "automatic control and correction"
+    }
+  },
+  "10_minutes_wind": {
+    "title": "10-minute station observations of wind for Germany",
+    "citation": "10-minute station observations of wind for Germany, Version v24.03",
+    "dataset_id": "urn:x-wmo:md:de.dwd.cdc::obsgermany-climate-10min-wind",
+    "version": "v24.03",
+    "publication_date": "2024-03-29",
+    "dataset_description": "Observations from DWD and partner networks; includes metadata on instruments, stations, and measurement algorithms.",
+    "parameters": [
+      "wind direction",
+      "wind velocity"
+    ],
+    "units": [
+      "degree",
+      "m/s"
+    ],
+    "statistical_processing": "time series, 10-minute mean, standard deviation",
+    "temporal_coverage": "1989-07-03 -- ...",
+    "spatial_coverage": "stations in Germany",
+    "projection": "WGS 84 (EPSG:4326)",
+    "timestamp_note": {
+      "before_2000": "MEZ",
+      "after_2000": "UTC"
+    },
+    "qn_levels": {
+      "1": "only formal control",
+      "2": "controlled with individually defined criteria",
+      "3": "automatic control and correction"
+    }
+  },
+  "1_minute_precipitation": {
+    "title": "1-minute station observations of precipitation for Germany",
+    "citation": "1-minute station observations of precipitation for Germany, Version v24.3",
+    "dataset_id": "uurn:x-wmo:md:de.dwd.cdc::obsgermany-climate-1min-rr",
+    "version": "v24.03",
+    "publication_date": "2024",
+    "dataset_description": "Observations from DWD and partner networks; includes metadata on instruments, stations, and measurement algorithms.",
+    "parameters": [
+      "precipitation parameters",
+      "precipitation height",
+      "duration of precipitation",
+      "precipitation fallen indicator"
+    ],
+    "units": [
+      "minutes",
+      "mm",
+      "numerical code"
+    ],
+    "statistical_processing": "time series, 1-minute sum, 1-minute value",
+    "temporal_coverage": "1989-10-14 -- ...",
+    "spatial_coverage": "stations in Germany",
+    "projection": "WGS 84 (EPSG:4326)",
+    "timestamp_note": {
+      "before_2000": "MEZ",
+      "after_2000": "UTC"
+    },
+    "qn_levels": {
+      "1": "only formal control",
+      "2": "controlled with individually defined criteria",
+      "3": "automatic control and correction"
+    }
+  },
+  "5_minutes_precipitation": {
+    "title": "5-minute station observations of precipitation for Germany",
+    "citation": "5-minute station observations of precipitation for Germany, Version v24.3",
+    "dataset_id": "urn:x-wmo:md:de.dwd.cdc::obsgermany-climate-5min-rr",
+    "version": "v24.3",
+    "publication_date": "2024",
+    "dataset_description": "Observations from DWD and partner networks; includes metadata on instruments, stations, and measurement algorithms.",
+    "parameters": [
+      "precipitation parameters",
+      "precipitation height",
+      "duration of precipitation",
+      "precipitation fallen indicator"
+    ],
+    "units": [
+      "minutes",
+      "mm",
+      "numerical code"
+    ],
+    "statistical_processing": "5-minute sum, 5-minute value, time series",
+    "temporal_coverage": "1989-10-14 -- ...",
+    "spatial_coverage": "stations in Germany",
+    "projection": "WGS 84 (EPSG:4326)",
+    "timestamp_note": {
+      "before_2000": "MEZ",
+      "after_2000": "UTC"
+    },
+    "qn_levels": {
+      "1": "only formal control",
+      "2": "controlled with individually defined criteria",
+      "3": "automatic control and correction"
+    }
+  },
+  "daily_kl": {
+    "title": "Daily station observations (temperature, pressure, precipitation, sunshine duration, etc.) for Germany",
+    "citation": "Daily station observations (temperature, pressure, precipitation, sunshine duration, etc.) for Germany, Version v24.3",
+    "dataset_id": "urn:x-wmo:md:de.dwd.cdc::obsgermany-climate-5min-rr",
+    "version": "v24.3",
+    "publication_date": "2024",
+    "dataset_description": "Observations from DWD and partner networks; includes metadata on instruments, stations, and measurement algorithms.",
+    "parameters": [
+      "precipitation parameters",
+      "form of precipitation",
+      "relative humidity",
+      "vapor pressure",
+      "air pressure at station level",
+      "sunshine duration",
+      "air temperature at 2 m",
+      "wind velocity",
+      "wind gust",
+      "air temperature near ground",
+      "snow depth",
+      "cloud coverage",
+      "precipitation height"
+    ],
+    "units": [
+      "eighth",
+      "beaufort",
+      "°C",
+      "%",
+      "mm",
+      "m/s",
+      "cm",
+      "hPa"
+    ],
+    "statistical_processing": "daily mean, daily sum, time series, daily min, daily max",
+    "temporal_coverage": "1781-01-01 -- ...",
+    "spatial_coverage": "stations in Germany",
+    "projection": "WGS 84 (EPSG:4326)",
+    "timestamp_note": {
+      "before_2000": "null",
+      "after_2000": "null"
+    },
+    "qn_levels": {
+      "1": "only formal control",
+      "2": "controlled with individually defined criteria",
+      "3": "automatic control and correction",
+      "5": "historic, subjective procedures",
+      "7": "second control done, before correction",
+      "8": "quality control outside ROUTINE",
+      "9": "not all parameters corrected",
+      "10": "quality control finished, all corrections finished"
+    }
+  },
+  "daily_more_precip": {
+    "title": "Daily precipitation observations for Germany",
+    "citation": "Daily precipitation observations for Germany, Version v24.3",
+    "dataset_id": "urn:wmo:md:de-dwd-cdc:obsgermany-climate-daily-more_precip",
+    "version": "v24.3",
+    "publication_date": "2024",
+    "dataset_description": "Observations from DWD and partner networks; includes metadata on instruments, stations, and measurement algorithms.",
+    "parameters": [
+      "snow depth",
+      "precipitation height",
+      "height of newly fallen snow",
+      "form of precipitation",
+      "precipitation parameters",
+      "kind of precipitation"
+    ],
+    "units": [
+      "mm",
+      "cm"
+    ],
+    "statistical_processing": "daily value, time series, daily sum",
+    "temporal_coverage": "1827-01-01 -- ...",
+    "spatial_coverage": "stations in Germany",
+    "projection": "WGS 84 (EPSG:4326)",
+    "timestamp_note": {
+      "before_2000": "null",
+      "after_2000": "null"
+    },
+    "qn_levels": {
+      "1": "only formal control",
+      "2": "controlled with individually defined criteria",
+      "3": "automatic control and correction",
+      "5": "historic, subjective procedures",
+      "7": "second control done, before correction",
+      "8": "quality control outside ROUTINE",
+      "9": "not all parameters corrected",
+      "10": "quality control finished, all corrections finished"
+    }
+  },
+  "daily_soil_temperature": {
+    "title": "Daily station observations of soil temperature station data for Germany",
+    "citation": "Daily station observations of soil temperature station data for Germany, Version v24.3",
+    "dataset_id": "urn:wmo:md:de-dwd-cdc:obsgermany-climate-daily-more_precip",
+    "version": "v24.3",
+    "publication_date": "2024",
+    "dataset_description": "Observations from DWD and partner networks; includes metadata on instruments, stations, and measurement algorithms.",
+    "parameters": [
+      "soil temperature"
+    ],
+    "units": [
+      "°C"
+    ],
+    "statistical_processing": "time series",
+    "temporal_coverage": "1949-01-01 -- ...",
+    "spatial_coverage": "stations in Germany",
+    "projection": "WGS 84 (EPSG:4326)",
+    "timestamp_note": {
+      "before_2000": "null",
+      "after_2000": "null"
+    },
+    "qn_levels": {
+      "1": "only formal control",
+      "2": "controlled with individually defined criteria",
+      "3": "automatic control and correction",
+      "5": "historic, subjective procedures",
+      "7": "second control done, before correction",
+      "8": "quality control outside ROUTINE",
+      "9": "not all parameters corrected",
+      "10": "quality control finished, all corrections finished"
+    }
+  },
+  "daily_solar": {
+    "title": "Copy of record Daily station observations of solar incoming (total/diffuse) and longwave downward radiation for Germany",
+    "citation": "Copy of record Daily station observations of solar incoming (total/diffuse) and longwave downward radiation for Germany, Version v24.3",
+    "dataset_id": "urn:wmo:md:de-dwd-cdc:obsgermany-climate-daily-solar",
+    "version": "v24.3",
+    "publication_date": "2024",
+    "dataset_description": "Observations from DWD and partner networks; includes metadata on instruments, stations, and measurement algorithms.",
+    "parameters": [
+      "diffuse radiation",
+      "global radiation",
+      "sunshine duration"
+    ],
+    "units": [
+      "hours",
+      "J/cm²"
+    ],
+    "statistical_processing": "daily sum",
+    "temporal_coverage": "1937-01-01 -- ...",
+    "spatial_coverage": "stations in Germany",
+    "projection": "WGS 84 (EPSG:4326)",
+    "timestamp_note": {
+      "before_2000": "null",
+      "after_2000": "null"
+    },
+    "qn_levels": {
+      "1": "only formal control",
+      "2": "controlled with individually defined criteria",
+      "3": "automatic control and correction",
+      "5": "historic, subjective procedures",
+      "7": "second control done, before correction",
+      "8": "quality control outside ROUTINE",
+      "9": "not all parameters corrected",
+      "10": "quality control finished, all corrections finished"
+    }
+  },
+  "hourly_air_temperature": {
+    "title": "Hourly station observations of 2 m air temperature and humidity for Germany",
+    "citation": "Hourly station observations of 2 m air temperature and humidity for Germany, Version v24.03",
+    "dataset_id": "urn:x-wmo:md:de.dwd.cdc::obsgermany-climate-hourly-air_temperature",
+    "version": "v24.03",
+    "publication_date": "2024-03-09",
+    "dataset_description": "Observations from DWD and partner networks; includes metadata on instruments, stations, and measurement algorithms.",
+    "parameters": [
+      "relative humidity",
+      "air temperature at 2 m"
+    ],
+    "units": [
+      "%",
+      "°C"
+    ],
+    "statistical_processing": "time series, hourly value",
+    "temporal_coverage": "1893-01-01 -- ...",
+    "spatial_coverage": "stations in Germany",
+    "projection": "WGS 84 (EPSG:4326)",
+    "timestamp_note": {
+      "before_2000": "null",
+      "after_2000": "null"
+    },
+    "qn_levels": {
+      "1": "only formal control",
+      "2": "controlled with individually defined criteria",
+      "3": "automatic control and correction",
+      "5": "historic, subjective procedures",
+      "7": "second control done, before correction",
+      "8": "quality control outside ROUTINE",
+      "9": "not all parameters corrected",
+      "10": "quality control finished, all corrections finished"
+    }
+  },
+  "hourly_cloud_type": {
+    "title": "Hourly station observations of cloud cover, cloud type and cloud height in up to 4 layers for Germany",
+    "citation": "Hourly station observations of cloud cover, cloud type and cloud height in up to 4 layers for Germany, Version v24.03",
+    "dataset_id": "urn:x-wmo:md:de.dwd.cdc::obsgermany-climate-hourly-cloud_type",
+    "version": "v24.03",
+    "publication_date": "2024-03-09",
+    "dataset_description": "Observations from DWD and partner networks; includes metadata on instruments, stations, and measurement algorithms.",
+    "parameters": [
+      "cloud coverage",
+      "cloud height",
+      "kind of cloud"
+    ],
+    "units": [
+      "eighth",
+      "metre",
+      "numerical code"
+    ],
+    "statistical_processing": "hourly value, time series",
+    "temporal_coverage": "1949-01-01 -- ...",
+    "spatial_coverage": "stations in Germany",
+    "projection": "WGS 84 (EPSG:4326)",
+    "timestamp_note": {
+      "before_2000": "null",
+      "after_2000": "null"
+    },
+    "qn_levels": {
+      "1": "only formal control",
+      "2": "controlled with individually defined criteria",
+      "3": "automatic control and correction",
+      "5": "historic, subjective procedures",
+      "7": "second control done, before correction",
+      "8": "quality control outside ROUTINE",
+      "9": "not all parameters corrected",
+      "10": "quality control finished, all corrections finished"
+    }
+  },
+  "hourly_cloudiness": {
+    "title": "Hourly station observations of cloudiness for Germany",
+    "citation": "Hourly station observations of cloudiness for Germany, Version v24.03",
+    "dataset_id": "urn:x-wmo:md:de.dwd.cdc::obsgermany-climate-hourly-cloudiness",
+    "version": "v24.03",
+    "publication_date": "2024-03-09",
+    "dataset_description": "Observations from DWD and partner networks; includes metadata on instruments, stations, and measurement algorithms.",
+    "parameters": [
+      "cloud coverage"
+    ],
+    "units": [
+      "eighth"
+    ],
+    "statistical_processing": "hourly value, time series",
+    "temporal_coverage": "1949-01-01 -- ...",
+    "spatial_coverage": "stations in Germany",
+    "projection": "WGS 84 (EPSG:4326)",
+    "timestamp_note": {
+      "before_2000": "null",
+      "after_2000": "null"
+    },
+    "qn_levels": {
+      "1": "only formal control",
+      "2": "controlled with individually defined criteria",
+      "3": "automatic control and correction",
+      "5": "historic, subjective procedures",
+      "7": "second control done, before correction",
+      "8": "quality control outside ROUTINE",
+      "9": "not all parameters corrected",
+      "10": "quality control finished, all corrections finished"
+    }
+  },
+  "hourly_dew_point": {
+    "title": "Hourly station observations of air and dew point temperature for Germany",
+    "citation": "Hourly station observations of air and dew point temperature for Germany, Version v24.03",
+    "dataset_id": "urn:x-wmo:ds:de.dwd.cdc::obsgermany-climate-hourly-dew_point",
+    "version": "v24.03",
+    "publication_date": "2024-03-09",
+    "dataset_description": "Observations from DWD and partner networks; includes metadata on instruments, stations, and measurement algorithms.",
+    "parameters": [
+      "air temperature at 2 m",
+      "dew point temperature"
+    ],
+    "units": [
+      "°C"
+    ],
+    "statistical_processing": "hourly value, time series",
+    "temporal_coverage": "1949-01-01 -- ...",
+    "spatial_coverage": "stations in Germany",
+    "projection": "WGS 84 (EPSG:4326)",
+    "timestamp_note": {
+      "before_2000": "null",
+      "after_2000": "null"
+    },
+    "qn_levels": {
+      "1": "only formal control",
+      "2": "controlled with individually defined criteria",
+      "3": "automatic control and correction",
+      "5": "historic, subjective procedures",
+      "7": "second control done, before correction",
+      "8": "quality control outside ROUTINE",
+      "9": "not all parameters corrected",
+      "10": "quality control finished, all corrections finished"
+    }
+  },
+  "hourly_extreme_wind": {
+    "title": "Hourly maximum value from station observations of windspeed for Germany",
+    "citation": "Hourly maximum value from station observations of windspeed for Germany, Version v24.03",
+    "dataset_id": "urn:x-wmo:md:de.dwd.cdc::obsgermany-climate-hourly-extreme_wind",
+    "version": "v24.03",
+    "publication_date": "2024-03-09",
+    "dataset_description": "Observations from DWD and partner networks; includes metadata on instruments, stations, and measurement algorithms.",
+    "parameters": [
+      "wind gust",
+      "wind velocity"
+    ],
+    "units": [
+      "m/s"
+    ],
+    "statistical_processing": "time series, hourly maximum",
+    "temporal_coverage": "1970-04-02 -- ...",
+    "spatial_coverage": "stations in Germany",
+    "projection": "WGS 84 (EPSG:4326)",
+    "timestamp_note": {
+      "before_2000": "null",
+      "after_2000": "null"
+    },
+    "qn_levels": {
+      "1": "only formal control",
+      "2": "controlled with individually defined criteria",
+      "3": "automatic control and correction",
+      "5": "historic, subjective procedures",
+      "7": "second control done, before correction",
+      "8": "quality control outside ROUTINE",
+      "9": "not all parameters corrected",
+      "10": "quality control finished, all corrections finished"
+    }
+  },
+  "hourly_moisture": {
+    "title": "Hourly station observations of moisture parameters for Germany",
+    "citation": " Hourly station observations of moisture parameters for Germany, Version v24.03",
+    "dataset_id": "urn:x-wmo:md:de.dwd.cdc::obsgermany-climate-hourly-moisture",
+    "version": "v24.03",
+    "publication_date": "2024-03-09",
+    "dataset_description": "Observations from DWD and partner networks; includes metadata on instruments, stations, and measurement algorithms.",
+    "parameters": [
+      "air temperature at 2 m",
+      "wet bulb temperature",
+      "air pressure at station level",
+      "absolute humidity",
+      "dew point temperature",
+      "relative humidity",
+      "vapor pressure"
+    ],
+    "units": [
+      "hPa",
+      "°C",
+      "g/m³",
+      "%"
+    ],
+    "statistical_processing": "hourly value, time series",
+    "temporal_coverage": "1949-01-01 -- ...",
+    "spatial_coverage": "stations in Germany",
+    "projection": "WGS 84 (EPSG:4326)",
+    "timestamp_note": {
+      "before_2000": "null",
+      "after_2000": "null"
+    },
+    "qn_levels": {
+      "1": "only formal control",
+      "2": "controlled with individually defined criteria",
+      "3": "automatic control and correction",
+      "5": "historic, subjective procedures",
+      "7": "second control done, before correction",
+      "8": "quality control outside ROUTINE",
+      "9": "not all parameters corrected",
+      "10": "quality control finished, all corrections finished"
+    }
+  },
+  "hourly_precipitation": {
+    "title": "Hourly station observations of precipitation for Germany",
+    "citation": "Hourly station observations of precipitation for Germany, Version v24.03",
+    "dataset_id": "urn:x-wmo:md:de.dwd.cdc::obsgermany-climate-hourly-precipitation",
+    "version": "v24.03",
+    "publication_date": "2024-03-09",
+    "dataset_description": "Observations from DWD and partner networks; includes metadata on instruments, stations, and measurement algorithms.",
+    "parameters": [
+      "precipitation height",
+      "precipitation parameters",
+      "precipitation fallen indicator",
+      "kind of precipitation",
+      "form of precipitation"
+    ],
+    "units": [
+      "mm"
+    ],
+    "statistical_processing": "time series, hourly sum",
+    "temporal_coverage": "1995-09-01 -- ...",
+    "spatial_coverage": "stations in Germany",
+    "projection": "WGS 84 (EPSG:4326)",
+    "timestamp_note": {
+      "before_2000": "null",
+      "after_2000": "null"
+    },
+    "qn_levels": {
+      "1": "only formal control",
+      "2": "controlled with individually defined criteria",
+      "3": "automatic control and correction",
+      "5": "historic, subjective procedures",
+      "7": "second control done, before correction",
+      "8": "quality control outside ROUTINE",
+      "9": "not all parameters corrected",
+      "10": "quality control finished, all corrections finished"
+    }
+  },
+  "hourly_pressure": {
+    "title": "Hourly station observations of pressure for Germany",
+    "citation": "Hourly station observations of pressure for Germany, Version v24.03",
+    "dataset_id": "urn:x-wmo:md:de.dwd.cdc::obsgermany-climate-hourly-pressure",
+    "version": "v24.03",
+    "publication_date": "2024-03-09",
+    "dataset_description": "Observations from DWD and partner networks; includes metadata on instruments, stations, and measurement algorithms.",
+    "parameters": [
+      "msl air pressure",
+      "air pressure at station level"
+    ],
+    "units": [
+      "hPa"
+    ],
+    "statistical_processing": "hourly value, time series",
+    "temporal_coverage": "1949-01-01 -- ...",
+    "spatial_coverage": "stations in Germany",
+    "projection": "WGS 84 (EPSG:4326)",
+    "timestamp_note": {
+      "before_2000": "null",
+      "after_2000": "null"
+    },
+    "qn_levels": {
+      "1": "only formal control",
+      "2": "controlled with individually defined criteria",
+      "3": "automatic control and correction",
+      "5": "historic, subjective procedures",
+      "7": "second control done, before correction",
+      "8": "quality control outside ROUTINE",
+      "9": "not all parameters corrected",
+      "10": "quality control finished, all corrections finished"
+    }
+  },
+  "hourly_soil_temperature": {
+    "title": "Hourly station observations of of soil temperature for Germany",
+    "citation": "Hourly station observations of of soil temperature for Germany, Version v24.03",
+    "dataset_id": "urn:x-wmo:md:de.dwd.cdc::obsgermany-climate-hourly-soil_temperature",
+    "version": "v24.03",
+    "publication_date": "2024-03-09",
+    "dataset_description": "Observations from DWD and partner networks; includes metadata on instruments, stations, and measurement algorithms.",
+    "parameters": [
+      "soil temperature"
+    ],
+    "units": [
+      "°C"
+    ],
+    "statistical_processing": "hourly value, time series",
+    "temporal_coverage": "1949-01-01 -- ...",
+    "spatial_coverage": "stations in Germany",
+    "projection": "WGS 84 (EPSG:4326)",
+    "timestamp_note": {
+      "before_2000": "null",
+      "after_2000": "null"
+    },
+    "qn_levels": {
+      "1": "only formal control",
+      "2": "controlled with individually defined criteria",
+      "3": "automatic control and correction",
+      "5": "historic, subjective procedures",
+      "7": "second control done, before correction",
+      "8": "quality control outside ROUTINE",
+      "9": "not all parameters corrected",
+      "10": "quality control finished, all corrections finished"
+    }
+  },
+  "hourly_solar": {
+    "title": "Hourly station observations of solar incoming (total/diffuse) and longwave downward radiation for Germany",
+    "citation": "Hourly station observations of solar incoming (total/diffuse) and longwave downward radiation for Germany, Version v24.03",
+    "dataset_id": "urn:x-wmo:md:de.dwd.cdc::obsgermany-climate-hourly-solar",
+    "version": "v24.03",
+    "publication_date": "2024-03-09",
+    "dataset_description": "Observations from DWD and partner networks; includes metadata on instruments, stations, and measurement algorithms.",
+    "parameters": [
+      "diffuse radiation",
+      "global radiation",
+      "sunshine duration"
+    ],
+    "units": [
+      "degree",
+      "J/cm²",
+      "minutes"
+    ],
+    "statistical_processing": " hourly sum, time series",
+    "temporal_coverage": "1945-12-31 -- ...",
+    "spatial_coverage": "stations in Germany",
+    "projection": "WGS 84 (EPSG:4326)",
+    "timestamp_note": {
+      "before_2000": "null",
+      "after_2000": "null"
+    },
+    "qn_levels": {
+      "1": "only formal control",
+      "2": "controlled with individually defined criteria",
+      "3": "automatic control and correction",
+      "5": "historic, subjective procedures",
+      "7": "second control done, before correction",
+      "8": "quality control outside ROUTINE",
+      "9": "not all parameters corrected",
+      "10": "quality control finished, all corrections finished"
+    }
+  },
+  "hourly_sun": {
+    "title": "Hourly station observations of sunshine duration for Germany",
+    "citation": "Hourly station observations of sunshine duration for Germany, Version v24.03",
+    "dataset_id": "urn:x-wmo:md:de.dwd.cdc::obsgermany-climate-hourly-sun",
+    "version": "v24.03",
+    "publication_date": "2024-03-09",
+    "dataset_description": "Observations from DWD and partner networks; includes metadata on instruments, stations, and measurement algorithms.",
+    "parameters": [
+      "sunshine duration"
+    ],
+    "units": [
+      "minutes"
+    ],
+    "statistical_processing": "hourly sum, time series",
+    "temporal_coverage": "1890-01-01 -- ...",
+    "spatial_coverage": "stations in Germany",
+    "projection": "WGS 84 (EPSG:4326)",
+    "timestamp_note": {
+      "before_2000": "null",
+      "after_2000": "null"
+    },
+    "qn_levels": {
+      "1": "only formal control",
+      "2": "controlled with individually defined criteria",
+      "3": "automatic control and correction",
+      "5": "historic, subjective procedures",
+      "7": "second control done, before correction",
+      "8": "quality control outside ROUTINE",
+      "9": "not all parameters corrected",
+      "10": "quality control finished, all corrections finished"
+    }
+  },
+  "hourly_visibility": {
+    "title": "Hourly station observations of visibility for Germany",
+    "citation": "Hourly station observations of visibility for Germany, Version v24.03",
+    "dataset_id": "urn:x-wmo:md:de.dwd.cdc::obsgermany-climate-hourly-visibility",
+    "version": "v24.03",
+    "publication_date": "2024-03-09",
+    "dataset_description": "Observations from DWD and partner networks; includes metadata on instruments, stations, and measurement algorithms.",
+    "parameters": [
+      "visibility range"
+    ],
+    "units": [
+      "metre"
+    ],
+    "statistical_processing": " hourly value, time series",
+    "temporal_coverage": "1949-01-01 -- ...",
+    "spatial_coverage": "stations in Germany",
+    "projection": "WGS 84 (EPSG:4326)",
+    "timestamp_note": {
+      "before_2000": "null",
+      "after_2000": "null"
+    },
+    "qn_levels": {
+      "1": "only formal control",
+      "2": "controlled with individually defined criteria",
+      "3": "automatic control and correction",
+      "5": "historic, subjective procedures",
+      "7": "second control done, before correction",
+      "8": "quality control outside ROUTINE",
+      "9": "not all parameters corrected",
+      "10": "quality control finished, all corrections finished"
+    }
+  },
+  "hourly_weather_phenomena": {
+    "title": "Hourly station observations of weather phenomena for Germany",
+    "citation": "Hourly station observations of weather phenomena for Germany, Version v24.03",
+    "dataset_id": "urn:x-wmo:md:de.dwd.cdc::obsgermany-climate-hourly-weather_phenomena",
+    "version": "v24.03",
+    "publication_date": "2024-03-09",
+    "dataset_description": "Observations from DWD and partner networks; includes metadata on instruments, stations, and measurement algorithms.",
+    "parameters": [
+      "numerical code"
+    ],
+    "units": [
+      "null"
+    ],
+    "statistical_processing": "hourly value, time series",
+    "temporal_coverage": "1949-01-01 -- ...",
+    "spatial_coverage": "stations in Germany",
+    "projection": "WGS 84 (EPSG:4326)",
+    "timestamp_note": {
+      "before_2000": "null",
+      "after_2000": "null"
+    },
+    "qn_levels": {
+      "1": "only formal control",
+      "2": "controlled with individually defined criteria",
+      "3": "automatic control and correction",
+      "5": "historic, subjective procedures",
+      "7": "second control done, before correction",
+      "8": "quality control outside ROUTINE",
+      "9": "not all parameters corrected",
+      "10": "quality control finished, all corrections finished"
+    }
+  },
+  "hourly_wind": {
+    "title": "Hourly mean value from station observations of wind speed and wind direction for Germany",
+    "citation": "Hourly mean value from station observations of wind speed and wind direction for Germany, Version v24.03",
+    "dataset_id": "urn:x-wmo:md:de.dwd.cdc::obsgermany-climate-hourly-wind",
+    "version": "v24.03",
+    "publication_date": "2024-03-09",
+    "dataset_description": "Observations from DWD and partner networks; includes metadata on instruments, stations, and measurement algorithms.",
+    "parameters": [
+      "wind velocity",
+      "wind direction"
+    ],
+    "units": [
+      "m/s",
+      "degree"
+    ],
+    "statistical_processing": "hourly mean, time series",
+    "temporal_coverage": "1893-01-01 -- ...",
+    "spatial_coverage": "stations in Germany",
+    "projection": "WGS 84 (EPSG:4326)",
+    "timestamp_note": {
+      "before_2000": "null",
+      "after_2000": "null"
+    },
+    "qn_levels": {
+      "1": "only formal control",
+      "2": "controlled with individually defined criteria",
+      "3": "automatic control and correction",
+      "5": "historic, subjective procedures",
+      "7": "second control done, before correction",
+      "8": "quality control outside ROUTINE",
+      "9": "not all parameters corrected",
+      "10": "quality control finished, all corrections finished"
+    }
+  },
+  "hourly_wind_synop": {
+    "title": "Hourly station observations of wind speed and wind direction for Germany",
+    "citation": "Hourly station observations of wind speed and wind direction for Germany, Version v24.03",
+    "dataset_id": "urn:x-wmo:md:de.dwd.cdc::obsgermany-climate-hourly-wind_synop",
+    "version": "v24.03",
+    "publication_date": "2024-03-09",
+    "dataset_description": "Observations from DWD and partner networks; includes metadata on instruments, stations, and measurement algorithms.",
+    "parameters": [
+      "wind velocity",
+      "wind direction"
+    ],
+    "units": [
+      "m/s",
+      "degree"
+    ],
+    "statistical_processing": "hourly mean, time series",
+    "temporal_coverage": "1949-01-01 -- ...",
+    "spatial_coverage": "stations in Germany",
+    "projection": "WGS 84 (EPSG:4326)",
+    "timestamp_note": {
+      "before_2000": "null",
+      "after_2000": "null"
+    },
+    "qn_levels": {
+      "1": "only formal control",
+      "2": "controlled with individually defined criteria",
+      "3": "automatic control and correction",
+      "5": "historic, subjective procedures",
+      "7": "second control done, before correction",
+      "8": "quality control outside ROUTINE",
+      "9": "not all parameters corrected",
+      "10": "quality control finished, all corrections finished"
+    }
+  },
+  "monthly_kl": {
+    "title": "Monthly station observations (temperature, precipitation, sunshine duration, wind and cloud cover) for Germany",
+    "citation": "Monthly station observations (temperature, precipitation, sunshine duration, wind and cloud cover) for Germany, Version v24.03",
+    "dataset_id": "urn:x-wmo:md:de.dwd.cdc::obsgermany-climate-hourly-wind_synop",
+    "version": "v24.03",
+    "publication_date": "2024",
+    "dataset_description": "Observations from DWD and partner networks; includes metadata on instruments, stations, and measurement algorithms.",
+    "parameters": [
+      "wind force",
+      "wind gust",
+      "air temperature at 2 m",
+      "precipitation height",
+      "cloud coverage",
+      "sunshine duration"
+    ],
+    "units": [
+      "null"
+    ],
+    "statistical_processing": "null",
+    "temporal_coverage": "1719-01-01 -- ...",
+    "spatial_coverage": "stations in Germany",
+    "projection": "WGS 84 (EPSG:4326)",
+    "timestamp_note": {
+      "before_2000": "null",
+      "after_2000": "null"
+    },
+    "qn_levels": {
+      "1": "only formal control",
+      "2": "controlled with individually defined criteria",
+      "3": "automatic control and correction",
+      "5": "historic, subjective procedures",
+      "7": "second control done, before correction",
+      "8": "quality control outside ROUTINE",
+      "9": "not all parameters corrected",
+      "10": "quality control finished, all corrections finished"
+    }
+  },
+  "monthly_more_precip": {
+    "title": "Monthly precipitation observations for Germany",
+    "citation": "Monthly precipitation observations for Germany, Version v24.03",
+    "dataset_id": "urn:wmo:md:de-dwd-cdc:obsgermany-climate-monthly-more_precip",
+    "version": "v24.03",
+    "publication_date": "2024",
+    "dataset_description": "Observations from DWD and partner networks; includes metadata on instruments, stations, and measurement algorithms.",
+    "parameters": [
+      "precipitation height",
+      "snow depth",
+      "height of newly fallen snow"
+    ],
+    "units": [
+      "null"
+    ],
+    "statistical_processing": "monthly sum, monthly max",
+    "temporal_coverage": "1781-01-01 -- ...",
+    "spatial_coverage": "stations in Germany",
+    "projection": "WGS 84 (EPSG:4326)",
+    "timestamp_note": {
+      "before_2000": "null",
+      "after_2000": "null"
+    },
+    "qn_levels": {
+      "1": "only formal control",
+      "2": "controlled with individually defined criteria",
+      "3": "automatic control and correction",
+      "5": "historic, subjective procedures",
+      "7": "second control done, before correction",
+      "8": "quality control outside ROUTINE",
+      "9": "not all parameters corrected",
+      "10": "quality control finished, all corrections finished"
+    }
+  }
+}

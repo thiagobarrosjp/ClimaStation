@@ -820,4 +820,76 @@ CLIMASTATION-BACKEND
     - dev_log.md  
     - README.md  
     - requirements.txt
+
+
+- 2025-07-05:  
+- Deprecated `extract_pdf_metadata.py` and all its output files (`description_metadata.json`, `dataset_info.json`, `field_schema_extended.json`).
+- Manually curated a new reference file: `pdf_description_manual.pretty.json` located at `tools/dwd_pipeline/field_descriptions/`
+  - Contains structured metadata extracted from official DWD `DESCRIPTION_*.pdf` files
+  - Includes: title, citation, dataset ID, version, publication date, parameters, timestamp format, QN-levels, and description summary
+- Determined that many fields like quality flags, timestamp formats, and temporal coverage are common across datasets and don’t need individualized parsing
+- Validated 30+ DWD PDF files manually and excluded 4 special cases that don’t follow the standard structure (multi-annual mean datasets and subdaily template)
+- Updated `README.md` in `tools/dwd_pipeline/` to reflect this final schema approach
+- The current folder structure:
+<pre>
+CLIMASTATION-BACKEND		
+    - .vscode\
+        -- settings.json
+    - app\
+        -- features\
+            --- dwd\  
+                ---- record_schemas\ 
+                    ----- README.md   
+                    ----- field_map.json  
+                    ----- field_map.py  
+                    ----- v0_initial_schema.json  
+                ---- __init__.py
+                ---- metadata_parser.py  
+                ---- record_validator.py  
+                ---- schemas.py            
+            --- tools\
+                ---- dwd_pipeline\ 
+                    ---- field_descriptions\
+                        ----- pdf_description_manual.pretty.json
+                    ---- __init__.py 
+                    ---- build_station_summary.py                       
+                    ---- crawl_dwd.py  
+                    ---- download_samples.py   
+                    ---- extract_dataset_fields.py  
+                    ---- inspect_archives.py                      
+                    ---- README.md     
+                    ---- utils.py                   
+            --- __init__.py  
+        -- __init__.py
+    - data\          
+        -- 0_debug\  
+            --- crawl_dwd_debug.log  
+            --- download_samples_debug.log  
+            --- extract_dataset_fields_debug.log  
+            --- inspect_archives_debug.log  
+            --- station_summary_debug.log    
+        -- 1_structure\    
+            --- [timestamp]_structure.json  
+            --- [timestamp]_tree.txt  
+            --- [timestamp]_urls.jsonl    
+        -- 2_samples\    
+            --- raw\
+            --- downloaded_files.txt              
+        -- 3_inspection\ 
+            --- [timestamp]_archive_inspection.jsonl
+            --- [timestamp]_archive_inspection.pretty.json
+        -- 4_summaries\  
+            --- [timestamp]_station_and dataset_summary.pretty.json  
+        -- 5_matching\  
+            --- station_profile.merged.pretty.json  
+        -- 6_fields  
+            --- dataset_fields.json
+        -- README.md       
+    - tests\
+        -- test_dwd_pipeline.py	
+    - .env
+    - .gitignore
+    - dev_log.md  
+    - README.md  
+    - requirements.txt
 </pre>

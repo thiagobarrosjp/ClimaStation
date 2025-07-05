@@ -176,14 +176,34 @@ def run():
                                     if "parameter" not in meta_file.lower():
                                         header, sample = sample_metadata_structure(lines)
                                         logging.info(f"[STRUCTURE_SAMPLE] {meta_file} fields: {header}")
-                                        if sample:
+                                        if header and sample:
                                             logging.info(f"[STRUCTURE_SAMPLE] Example row: {sample}")
+                                            raw_fields = [h.strip().lower() for h in header]
+                                            canonical_fields = [CANONICAL_FIELD_MAP.get(f, f) for f in raw_fields if CANONICAL_FIELD_MAP.get(f, f)]
+                                            matched[meta_file] = [{
+                                                "metadata_fields_original": raw_fields,
+                                                "metadata_fields_canonical": canonical_fields
+                                            }]
                                         continue
 
                                     raw_rows = parse_metadata_lines(lines, station_id=station_id)
                                     canonical_rows = [normalize_metadata_row(r, CANONICAL_FIELD_MAP) for r in raw_rows]
-                                    matches = match_by_interval(rfrom, rto, canonical_rows)
-                                    matched[meta_file] = matches
+
+                                    # Group by parameter_code
+                                    grouped = {}
+                                    for row in canonical_rows:
+                                        code = row.get("parameter_code")
+                                        if not code:
+                                            continue
+                                        grouped.setdefault(code, []).append(row)
+
+                                    # Match each parameter's timeline separately
+                                    param_matches = {}
+                                    for code, rows in grouped.items():
+                                        param_matches[code] = match_by_interval(rfrom, rto, rows)
+
+                                    matched[meta_file] = {"parameter_metadata": param_matches}
+
                         except Exception as e:
                             logging.warning(f"Failed reading {meta_file}: {e}")
                             continue
