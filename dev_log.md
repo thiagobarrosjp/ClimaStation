@@ -894,3 +894,83 @@ CLIMASTATION-BACKEND
     - README.md  
     - requirements.txt
 </pre>
+
+
+- 2025-07-06:
+- Struggled a lot trying to automate the pipeline to create a decend record format. But the AI assistant is driving me crazy.
+- I managed to make the AI manually create a parsed JSON record from the raw data, enriched with metadata. It is not looking very good, but it's a start. I need to improve this record and work backwards from here. 
+- This is the example we have so far:
+<pre>
+{
+  "station_id": "00003",
+  "station_name": "Aachen",
+  "timestamp": "1993-04-28T12:30:00",
+  "dataset": "10_minutes_air_temperature",
+  "variant": "historical",
+  "parameters": {
+    "air_pressure_hpa": 987.3,
+    "air_temperature_C": 24.9,
+    "5min_mean_temperature_C": 28.4,
+    "relative_humidity_percent": 23.0,
+    "dew_point_temperature_C": 2.4
+  },
+  "quality_flag": {
+    "quality_flag": 1
+  },
+  "location": {
+    "latitude": 50.7827,
+    "longitude": 6.0941,
+    "station_altitude_m": 202.0
+  },
+  "sensor": {
+    "air_temperature_C": {
+      "device_type": "PT 100 (Luft)",
+      "sensor_height_above_ground_m": 2.0,
+      "measurement_method": "Temperaturmessung, elektr."
+    },
+    "5min_mean_temperature_C": {
+      "device_type": "PT 100 (Luft)",
+      "sensor_height_above_ground_m": 0.05,
+      "measurement_method": "Temperaturmessung, elektr."
+    },
+    "relative_humidity_percent": {
+      "device_type": "HYGROMER MP100",
+      "sensor_height_above_ground_m": 2.0,
+      "measurement_method": "Feuchtemessung, elektr."
+    },
+    "air_pressure_hpa": null
+  },
+  "metadata": {
+    "air_pressure_hpa": {
+      "unit": "hPa",
+      "parameter_description": "Luftdruck in Stationshoehe der voran. 10 min",
+      "data_source": "10-Minutenwerte von automatischen Stationen der 1. Generation (MIRIAM/AFMS2, ESAU-Daten bis 31.12.1999 (Zeitbezug ist MEZ)",
+      "time_note": "HHMM MEZ"
+    },
+    "air_temperature_C": {
+      "unit": "°C",
+      "parameter_description": "momentane Lufttemperatur in 2m Hoehe",
+      "data_source": "10-Minutenwerte von automatischen Stationen der 1. Generation (MIRIAM/AFMS2, ESAU-Daten bis 31.12.1999 (Zeitbezug ist MEZ)",
+      "time_note": "HHMM MEZ"
+    },
+    "5min_mean_temperature_C": {
+      "unit": "°C",
+      "parameter_description": "Momentane Temperatur in 5 cm Hoehe 10min",
+      "data_source": "10-Minutenwerte von automatischen Stationen der 1. Generation (MIRIAM/AFMS2, ESAU-Daten bis 31.12.1999 (Zeitbezug ist MEZ)",
+      "time_note": "HHMM MEZ"
+    },
+    "relative_humidity_percent": {
+      "unit": "%",
+      "parameter_description": "relative Feucht in 2m Hoehe",
+      "data_source": "10-Minutenwerte von automatischen Stationen der 1. Generation (MIRIAM/AFMS2, ESAU-Daten bis 31.12.1999 (Zeitbezug ist MEZ)",
+      "time_note": "HHMM MEZ"
+    },
+    "dew_point_temperature_C": {
+      "unit": "°C",
+      "parameter_description": "Taupunkttemperatur in 2m Hoehe",
+      "data_source": "10-Minutenwerte von automatischen Stationen der 1. Generation (MIRIAM/AFMS2, ESAU-Daten bis 31.12.1999 (Zeitbezug ist MEZ)",
+      "time_note": "HHMM MEZ"
+    }
+  }
+}
+</pre>

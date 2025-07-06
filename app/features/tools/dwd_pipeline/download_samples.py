@@ -20,8 +20,8 @@ Output:
         → Debug output including failed downloads
 
 Notes:
-    - File names are flattened to preserve dataset prefix and avoid directory nesting
-    - Used to generate a manageable sample set for downstream schema and structure analysis
+    - Zip files retain their original filenames
+    - PDF files are flattened with folder prefix to avoid conflicts
 """
 
 
@@ -120,12 +120,15 @@ def run():
 
                 for fname, filetype in all_targets:
                     file_url = urljoin(url, fname)
-                    flat_name = sanitize_filename(prefix, fname)
-                    save_path = os.path.join(RAW_DATA_DIR, flat_name)
+                    if filetype == "zip":
+                        save_path = os.path.join(RAW_DATA_DIR, fname)  # keep original name
+                    else:
+                        flat_name = sanitize_filename(prefix, fname)
+                        save_path = os.path.join(RAW_DATA_DIR, flat_name)
 
                     if download_file(file_url, save_path):
                         with open(LOG_FILE_PATH, "a", encoding="utf-8") as log_f:
-                            log_f.write(f"{prefix} -> {flat_name} -> {file_url}\n")
+                            log_f.write(f"{prefix} -> {os.path.basename(save_path)} -> {file_url}\n")
 
             except Exception as e:
                 print(f"⚠️ Skipping folder {record.get('url', '?')}: {e}")
