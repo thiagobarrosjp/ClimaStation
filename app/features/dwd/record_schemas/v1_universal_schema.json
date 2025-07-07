@@ -49,8 +49,31 @@
       }
     },
     "timestamp": {
-      "type": "string",
-      "format": "date-time"
+      "type": "object",
+      "required": [
+        "value",
+        "time_reference"
+      ],
+      "properties": {
+        "value": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "time_reference": {
+          "type": "string",
+          "enum": [
+            "UTC",
+            "MEZ",
+            "MESZ",
+            "CET",
+            "CEST"
+          ]
+        },
+        "utc_offset": {
+          "type": "string",
+          "pattern": "^[+-][0-9]{2}:[0-9]{2}$"
+        }
+      }
     },
     "parameters": {
       "type": "object",

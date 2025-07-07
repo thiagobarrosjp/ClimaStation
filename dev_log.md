@@ -974,3 +974,83 @@ CLIMASTATION-BACKEND
   }
 }
 </pre>
+
+- 2025-07-07:
+- Created the v1_universal_schema.json manually and used it to create the example below.
+- A few comments on the example:
+-- description: value taken from the field "title" in pdf_description_manual.pretty.json.
+-- state: value listed in the text file in this path:
+https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/air_temperature/historical/zehn_min_tu_Beschreibung_Stationen.txt
+
+<pre>
+{
+  "station": {
+    "station_id": "00003",
+    "station_name": "Aachen"
+  },
+  "dataset": {
+    "name": "10_minutes_air_temperature",
+    "variant": "historical",
+    "description": "10-minute station observations of air temperature for Germany"
+  },
+  "timestamp": {
+    "value": "1993-04-28T12:30:00",
+    "time_reference": "MEZ",
+    "utc_offset": "+01:00"
+  },
+  "parameters": {
+    "air_pressure_hpa": 987.3,
+    "air_temperature_C": 24.9,
+    "5min_mean_temperature_C": 28.4,
+    "relative_humidity_percent": 23.0,
+    "dew_point_temperature_C": 2.4
+  },
+  "quality_flag": 1,
+  "location": {
+    "latitude": 50.7827,
+    "longitude": 6.0941,
+    "station_altitude_m": 202.0,
+    "country": "Germany",
+    "state": "Nordrhein-Westfalen"
+  },
+  "sensor": {
+    "air_temperature_C": "device_type: PT 100 (Luft); sensor_height_above_ground_m: 2.0; measurement_method: Temperaturmessung, elektr.",
+    "5min_mean_temperature_C": "device_type: PT 100 (Luft); sensor_height_above_ground_m: 0.05; measurement_method: Temperaturmessung, elektr.",
+    "relative_humidity_percent": "device_type: HYGROMER MP100; sensor_height_above_ground_m: 2.0; measurement_method: Feuchtemessung, elektr.",
+    "air_pressure_hpa": null
+  },
+  "metadata": {
+    "air_pressure_hpa": {
+      "unit": "hPa",
+      "parameter_description": "Luftdruck in Stationshoehe der voran. 10 min",
+      "data_source": "10-Minutenwerte von automatischen Stationen der 1. Generation (MIRIAM/AFMS2, ESAU-Daten bis 31.12.1999 (Zeitbezug ist MEZ)",
+      "time_note": "HHMM MEZ"
+    },
+    "air_temperature_C": {
+      "unit": "°C",
+      "parameter_description": "momentane Lufttemperatur in 2m Hoehe",
+      "data_source": "10-Minutenwerte von automatischen Stationen der 1. Generation (MIRIAM/AFMS2, ESAU-Daten bis 31.12.1999 (Zeitbezug ist MEZ)",
+      "time_note": "HHMM MEZ"
+    },
+    "5min_mean_temperature_C": {
+      "unit": "°C",
+      "parameter_description": "Momentane Temperatur in 5 cm Hoehe 10min",
+      "data_source": "10-Minutenwerte von automatischen Stationen der 1. Generation (MIRIAM/AFMS2, ESAU-Daten bis 31.12.1999 (Zeitbezug ist MEZ)",
+      "time_note": "HHMM MEZ"
+    },
+    "relative_humidity_percent": {
+      "unit": "%",
+      "parameter_description": "relative Feucht in 2m Hoehe",
+      "data_source": "10-Minutenwerte von automatischen Stationen der 1. Generation (MIRIAM/AFMS2, ESAU-Daten bis 31.12.1999 (Zeitbezug ist MEZ)",
+      "time_note": "HHMM MEZ"
+    },
+    "dew_point_temperature_C": {
+      "unit": "°C",
+      "parameter_description": "Taupunkttemperatur in 2m Hoehe",
+      "data_source": "10-Minutenwerte von automatischen Stationen der 1. Generation (MIRIAM/AFMS2, ESAU-Daten bis 31.12.1999 (Zeitbezug ist MEZ)",
+      "time_note": "HHMM MEZ"
+    }
+  }
+}
+
+</pre>
