@@ -820,7 +820,7 @@ CLIMASTATION-BACKEND
     - dev_log.md  
     - README.md  
     - requirements.txt
-
+</pre>
 
 - 2025-07-05:  
 - Deprecated `extract_pdf_metadata.py` and all its output files (`description_metadata.json`, `dataset_info.json`, `field_schema_extended.json`).

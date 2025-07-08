@@ -122,7 +122,38 @@
         "null"
       ],
       "additionalProperties": {
-        "type": "string"
+        "type": [
+          "object",
+          "null"
+        ],
+        "properties": {
+          "device_type": {
+            "type": "string"
+          },
+          "sensor_height_above_ground_m": {
+            "type": "number"
+          },
+          "measurement_method": {
+            "type": "object",
+            "properties": {
+              "en": {
+                "type": "string"
+              },
+              "de": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "en",
+              "de"
+            ]
+          }
+        },
+        "required": [
+          "device_type",
+          "sensor_height_above_ground_m",
+          "measurement_method"
+        ]
       }
     },
     "metadata": {
@@ -134,16 +165,72 @@
             "type": "string"
           },
           "parameter_description": {
-            "type": "string"
-          },
-          "data_source": {
-            "type": "string"
-          },
-          "time_note": {
-            "type": "string"
+            "type": "object",
+            "properties": {
+              "en": {
+                "type": "string"
+              },
+              "de": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "en",
+              "de"
+            ]
           }
+        },
+        "required": [
+          "unit",
+          "parameter_description"
+        ]
+      }
+    },
+    "record_metadata": {
+      "type": "object",
+      "required": [
+        "data_source",
+        "time_note"
+      ],
+      "properties": {
+        "data_source": {
+          "type": "object",
+          "properties": {
+            "en": {
+              "type": "string"
+            },
+            "de": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "en",
+            "de"
+          ]
+        },
+        "time_note": {
+          "type": "string"
         }
       }
+    },
+    "source_reference": {
+      "type": "object",
+      "description": "Reference to the original files this record was derived from",
+      "properties": {
+        "data_zip": {
+          "type": "string",
+          "description": "ZIP archive containing the raw measurement data"
+        },
+        "metadata_zip": {
+          "type": "string",
+          "description": "ZIP archive containing parameter metadata (may be same as data_zip)"
+        },
+        "description_pdf": {
+          "type": "string",
+          "description": "Path to optional PDF description of the dataset"
+        }
+      },
+      "additionalProperties": false
     }
   }
 }
