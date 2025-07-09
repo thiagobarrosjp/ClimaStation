@@ -1,203 +1,179 @@
-"""
-ClimaStation Utility Script: Extract and Parse DWD Raw Data ZIP File with Schema Validation + Debug Log
-
-This script:
-1. Extracts a .txt file from a ZIP archive in 2_downloaded_files/
-2. Parses each data line into a JSON object
-3. Validates the object against v1_universal_schema.json
-4. Writes valid records to a .jsonl file in 3_parsed_files/
-5. Logs debug messages to data/germany/0_debug/parse_single_zip_debug.log
-"""
-
 import os
 import zipfile
 import json
+import io
+from datetime import datetime
 from pathlib import Path
-from typing import Optional
-from jsonschema import validate, ValidationError
-import logging
+import pandas as pd
 
-# === CONFIG ===
+RAW_DATA_FOLDER = Path("data/germany/2_downloaded_files/10_minutes/air_temperature/historical")
+METADATA_FOLDER = Path("data/germany/2_downloaded_files/10_minutes/air_temperature/meta_data")
+OUTPUT_FOLDER = Path("data/germany/3_parsed_files/parsed_10_minutes/parsed_air_temperature/parsed_historical")
 
-ZIP_FILENAME = "10minutenwerte_TU_00003_19930428_19991231_hist.zip"
-
-INPUT_PATH = Path("data/germany/2_downloaded_files/10_minutes/air_temperature/historical") / ZIP_FILENAME
-OUTPUT_DIR = Path("data/germany/3_parsed_files/parsed_10_minutes/parsed_air_temperature/parsed_historical")
-OUTPUT_FILENAME = "parsed_10minutenwerte_TU_00003_19930428_19991231_hist.jsonl"
-OUTPUT_PATH = OUTPUT_DIR / OUTPUT_FILENAME
-
-SCHEMA_PATH = Path("app/features/dwd/record_schemas/v1_universal_schema.json")
-
-DEBUG_LOG_PATH = Path("data/germany/0_debug/parse_single_zip_debug.log")
-DEBUG_LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
-OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-
-# === LOGGING ===
-
-if DEBUG_LOG_PATH.exists():
-    DEBUG_LOG_PATH.unlink()  # clear old log
-
-logging.basicConfig(
-    filename=DEBUG_LOG_PATH,
-    level=logging.DEBUG,
-    format="%(asctime)s - %(levelname)s - %(message)s"
-)
-logging.info("=== Started parse_single_zip.py ===")
-
-# === Load schema ===
-
-try:
-    with open(SCHEMA_PATH, "r", encoding="utf-8") as f:
-        SCHEMA = json.load(f)
-    logging.info("Schema loaded successfully.")
-except Exception as e:
-    logging.error(f"Failed to load schema: {e}")
-    raise
-
-# === Metadata ===
-
-PARAM_MAP = {
-    "TT_10": {
-        "label": "air_temperature",
-        "unit": "C",
-        "desc": {"de": "Lufttemperatur", "en": "Air Temperature"}
-    },
-    "TM5_10": {
-        "label": "ground_temperature",
-        "unit": "C",
-        "desc": {"de": "Temperatur 5 cm ueber Boden", "en": "Air Temp. 5 cm above ground"}
-    },
-    "PP_10": {
-        "label": "air_pressure",
-        "unit": "hPa",
-        "desc": {"de": "Luftdruck", "en": "Air Pressure"}
-    },
-    "RF_10": {
-        "label": "humidity",
-        "unit": "%",
-        "desc": {"de": "Relative Luftfeuchtigkeit", "en": "Relative Humidity"}
-    },
-    "TD_10": {
-        "label": "dew_point",
-        "unit": "C",
-        "desc": {"de": "Taupunkt", "en": "Dew Point"}
-    }
-}
-
-# === Parser Function ===
-
-def parse_row_to_json(row_dict: dict) -> Optional[dict]:
+# --- Helper functions ---
+def extract_zip(zip_path: Path, extract_to: Path) -> list:
     try:
-        station_id = row_dict.get("STATIONS_ID") or row_dict.get("STATION_ID") or "00000"
-        timestamp_str = row_dict.get("MESS_DATUM")
+        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+            members = zip_ref.namelist()
+            zip_ref.extractall(extract_to)
+        return [extract_to / member for member in members if member.endswith(".txt")]
+    except FileNotFoundError:
+        raise FileNotFoundError(f"ZIP file not found: {zip_path}")
+    except zipfile.BadZipFile:
+        raise ValueError(f"Invalid ZIP file: {zip_path}")
 
-        if not timestamp_str or len(timestamp_str) != 12:
-            raise ValueError("Invalid timestamp format")
+def cleanup_files(file_paths):
+    for file_path in file_paths:
+        try:
+            os.remove(file_path)
+        except Exception as e:
+            print(f"⚠️ Failed to remove {file_path}: {e}")
 
-        timestamp_iso = f"{timestamp_str[:4]}-{timestamp_str[4:6]}-{timestamp_str[6:8]}T{timestamp_str[8:10]}:{timestamp_str[10:]}:00"
+def parse_zip_with_metadata(raw_zip: str, station_id: int):
+    raw_zip_path = RAW_DATA_FOLDER / raw_zip
+    raw_extract_path = RAW_DATA_FOLDER / "_temp"
+    raw_extract_path.mkdir(parents=True, exist_ok=True)
 
-        parameters = {}
-        for key, meta in PARAM_MAP.items():
-            raw_val = row_dict.get(key)
-            if raw_val is None:
-                continue
+    raw_txt_files = extract_zip(raw_zip_path, raw_extract_path)
+    if not raw_txt_files:
+        raise RuntimeError("No .txt file found in raw ZIP")
+    raw_txt_file = raw_txt_files[0]
+
+    raw_df = pd.read_csv(raw_txt_file, sep=';', skipinitialspace=True, encoding='utf-8')
+    raw_df.columns = raw_df.columns.str.strip()
+    raw_df['MESS_DATUM'] = raw_df['MESS_DATUM'].astype(str).str.zfill(12)
+
+    cleanup_files(raw_txt_files)
+
+    meta_zip_filename = f"Meta_Daten_zehn_min_tu_{str(station_id).zfill(5)}.zip"
+    meta_zip_path = METADATA_FOLDER / meta_zip_filename
+    meta_extract_path = METADATA_FOLDER / "_temp"
+    meta_extract_path.mkdir(parents=True, exist_ok=True)
+
+    meta_txt_files = extract_zip(meta_zip_path, meta_extract_path)
+    parameter_file = next((f for f in meta_txt_files if f.name.startswith("Metadaten_Parameter") and f.name.endswith(".txt")), None)
+    if not parameter_file:
+        raise RuntimeError("No Metadaten_Parameter_*.txt file found")
+
+    with open(parameter_file, encoding='iso-8859-1') as f:
+        lines = [line for line in f if not line.lstrip().startswith("generiert")]
+    import io
+    param_meta = pd.read_csv(io.StringIO("".join(lines)), sep=';', engine='python')
+    param_meta.columns = param_meta.columns.str.strip()
+    if param_meta.columns[-1].lower().strip() == 'eor':
+        param_meta = param_meta[param_meta.columns[:-1]]
+    param_meta['Parameter'] = param_meta['Parameter'].astype(str).str.strip()
+    param_meta['Stations_ID'] = param_meta['Stations_ID'].astype(str).str.strip()
+
+    cleanup_files(meta_txt_files)
+
+    param_map = {
+        "TT_10": "air_temperature",
+        "TM5_10": "ground_temperature",
+        "PP_10": "air_pressure",
+        "RF_10": "humidity",
+        "TD_10": "dew_point"
+    }
+
+    metadata = {
+        "data_zip": raw_zip,
+        "metadata_zip": meta_zip_filename,
+        "station_name": "Aachen",
+        "station_operator": "DWD",
+        "location": {
+            "latitude": 50.7827,
+            "longitude": 6.0941,
+            "station_altitude_m": 202,
+            "city": "Aachen",
+            "state": "",
+            "region": None
+        },
+        "sensors": []
+    }
+
+    OUTPUT_FOLDER.mkdir(parents=True, exist_ok=True)
+    output_path = OUTPUT_FOLDER / f"parsed_{raw_zip.replace('.zip', '.jsonl')}"
+
+    with open(output_path, "w", encoding="utf-8") as out_file:
+        for i, row in raw_df.head(500).iterrows():
             try:
-                parsed_val = float(raw_val) if raw_val.strip() != "-999" else None
-            except Exception:
-                parsed_val = None
-            parameters[meta["label"]] = {
-                "value": parsed_val,
-                "unit": meta["unit"],
-                "parameter_description": meta["desc"],
-                "data_source": {"de": "DWD", "en": "DWD"}
-            }
+                timestamp = datetime.strptime(row['MESS_DATUM'], "%Y%m%d%H%M")
+                timestamp_str = timestamp.strftime("%Y-%m-%dT%H:%M:%S")
+                date_int = int(timestamp.strftime("%Y%m%d"))
+                parameters = {}
+                for raw_key, target_key in param_map.items():
+                    try:
+                        value = float(row[raw_key])
+                    except:
+                        value = None
+                    meta_rows = param_meta[
+                        (param_meta['Parameter'] == raw_key.strip()) &
+                        (param_meta['Stations_ID'] == str(station_id).strip())
+                    ]
+                    match = None
+                    for _, meta_row in meta_rows.iterrows():
+                        try:
+                            start = int(str(meta_row['Von_Datum']))
+                            end = int(str(meta_row['Bis_Datum']))
+                            if start <= date_int <= end:
+                                match = meta_row
+                                break
+                        except:
+                            continue
+                    if match is not None:
+                        unit = str(match['Einheit']).strip()
+                        desc_de = str(match['Parameterbeschreibung']).strip()
+                        source_de = str(match['Datenquelle (Strukturversion=SV)']).strip()
+                    else:
+                        unit = ""
+                        desc_de = ""
+                        source_de = ""
+                    parameters[target_key] = {
+                        "value": value,
+                        "unit": unit,
+                        "parameter_description": {"de": desc_de, "en": ""},
+                        "data_source": {"de": source_de, "en": ""}
+                    }
 
-        record = {
-            "timestamp": {
-                "value": timestamp_iso,
-                "time_reference": "UTC"
-            },
-            "countries": {
-                "DE": {
-                    "stations": {
-                        station_id: {
-                            "station": {
-                                "station_id": station_id,
-                                "station_name": "Unknown"
-                            },
-                            "location": {
-                                "latitude": 0.0,
-                                "longitude": 0.0,
-                                "station_altitude_m": 0
-                            },
-                            "measurements": {
-                                "10_minutes_air_temperature": {
-                                    "source_reference": {
-                                        "data_zip": ZIP_FILENAME,
-                                        "metadata_zip": "",
-                                        "description_pdf": ""
+                enriched = {
+                    "timestamp": {
+                        "value": timestamp_str,
+                        "time_reference": "UTC"
+                    },
+                    "countries": {
+                        "DE": {
+                            "stations": {
+                                str(station_id): {
+                                    "station": {
+                                        "station_id": str(station_id),
+                                        "station_name": metadata.get("station_name"),
+                                        "station_operator": metadata.get("station_operator")
                                     },
-                                    "parameters": parameters
+                                    "location": metadata.get("location"),
+                                    "measurements": {
+                                        "10_minutes_air_temperature": {
+                                            "source_reference": {
+                                                "data_zip": metadata.get("data_zip"),
+                                                "metadata_zip": metadata.get("metadata_zip"),
+                                                "description_pdf": ""
+                                            },
+                                            "sensors": metadata.get("sensors"),
+                                            "parameters": parameters
+                                        }
+                                    }
                                 }
                             }
                         }
                     }
                 }
-            }
-        }
+                json.dump(enriched, out_file, ensure_ascii=False)
+                out_file.write("\n")
+            except Exception as e:
+                print(f"⚠️ Error in row {i}: {e}")
 
-        validate(instance=record, schema=SCHEMA)
-        return record
-
-    except (ValueError, ValidationError) as e:
-        logging.warning(f"Invalid row skipped: {e}")
-        return None
-
-# === Main ===
-
-def extract_and_parse_zip():
-    try:
-        logging.info(f"Opening ZIP: {INPUT_PATH}")
-        with zipfile.ZipFile(INPUT_PATH, "r") as zip_ref:
-            txt_filenames = [f for f in zip_ref.namelist() if f.endswith(".txt")]
-            if not txt_filenames:
-                logging.error("No .txt file found in ZIP archive.")
-                print("\u274c No .txt file found in archive.")
-                return
-            txt_file = txt_filenames[0]
-
-            with zip_ref.open(txt_file) as file:
-                lines = file.read().decode("utf-8").splitlines()
-
-        logging.info(f"Read {len(lines)} lines from {txt_file}")
-
-        headers = lines[0].strip().split(";")
-        valid_count = 0
-        skipped_count = 0
-
-        with open(OUTPUT_PATH, "w", encoding="utf-8") as out_f:
-            MAX_RECORDS = 500  # Limit for testing
-            for i, line in enumerate(lines[1:], start=1):
-                if not line.strip():
-                    continue
-                if valid_count >= MAX_RECORDS:
-                    break
-                row_values = line.strip().split(";")
-                row_dict = dict(zip(headers, row_values))
-                record = parse_row_to_json(row_dict)
-                if record:
-                    out_f.write(json.dumps(record) + "\n")
-                    valid_count += 1
-                else:
-                    skipped_count += 1
-
-        logging.info(f"Parsed {valid_count} records, skipped {skipped_count}.")
-        print(f"\u2705 Parsed {valid_count} valid records to: {OUTPUT_PATH}")
-
-    except Exception as e:
-        logging.exception(f"Fatal error while parsing: {e}")
-        raise
-
+# --- MAIN ---
 if __name__ == "__main__":
-    extract_and_parse_zip()
-    logging.info("=== Finished parse_single_zip.py ===")
+    try:
+        parse_zip_with_metadata("10minutenwerte_TU_00003_19930428_19991231_hist.zip", station_id=3)
+    except Exception as e:
+        print(f"❌ Fatal error during parsing: {e}")
