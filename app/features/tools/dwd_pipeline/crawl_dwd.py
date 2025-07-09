@@ -9,16 +9,12 @@ Purpose:
     Identifies all folders and subfolders, determines which ones contain downloadable datasets
     (.zip, .gz, .txt, .pdf), and produces a structured snapshot of the repository for downstream processing.
 
-Input:
-    - Remote: DWD climate repository (online URL)
-    - Local: None
-
 Output:
-    - data/1_structure/[timestamp]_tree.txt
+    - data/germany/1_crawl_dwd/dwd_tree.txt
         → Human-readable tree with folder hierarchy and file type annotations
-    - data/1_structure/[timestamp]_urls.jsonl
+    - data/germany/1_crawl_dwd/dwd_urls.jsonl
         → JSONL list of dataset-relevant folders and file stats
-    - data/1_structure/[timestamp]_structure.json
+    - data/germany/1_crawl_dwd/dwd_structure.json
         → Full JSON tree of the folder structure, with metadata
 
 Debug:
@@ -27,29 +23,26 @@ Debug:
 
 Notes:
     - This script is the **first step** of the ClimaStation pipeline.
-    - It enables the system to discover valid datasets and prepare sample downloads.
+    - Output filenames are fixed for consistency and reusability.
 """
-
 
 import os
 import requests
-from bs4 import BeautifulSoup
-from bs4 import Tag
+from bs4 import BeautifulSoup, Tag
 from urllib.parse import urljoin
 from datetime import datetime
 import json
-from typing import List, Dict
-from typing import cast
+from typing import List, Dict, cast
 import time
 import logging
 
 # === Config ===
 BASE_URL = "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/"
-STRUCTURE_DIR = "data/1_structure"
-DEBUG_LOG_PATH = "data/0_debug/crawl_dwd_debug.log"
+STRUCTURE_DIR = "data/germany/1_crawl_dwd"
+DEBUG_LOG_PATH = "data/germany/0_debug/crawl_dwd_debug.log"
 
 os.makedirs(STRUCTURE_DIR, exist_ok=True)
-os.makedirs("data/0_debug", exist_ok=True)
+os.makedirs("data/germany/0_debug", exist_ok=True)
 
 # === Logging ===
 if os.path.exists(DEBUG_LOG_PATH):
@@ -159,10 +152,9 @@ class DWDCrawler:
         return lines
 
     def save_outputs(self):
-        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M")
-        tree_path = os.path.join(STRUCTURE_DIR, f"{timestamp}_tree.txt")
-        urls_path = os.path.join(STRUCTURE_DIR, f"{timestamp}_urls.jsonl")
-        structure_path = os.path.join(STRUCTURE_DIR, f"{timestamp}_structure.json")
+        tree_path = os.path.join(STRUCTURE_DIR, "dwd_tree.txt")
+        urls_path = os.path.join(STRUCTURE_DIR, "dwd_urls.jsonl")
+        structure_path = os.path.join(STRUCTURE_DIR, "dwd_structure.json")
 
         top_level_paths = sorted(p for p in self.tree_structure if "/" not in p)
         all_tree_lines = []
@@ -201,7 +193,6 @@ if __name__ == "__main__":
 
     crawler = DWDCrawler()
 
-    # Manually load top-level folders (instead of crawling "root")
     try:
         root_response = requests.get(BASE_URL)
         root_response.raise_for_status()
@@ -217,7 +208,6 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"❌ Failed to fetch top-level folders: {e}")
         top_level_folders = []
-
 
     for folder in top_level_folders:
         full_url = urljoin(BASE_URL, folder + "/")

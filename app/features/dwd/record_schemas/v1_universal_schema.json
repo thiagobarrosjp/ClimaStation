@@ -1,53 +1,12 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "ClimaStation Universal Record Format V1",
+  "title": "ClimaStation Universal Record Format V2",
   "type": "object",
   "required": [
-    "station",
-    "dataset",
     "timestamp",
-    "parameters"
+    "countries"
   ],
   "properties": {
-    "station": {
-      "type": "object",
-      "required": [
-        "station_id",
-        "station_name"
-      ],
-      "properties": {
-        "station_id": {
-          "type": "string"
-        },
-        "station_name": {
-          "type": "string"
-        },
-        "station_operator": {
-          "type": "string"
-        }
-      }
-    },
-    "dataset": {
-      "type": "object",
-      "required": [
-        "name",
-        "description"
-      ],
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "description": {
-          "type": "string"
-        },
-        "id": {
-          "type": "string"
-        },
-        "variant": {
-          "type": "string"
-        }
-      }
-    },
     "timestamp": {
       "type": "object",
       "required": [
@@ -75,162 +34,197 @@
         }
       }
     },
-    "parameters": {
-      "type": "object",
-      "additionalProperties": {
-        "type": [
-          "number",
-          "null"
-        ]
-      }
-    },
-    "quality_flag": {
-      "type": "integer"
-    },
-    "location": {
-      "type": "object",
-      "required": [
-        "latitude",
-        "longitude",
-        "station_altitude_m",
-        "country"
-      ],
-      "properties": {
-        "latitude": {
-          "type": "number"
-        },
-        "longitude": {
-          "type": "number"
-        },
-        "station_altitude_m": {
-          "type": "number"
-        },
-        "country": {
-          "type": "string"
-        },
-        "state": {
-          "type": "string"
-        },
-        "region": {
-          "type": "string"
-        }
-      }
-    },
-    "sensor": {
-      "type": [
-        "object",
-        "null"
-      ],
-      "additionalProperties": {
-        "type": [
-          "object",
-          "null"
-        ],
-        "properties": {
-          "device_type": {
-            "type": "string"
-          },
-          "sensor_height_above_ground_m": {
-            "type": "number"
-          },
-          "measurement_method": {
-            "type": "object",
-            "properties": {
-              "en": {
-                "type": "string"
-              },
-              "de": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "en",
-              "de"
-            ]
-          }
-        },
-        "required": [
-          "device_type",
-          "sensor_height_above_ground_m",
-          "measurement_method"
-        ]
-      }
-    },
-    "metadata": {
+    "countries": {
       "type": "object",
       "additionalProperties": {
         "type": "object",
-        "properties": {
-          "unit": {
-            "type": "string"
-          },
-          "parameter_description": {
-            "type": "object",
-            "properties": {
-              "en": {
-                "type": "string"
-              },
-              "de": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "en",
-              "de"
-            ]
-          }
-        },
         "required": [
-          "unit",
-          "parameter_description"
-        ]
-      }
-    },
-    "record_metadata": {
-      "type": "object",
-      "required": [
-        "data_source",
-        "time_note"
-      ],
-      "properties": {
-        "data_source": {
-          "type": "object",
-          "properties": {
-            "en": {
-              "type": "string"
-            },
-            "de": {
-              "type": "string"
+          "stations"
+        ],
+        "properties": {
+          "stations": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "required": [
+                "station",
+                "location",
+                "measurements"
+              ],
+              "properties": {
+                "station": {
+                  "type": "object",
+                  "required": [
+                    "station_id",
+                    "station_name"
+                  ],
+                  "properties": {
+                    "station_id": {
+                      "type": "string"
+                    },
+                    "station_name": {
+                      "type": "string"
+                    },
+                    "station_operator": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "location": {
+                  "type": "object",
+                  "required": [
+                    "latitude",
+                    "longitude",
+                    "station_altitude_m"
+                  ],
+                  "properties": {
+                    "latitude": {
+                      "type": "number"
+                    },
+                    "longitude": {
+                      "type": "number"
+                    },
+                    "station_altitude_m": {
+                      "type": "number"
+                    },
+                    "city": {
+                      "type": "string"
+                    },
+                    "state": {
+                      "type": "string"
+                    },
+                    "region": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  }
+                },
+                "measurements": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "object",
+                    "required": [
+                      "source_reference",
+                      "parameters"
+                    ],
+                    "properties": {
+                      "source_reference": {
+                        "type": "object",
+                        "properties": {
+                          "data_zip": {
+                            "type": "string"
+                          },
+                          "metadata_zip": {
+                            "type": "string"
+                          },
+                          "description_pdf": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "data_zip",
+                          "metadata_zip",
+                          "description_pdf"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "sensors": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "required": [
+                            "device_type",
+                            "sensor_height_above_ground_m",
+                            "measurement_method"
+                          ],
+                          "properties": {
+                            "device_type": {
+                              "type": "string"
+                            },
+                            "sensor_height_above_ground_m": {
+                              "type": "number"
+                            },
+                            "measurement_method": {
+                              "type": "object",
+                              "required": [
+                                "de",
+                                "en"
+                              ],
+                              "properties": {
+                                "de": {
+                                  "type": "string"
+                                },
+                                "en": {
+                                  "type": "string"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "parameters": {
+                        "type": "object",
+                        "additionalProperties": {
+                          "type": "object",
+                          "required": [
+                            "value",
+                            "unit",
+                            "parameter_description",
+                            "data_source"
+                          ],
+                          "properties": {
+                            "value": {
+                              "type": [
+                                "number",
+                                "null"
+                              ]
+                            },
+                            "unit": {
+                              "type": "string"
+                            },
+                            "parameter_description": {
+                              "type": "object",
+                              "required": [
+                                "de",
+                                "en"
+                              ],
+                              "properties": {
+                                "de": {
+                                  "type": "string"
+                                },
+                                "en": {
+                                  "type": "string"
+                                }
+                              }
+                            },
+                            "data_source": {
+                              "type": "object",
+                              "required": [
+                                "de",
+                                "en"
+                              ],
+                              "properties": {
+                                "de": {
+                                  "type": "string"
+                                },
+                                "en": {
+                                  "type": "string"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
             }
-          },
-          "required": [
-            "en",
-            "de"
-          ]
-        },
-        "time_note": {
-          "type": "string"
+          }
         }
       }
-    },
-    "source_reference": {
-      "type": "object",
-      "description": "Reference to the original files this record was derived from",
-      "properties": {
-        "data_zip": {
-          "type": "string",
-          "description": "ZIP archive containing the raw measurement data"
-        },
-        "metadata_zip": {
-          "type": "string",
-          "description": "ZIP archive containing parameter metadata (may be same as data_zip)"
-        },
-        "description_pdf": {
-          "type": "string",
-          "description": "Path to optional PDF description of the dataset"
-        }
-      },
-      "additionalProperties": false
     }
   }
 }

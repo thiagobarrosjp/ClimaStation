@@ -1,0 +1,4211 @@
+{
+  "10_minutes": {
+    "name": "10_minutes",
+    "children": [
+      "10_minutes/air_temperature",
+      "10_minutes/extreme_temperature",
+      "10_minutes/extreme_wind",
+      "10_minutes/precipitation",
+      "10_minutes/solar",
+      "10_minutes/wind",
+      "10_minutes/wind_test"
+    ],
+    "has_data": false,
+    "data_info": null,
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/",
+    "depth": 1
+  },
+  "10_minutes/air_temperature": {
+    "name": "10_minutes/air_temperature",
+    "children": [
+      "10_minutes/air_temperature/historical",
+      "10_minutes/air_temperature/meta_data",
+      "10_minutes/air_temperature/now",
+      "10_minutes/air_temperature/recent"
+    ],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".pdf"
+      ],
+      "file_count": 2,
+      "pdf_count": 2
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/air_temperature/",
+    "depth": 2
+  },
+  "10_minutes/air_temperature/historical": {
+    "name": "10_minutes/air_temperature/historical",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 1623,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/air_temperature/historical/",
+    "depth": 3
+  },
+  "10_minutes/air_temperature/meta_data": {
+    "name": "10_minutes/air_temperature/meta_data",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".zip"
+      ],
+      "file_count": 526,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/air_temperature/meta_data/",
+    "depth": 3
+  },
+  "10_minutes/air_temperature/now": {
+    "name": "10_minutes/air_temperature/now",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 469,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/air_temperature/now/",
+    "depth": 3
+  },
+  "10_minutes/air_temperature/recent": {
+    "name": "10_minutes/air_temperature/recent",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 478,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/air_temperature/recent/",
+    "depth": 3
+  },
+  "10_minutes/extreme_temperature": {
+    "name": "10_minutes/extreme_temperature",
+    "children": [
+      "10_minutes/extreme_temperature/historical",
+      "10_minutes/extreme_temperature/meta_data",
+      "10_minutes/extreme_temperature/now",
+      "10_minutes/extreme_temperature/recent"
+    ],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".pdf"
+      ],
+      "file_count": 2,
+      "pdf_count": 2
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/extreme_temperature/",
+    "depth": 2
+  },
+  "10_minutes/extreme_temperature/historical": {
+    "name": "10_minutes/extreme_temperature/historical",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 1630,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/extreme_temperature/historical/",
+    "depth": 3
+  },
+  "10_minutes/extreme_temperature/meta_data": {
+    "name": "10_minutes/extreme_temperature/meta_data",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".zip"
+      ],
+      "file_count": 525,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/extreme_temperature/meta_data/",
+    "depth": 3
+  },
+  "10_minutes/extreme_temperature/now": {
+    "name": "10_minutes/extreme_temperature/now",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 469,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/extreme_temperature/now/",
+    "depth": 3
+  },
+  "10_minutes/extreme_temperature/recent": {
+    "name": "10_minutes/extreme_temperature/recent",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 478,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/extreme_temperature/recent/",
+    "depth": 3
+  },
+  "10_minutes/extreme_wind": {
+    "name": "10_minutes/extreme_wind",
+    "children": [
+      "10_minutes/extreme_wind/historical",
+      "10_minutes/extreme_wind/meta_data",
+      "10_minutes/extreme_wind/now",
+      "10_minutes/extreme_wind/recent"
+    ],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".pdf"
+      ],
+      "file_count": 2,
+      "pdf_count": 2
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/extreme_wind/",
+    "depth": 2
+  },
+  "10_minutes/extreme_wind/historical": {
+    "name": "10_minutes/extreme_wind/historical",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 1080,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/extreme_wind/historical/",
+    "depth": 3
+  },
+  "10_minutes/extreme_wind/meta_data": {
+    "name": "10_minutes/extreme_wind/meta_data",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".zip"
+      ],
+      "file_count": 314,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/extreme_wind/meta_data/",
+    "depth": 3
+  },
+  "10_minutes/extreme_wind/now": {
+    "name": "10_minutes/extreme_wind/now",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 547,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/extreme_wind/now/",
+    "depth": 3
+  },
+  "10_minutes/extreme_wind/recent": {
+    "name": "10_minutes/extreme_wind/recent",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 277,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/extreme_wind/recent/",
+    "depth": 3
+  },
+  "10_minutes/precipitation": {
+    "name": "10_minutes/precipitation",
+    "children": [
+      "10_minutes/precipitation/historical",
+      "10_minutes/precipitation/meta_data",
+      "10_minutes/precipitation/now",
+      "10_minutes/precipitation/recent"
+    ],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".pdf"
+      ],
+      "file_count": 2,
+      "pdf_count": 2
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/precipitation/",
+    "depth": 2
+  },
+  "10_minutes/precipitation/historical": {
+    "name": "10_minutes/precipitation/historical",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 3666,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/precipitation/historical/",
+    "depth": 3
+  },
+  "10_minutes/precipitation/meta_data": {
+    "name": "10_minutes/precipitation/meta_data",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".zip"
+      ],
+      "file_count": 1491,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/precipitation/meta_data/",
+    "depth": 3
+  },
+  "10_minutes/precipitation/now": {
+    "name": "10_minutes/precipitation/now",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 1341,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/precipitation/now/",
+    "depth": 3
+  },
+  "10_minutes/precipitation/recent": {
+    "name": "10_minutes/precipitation/recent",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 1360,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/precipitation/recent/",
+    "depth": 3
+  },
+  "10_minutes/solar": {
+    "name": "10_minutes/solar",
+    "children": [
+      "10_minutes/solar/historical",
+      "10_minutes/solar/meta_data",
+      "10_minutes/solar/now",
+      "10_minutes/solar/recent"
+    ],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".pdf"
+      ],
+      "file_count": 2,
+      "pdf_count": 2
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/solar/",
+    "depth": 2
+  },
+  "10_minutes/solar/historical": {
+    "name": "10_minutes/solar/historical",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 1050,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/solar/historical/",
+    "depth": 3
+  },
+  "10_minutes/solar/meta_data": {
+    "name": "10_minutes/solar/meta_data",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".zip"
+      ],
+      "file_count": 328,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/solar/meta_data/",
+    "depth": 3
+  },
+  "10_minutes/solar/now": {
+    "name": "10_minutes/solar/now",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 137,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/solar/now/",
+    "depth": 3
+  },
+  "10_minutes/solar/recent": {
+    "name": "10_minutes/solar/recent",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 219,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/solar/recent/",
+    "depth": 3
+  },
+  "10_minutes/wind": {
+    "name": "10_minutes/wind",
+    "children": [
+      "10_minutes/wind/historical",
+      "10_minutes/wind/meta_data",
+      "10_minutes/wind/now",
+      "10_minutes/wind/recent"
+    ],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".pdf"
+      ],
+      "file_count": 2,
+      "pdf_count": 2
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/wind/",
+    "depth": 2
+  },
+  "10_minutes/wind/historical": {
+    "name": "10_minutes/wind/historical",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 1007,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/wind/historical/",
+    "depth": 3
+  },
+  "10_minutes/wind/meta_data": {
+    "name": "10_minutes/wind/meta_data",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".zip"
+      ],
+      "file_count": 316,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/wind/meta_data/",
+    "depth": 3
+  },
+  "10_minutes/wind/now": {
+    "name": "10_minutes/wind/now",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 276,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/wind/now/",
+    "depth": 3
+  },
+  "10_minutes/wind/recent": {
+    "name": "10_minutes/wind/recent",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 277,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/wind/recent/",
+    "depth": 3
+  },
+  "10_minutes/wind_test": {
+    "name": "10_minutes/wind_test",
+    "children": [
+      "10_minutes/wind_test/historical",
+      "10_minutes/wind_test/meta_data",
+      "10_minutes/wind_test/now",
+      "10_minutes/wind_test/recent"
+    ],
+    "has_data": false,
+    "data_info": null,
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/wind_test/",
+    "depth": 2
+  },
+  "10_minutes/wind_test/historical": {
+    "name": "10_minutes/wind_test/historical",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 769,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/wind_test/historical/",
+    "depth": 3
+  },
+  "10_minutes/wind_test/meta_data": {
+    "name": "10_minutes/wind_test/meta_data",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".zip"
+      ],
+      "file_count": 278,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/wind_test/meta_data/",
+    "depth": 3
+  },
+  "10_minutes/wind_test/now": {
+    "name": "10_minutes/wind_test/now",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 276,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/wind_test/now/",
+    "depth": 3
+  },
+  "10_minutes/wind_test/recent": {
+    "name": "10_minutes/wind_test/recent",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 276,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/wind_test/recent/",
+    "depth": 3
+  },
+  "1_minute": {
+    "name": "1_minute",
+    "children": [
+      "1_minute/precipitation"
+    ],
+    "has_data": false,
+    "data_info": null,
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/1_minute/",
+    "depth": 1
+  },
+  "1_minute/precipitation": {
+    "name": "1_minute/precipitation",
+    "children": [
+      "1_minute/precipitation/historical",
+      "1_minute/precipitation/meta_data",
+      "1_minute/precipitation/now",
+      "1_minute/precipitation/recent"
+    ],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".pdf"
+      ],
+      "file_count": 2,
+      "pdf_count": 2
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/1_minute/precipitation/",
+    "depth": 2
+  },
+  "1_minute/precipitation/historical": {
+    "name": "1_minute/precipitation/historical",
+    "children": [
+      "1_minute/precipitation/historical/1993",
+      "1_minute/precipitation/historical/1994",
+      "1_minute/precipitation/historical/1995",
+      "1_minute/precipitation/historical/1996",
+      "1_minute/precipitation/historical/1997",
+      "1_minute/precipitation/historical/1998",
+      "1_minute/precipitation/historical/1999",
+      "1_minute/precipitation/historical/2000",
+      "1_minute/precipitation/historical/2001",
+      "1_minute/precipitation/historical/2002",
+      "1_minute/precipitation/historical/2003",
+      "1_minute/precipitation/historical/2004",
+      "1_minute/precipitation/historical/2005",
+      "1_minute/precipitation/historical/2006",
+      "1_minute/precipitation/historical/2007",
+      "1_minute/precipitation/historical/2008",
+      "1_minute/precipitation/historical/2009",
+      "1_minute/precipitation/historical/2010",
+      "1_minute/precipitation/historical/2011",
+      "1_minute/precipitation/historical/2012",
+      "1_minute/precipitation/historical/2013",
+      "1_minute/precipitation/historical/2014",
+      "1_minute/precipitation/historical/2015",
+      "1_minute/precipitation/historical/2016",
+      "1_minute/precipitation/historical/2017",
+      "1_minute/precipitation/historical/2018",
+      "1_minute/precipitation/historical/2019",
+      "1_minute/precipitation/historical/2020",
+      "1_minute/precipitation/historical/2021",
+      "1_minute/precipitation/historical/2022",
+      "1_minute/precipitation/historical/2023",
+      "1_minute/precipitation/historical/2024"
+    ],
+    "has_data": false,
+    "data_info": null,
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/1_minute/precipitation/historical/",
+    "depth": 3
+  },
+  "1_minute/precipitation/historical/1993": {
+    "name": "1_minute/precipitation/historical/1993",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 889,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/1_minute/precipitation/historical/1993/",
+    "depth": 4
+  },
+  "1_minute/precipitation/historical/1994": {
+    "name": "1_minute/precipitation/historical/1994",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 1043,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/1_minute/precipitation/historical/1994/",
+    "depth": 4
+  },
+  "1_minute/precipitation/historical/1995": {
+    "name": "1_minute/precipitation/historical/1995",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 1165,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/1_minute/precipitation/historical/1995/",
+    "depth": 4
+  },
+  "1_minute/precipitation/historical/1996": {
+    "name": "1_minute/precipitation/historical/1996",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 1298,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/1_minute/precipitation/historical/1996/",
+    "depth": 4
+  },
+  "1_minute/precipitation/historical/1997": {
+    "name": "1_minute/precipitation/historical/1997",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 1608,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/1_minute/precipitation/historical/1997/",
+    "depth": 4
+  },
+  "1_minute/precipitation/historical/1998": {
+    "name": "1_minute/precipitation/historical/1998",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 1668,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/1_minute/precipitation/historical/1998/",
+    "depth": 4
+  },
+  "1_minute/precipitation/historical/1999": {
+    "name": "1_minute/precipitation/historical/1999",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 1638,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/1_minute/precipitation/historical/1999/",
+    "depth": 4
+  },
+  "1_minute/precipitation/historical/2000": {
+    "name": "1_minute/precipitation/historical/2000",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 1749,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/1_minute/precipitation/historical/2000/",
+    "depth": 4
+  },
+  "1_minute/precipitation/historical/2001": {
+    "name": "1_minute/precipitation/historical/2001",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 1773,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/1_minute/precipitation/historical/2001/",
+    "depth": 4
+  },
+  "1_minute/precipitation/historical/2002": {
+    "name": "1_minute/precipitation/historical/2002",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 1775,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/1_minute/precipitation/historical/2002/",
+    "depth": 4
+  },
+  "1_minute/precipitation/historical/2003": {
+    "name": "1_minute/precipitation/historical/2003",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 1852,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/1_minute/precipitation/historical/2003/",
+    "depth": 4
+  },
+  "1_minute/precipitation/historical/2004": {
+    "name": "1_minute/precipitation/historical/2004",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 5725,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/1_minute/precipitation/historical/2004/",
+    "depth": 4
+  },
+  "1_minute/precipitation/historical/2005": {
+    "name": "1_minute/precipitation/historical/2005",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 7912,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/1_minute/precipitation/historical/2005/",
+    "depth": 4
+  },
+  "1_minute/precipitation/historical/2006": {
+    "name": "1_minute/precipitation/historical/2006",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 9358,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/1_minute/precipitation/historical/2006/",
+    "depth": 4
+  },
+  "1_minute/precipitation/historical/2007": {
+    "name": "1_minute/precipitation/historical/2007",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 10414,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/1_minute/precipitation/historical/2007/",
+    "depth": 4
+  },
+  "1_minute/precipitation/historical/2008": {
+    "name": "1_minute/precipitation/historical/2008",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 11109,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/1_minute/precipitation/historical/2008/",
+    "depth": 4
+  },
+  "1_minute/precipitation/historical/2009": {
+    "name": "1_minute/precipitation/historical/2009",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 11485,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/1_minute/precipitation/historical/2009/",
+    "depth": 4
+  },
+  "1_minute/precipitation/historical/2010": {
+    "name": "1_minute/precipitation/historical/2010",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 11464,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/1_minute/precipitation/historical/2010/",
+    "depth": 4
+  },
+  "1_minute/precipitation/historical/2011": {
+    "name": "1_minute/precipitation/historical/2011",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 11526,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/1_minute/precipitation/historical/2011/",
+    "depth": 4
+  },
+  "1_minute/precipitation/historical/2012": {
+    "name": "1_minute/precipitation/historical/2012",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 11487,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/1_minute/precipitation/historical/2012/",
+    "depth": 4
+  },
+  "1_minute/precipitation/historical/2013": {
+    "name": "1_minute/precipitation/historical/2013",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 11437,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/1_minute/precipitation/historical/2013/",
+    "depth": 4
+  },
+  "1_minute/precipitation/historical/2014": {
+    "name": "1_minute/precipitation/historical/2014",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 11441,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/1_minute/precipitation/historical/2014/",
+    "depth": 4
+  },
+  "1_minute/precipitation/historical/2015": {
+    "name": "1_minute/precipitation/historical/2015",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 11439,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/1_minute/precipitation/historical/2015/",
+    "depth": 4
+  },
+  "1_minute/precipitation/historical/2016": {
+    "name": "1_minute/precipitation/historical/2016",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 11544,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/1_minute/precipitation/historical/2016/",
+    "depth": 4
+  },
+  "1_minute/precipitation/historical/2017": {
+    "name": "1_minute/precipitation/historical/2017",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 11508,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/1_minute/precipitation/historical/2017/",
+    "depth": 4
+  },
+  "1_minute/precipitation/historical/2018": {
+    "name": "1_minute/precipitation/historical/2018",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 11445,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/1_minute/precipitation/historical/2018/",
+    "depth": 4
+  },
+  "1_minute/precipitation/historical/2019": {
+    "name": "1_minute/precipitation/historical/2019",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 11364,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/1_minute/precipitation/historical/2019/",
+    "depth": 4
+  },
+  "1_minute/precipitation/historical/2020": {
+    "name": "1_minute/precipitation/historical/2020",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 11365,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/1_minute/precipitation/historical/2020/",
+    "depth": 4
+  },
+  "1_minute/precipitation/historical/2021": {
+    "name": "1_minute/precipitation/historical/2021",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 11358,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/1_minute/precipitation/historical/2021/",
+    "depth": 4
+  },
+  "1_minute/precipitation/historical/2022": {
+    "name": "1_minute/precipitation/historical/2022",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 12426,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/1_minute/precipitation/historical/2022/",
+    "depth": 4
+  },
+  "1_minute/precipitation/historical/2023": {
+    "name": "1_minute/precipitation/historical/2023",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 15335,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/1_minute/precipitation/historical/2023/",
+    "depth": 4
+  },
+  "1_minute/precipitation/historical/2024": {
+    "name": "1_minute/precipitation/historical/2024",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 16018,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/1_minute/precipitation/historical/2024/",
+    "depth": 4
+  },
+  "1_minute/precipitation/meta_data": {
+    "name": "1_minute/precipitation/meta_data",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".zip"
+      ],
+      "file_count": 1488,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/1_minute/precipitation/meta_data/",
+    "depth": 3
+  },
+  "1_minute/precipitation/now": {
+    "name": "1_minute/precipitation/now",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 1339,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/1_minute/precipitation/now/",
+    "depth": 3
+  },
+  "1_minute/precipitation/recent": {
+    "name": "1_minute/precipitation/recent",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 1357,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/1_minute/precipitation/recent/",
+    "depth": 3
+  },
+  "5_minutes": {
+    "name": "5_minutes",
+    "children": [
+      "5_minutes/precipitation"
+    ],
+    "has_data": false,
+    "data_info": null,
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/5_minutes/",
+    "depth": 1
+  },
+  "5_minutes/precipitation": {
+    "name": "5_minutes/precipitation",
+    "children": [
+      "5_minutes/precipitation/historical",
+      "5_minutes/precipitation/meta_data",
+      "5_minutes/precipitation/now",
+      "5_minutes/precipitation/recent"
+    ],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".pdf"
+      ],
+      "file_count": 2,
+      "pdf_count": 2
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/5_minutes/precipitation/",
+    "depth": 2
+  },
+  "5_minutes/precipitation/historical": {
+    "name": "5_minutes/precipitation/historical",
+    "children": [
+      "5_minutes/precipitation/historical/1993",
+      "5_minutes/precipitation/historical/1994",
+      "5_minutes/precipitation/historical/1995",
+      "5_minutes/precipitation/historical/1996",
+      "5_minutes/precipitation/historical/1997",
+      "5_minutes/precipitation/historical/1998",
+      "5_minutes/precipitation/historical/1999",
+      "5_minutes/precipitation/historical/2000",
+      "5_minutes/precipitation/historical/2001",
+      "5_minutes/precipitation/historical/2002",
+      "5_minutes/precipitation/historical/2003",
+      "5_minutes/precipitation/historical/2004",
+      "5_minutes/precipitation/historical/2005",
+      "5_minutes/precipitation/historical/2006",
+      "5_minutes/precipitation/historical/2007",
+      "5_minutes/precipitation/historical/2008",
+      "5_minutes/precipitation/historical/2009",
+      "5_minutes/precipitation/historical/2010",
+      "5_minutes/precipitation/historical/2011",
+      "5_minutes/precipitation/historical/2012",
+      "5_minutes/precipitation/historical/2013",
+      "5_minutes/precipitation/historical/2014",
+      "5_minutes/precipitation/historical/2015",
+      "5_minutes/precipitation/historical/2016",
+      "5_minutes/precipitation/historical/2017",
+      "5_minutes/precipitation/historical/2018",
+      "5_minutes/precipitation/historical/2019",
+      "5_minutes/precipitation/historical/2020",
+      "5_minutes/precipitation/historical/2021",
+      "5_minutes/precipitation/historical/2022",
+      "5_minutes/precipitation/historical/2023",
+      "5_minutes/precipitation/historical/2024"
+    ],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt"
+      ],
+      "file_count": 1,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/5_minutes/precipitation/historical/",
+    "depth": 3
+  },
+  "5_minutes/precipitation/historical/1993": {
+    "name": "5_minutes/precipitation/historical/1993",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".zip"
+      ],
+      "file_count": 888,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/5_minutes/precipitation/historical/1993/",
+    "depth": 4
+  },
+  "5_minutes/precipitation/historical/1994": {
+    "name": "5_minutes/precipitation/historical/1994",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".zip"
+      ],
+      "file_count": 1042,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/5_minutes/precipitation/historical/1994/",
+    "depth": 4
+  },
+  "5_minutes/precipitation/historical/1995": {
+    "name": "5_minutes/precipitation/historical/1995",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".zip"
+      ],
+      "file_count": 1164,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/5_minutes/precipitation/historical/1995/",
+    "depth": 4
+  },
+  "5_minutes/precipitation/historical/1996": {
+    "name": "5_minutes/precipitation/historical/1996",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".zip"
+      ],
+      "file_count": 1301,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/5_minutes/precipitation/historical/1996/",
+    "depth": 4
+  },
+  "5_minutes/precipitation/historical/1997": {
+    "name": "5_minutes/precipitation/historical/1997",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".zip"
+      ],
+      "file_count": 1616,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/5_minutes/precipitation/historical/1997/",
+    "depth": 4
+  },
+  "5_minutes/precipitation/historical/1998": {
+    "name": "5_minutes/precipitation/historical/1998",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".zip"
+      ],
+      "file_count": 1688,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/5_minutes/precipitation/historical/1998/",
+    "depth": 4
+  },
+  "5_minutes/precipitation/historical/1999": {
+    "name": "5_minutes/precipitation/historical/1999",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".zip"
+      ],
+      "file_count": 1758,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/5_minutes/precipitation/historical/1999/",
+    "depth": 4
+  },
+  "5_minutes/precipitation/historical/2000": {
+    "name": "5_minutes/precipitation/historical/2000",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".zip"
+      ],
+      "file_count": 1786,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/5_minutes/precipitation/historical/2000/",
+    "depth": 4
+  },
+  "5_minutes/precipitation/historical/2001": {
+    "name": "5_minutes/precipitation/historical/2001",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".zip"
+      ],
+      "file_count": 1832,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/5_minutes/precipitation/historical/2001/",
+    "depth": 4
+  },
+  "5_minutes/precipitation/historical/2002": {
+    "name": "5_minutes/precipitation/historical/2002",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".zip"
+      ],
+      "file_count": 3036,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/5_minutes/precipitation/historical/2002/",
+    "depth": 4
+  },
+  "5_minutes/precipitation/historical/2003": {
+    "name": "5_minutes/precipitation/historical/2003",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".zip"
+      ],
+      "file_count": 5407,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/5_minutes/precipitation/historical/2003/",
+    "depth": 4
+  },
+  "5_minutes/precipitation/historical/2004": {
+    "name": "5_minutes/precipitation/historical/2004",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".zip"
+      ],
+      "file_count": 6655,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/5_minutes/precipitation/historical/2004/",
+    "depth": 4
+  },
+  "5_minutes/precipitation/historical/2005": {
+    "name": "5_minutes/precipitation/historical/2005",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".zip"
+      ],
+      "file_count": 9023,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/5_minutes/precipitation/historical/2005/",
+    "depth": 4
+  },
+  "5_minutes/precipitation/historical/2006": {
+    "name": "5_minutes/precipitation/historical/2006",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".zip"
+      ],
+      "file_count": 10595,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/5_minutes/precipitation/historical/2006/",
+    "depth": 4
+  },
+  "5_minutes/precipitation/historical/2007": {
+    "name": "5_minutes/precipitation/historical/2007",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".zip"
+      ],
+      "file_count": 11724,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/5_minutes/precipitation/historical/2007/",
+    "depth": 4
+  },
+  "5_minutes/precipitation/historical/2008": {
+    "name": "5_minutes/precipitation/historical/2008",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".zip"
+      ],
+      "file_count": 11710,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/5_minutes/precipitation/historical/2008/",
+    "depth": 4
+  },
+  "5_minutes/precipitation/historical/2009": {
+    "name": "5_minutes/precipitation/historical/2009",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".zip"
+      ],
+      "file_count": 11623,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/5_minutes/precipitation/historical/2009/",
+    "depth": 4
+  },
+  "5_minutes/precipitation/historical/2010": {
+    "name": "5_minutes/precipitation/historical/2010",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".zip"
+      ],
+      "file_count": 11771,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/5_minutes/precipitation/historical/2010/",
+    "depth": 4
+  },
+  "5_minutes/precipitation/historical/2011": {
+    "name": "5_minutes/precipitation/historical/2011",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".zip"
+      ],
+      "file_count": 11829,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/5_minutes/precipitation/historical/2011/",
+    "depth": 4
+  },
+  "5_minutes/precipitation/historical/2012": {
+    "name": "5_minutes/precipitation/historical/2012",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".zip"
+      ],
+      "file_count": 11790,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/5_minutes/precipitation/historical/2012/",
+    "depth": 4
+  },
+  "5_minutes/precipitation/historical/2013": {
+    "name": "5_minutes/precipitation/historical/2013",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".zip"
+      ],
+      "file_count": 11726,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/5_minutes/precipitation/historical/2013/",
+    "depth": 4
+  },
+  "5_minutes/precipitation/historical/2014": {
+    "name": "5_minutes/precipitation/historical/2014",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".zip"
+      ],
+      "file_count": 11718,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/5_minutes/precipitation/historical/2014/",
+    "depth": 4
+  },
+  "5_minutes/precipitation/historical/2015": {
+    "name": "5_minutes/precipitation/historical/2015",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".zip"
+      ],
+      "file_count": 11703,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/5_minutes/precipitation/historical/2015/",
+    "depth": 4
+  },
+  "5_minutes/precipitation/historical/2016": {
+    "name": "5_minutes/precipitation/historical/2016",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".zip"
+      ],
+      "file_count": 11684,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/5_minutes/precipitation/historical/2016/",
+    "depth": 4
+  },
+  "5_minutes/precipitation/historical/2017": {
+    "name": "5_minutes/precipitation/historical/2017",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".zip"
+      ],
+      "file_count": 11656,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/5_minutes/precipitation/historical/2017/",
+    "depth": 4
+  },
+  "5_minutes/precipitation/historical/2018": {
+    "name": "5_minutes/precipitation/historical/2018",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".zip"
+      ],
+      "file_count": 11630,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/5_minutes/precipitation/historical/2018/",
+    "depth": 4
+  },
+  "5_minutes/precipitation/historical/2019": {
+    "name": "5_minutes/precipitation/historical/2019",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".zip"
+      ],
+      "file_count": 11567,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/5_minutes/precipitation/historical/2019/",
+    "depth": 4
+  },
+  "5_minutes/precipitation/historical/2020": {
+    "name": "5_minutes/precipitation/historical/2020",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".zip"
+      ],
+      "file_count": 11506,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/5_minutes/precipitation/historical/2020/",
+    "depth": 4
+  },
+  "5_minutes/precipitation/historical/2021": {
+    "name": "5_minutes/precipitation/historical/2021",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".zip"
+      ],
+      "file_count": 11374,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/5_minutes/precipitation/historical/2021/",
+    "depth": 4
+  },
+  "5_minutes/precipitation/historical/2022": {
+    "name": "5_minutes/precipitation/historical/2022",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 12910,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/5_minutes/precipitation/historical/2022/",
+    "depth": 4
+  },
+  "5_minutes/precipitation/historical/2023": {
+    "name": "5_minutes/precipitation/historical/2023",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".zip"
+      ],
+      "file_count": 12089,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/5_minutes/precipitation/historical/2023/",
+    "depth": 4
+  },
+  "5_minutes/precipitation/historical/2024": {
+    "name": "5_minutes/precipitation/historical/2024",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 16035,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/5_minutes/precipitation/historical/2024/",
+    "depth": 4
+  },
+  "5_minutes/precipitation/meta_data": {
+    "name": "5_minutes/precipitation/meta_data",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".zip"
+      ],
+      "file_count": 1487,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/5_minutes/precipitation/meta_data/",
+    "depth": 3
+  },
+  "5_minutes/precipitation/now": {
+    "name": "5_minutes/precipitation/now",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 1339,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/5_minutes/precipitation/now/",
+    "depth": 3
+  },
+  "5_minutes/precipitation/recent": {
+    "name": "5_minutes/precipitation/recent",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 1357,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/5_minutes/precipitation/recent/",
+    "depth": 3
+  },
+  "annual": {
+    "name": "annual",
+    "children": [
+      "annual/climate_indices",
+      "annual/kl",
+      "annual/more_precip",
+      "annual/weather_phenomena"
+    ],
+    "has_data": false,
+    "data_info": null,
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/annual/",
+    "depth": 1
+  },
+  "annual/climate_indices": {
+    "name": "annual/climate_indices",
+    "children": [
+      "annual/climate_indices/kl",
+      "annual/climate_indices/precip"
+    ],
+    "has_data": false,
+    "data_info": null,
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/annual/climate_indices/",
+    "depth": 2
+  },
+  "annual/climate_indices/kl": {
+    "name": "annual/climate_indices/kl",
+    "children": [
+      "annual/climate_indices/kl/historical",
+      "annual/climate_indices/kl/recent",
+      "annual/climate_indices/kl/timeseries_overview"
+    ],
+    "has_data": false,
+    "data_info": null,
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/annual/climate_indices/kl/",
+    "depth": 3
+  },
+  "annual/climate_indices/kl/historical": {
+    "name": "annual/climate_indices/kl/historical",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 1114,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/annual/climate_indices/kl/historical/",
+    "depth": 4
+  },
+  "annual/climate_indices/kl/recent": {
+    "name": "annual/climate_indices/kl/recent",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 495,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/annual/climate_indices/kl/recent/",
+    "depth": 4
+  },
+  "annual/climate_indices/kl/timeseries_overview": {
+    "name": "annual/climate_indices/kl/timeseries_overview",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt"
+      ],
+      "file_count": 18,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/annual/climate_indices/kl/timeseries_overview/",
+    "depth": 4
+  },
+  "annual/climate_indices/precip": {
+    "name": "annual/climate_indices/precip",
+    "children": [
+      "annual/climate_indices/precip/historical",
+      "annual/climate_indices/precip/recent",
+      "annual/climate_indices/precip/timeseries_overview"
+    ],
+    "has_data": false,
+    "data_info": null,
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/annual/climate_indices/precip/",
+    "depth": 3
+  },
+  "annual/climate_indices/precip/historical": {
+    "name": "annual/climate_indices/precip/historical",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 6054,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/annual/climate_indices/precip/historical/",
+    "depth": 4
+  },
+  "annual/climate_indices/precip/recent": {
+    "name": "annual/climate_indices/precip/recent",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 2331,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/annual/climate_indices/precip/recent/",
+    "depth": 4
+  },
+  "annual/climate_indices/precip/timeseries_overview": {
+    "name": "annual/climate_indices/precip/timeseries_overview",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt"
+      ],
+      "file_count": 24,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/annual/climate_indices/precip/timeseries_overview/",
+    "depth": 4
+  },
+  "annual/kl": {
+    "name": "annual/kl",
+    "children": [
+      "annual/kl/historical",
+      "annual/kl/recent",
+      "annual/kl/timeseries_overview"
+    ],
+    "has_data": false,
+    "data_info": null,
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/annual/kl/",
+    "depth": 2
+  },
+  "annual/kl/historical": {
+    "name": "annual/kl/historical",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 1164,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/annual/kl/historical/",
+    "depth": 3
+  },
+  "annual/kl/recent": {
+    "name": "annual/kl/recent",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 510,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/annual/kl/recent/",
+    "depth": 3
+  },
+  "annual/kl/timeseries_overview": {
+    "name": "annual/kl/timeseries_overview",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt"
+      ],
+      "file_count": 32,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/annual/kl/timeseries_overview/",
+    "depth": 3
+  },
+  "annual/more_precip": {
+    "name": "annual/more_precip",
+    "children": [
+      "annual/more_precip/historical",
+      "annual/more_precip/recent",
+      "annual/more_precip/timeseries_overview"
+    ],
+    "has_data": false,
+    "data_info": null,
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/annual/more_precip/",
+    "depth": 2
+  },
+  "annual/more_precip/historical": {
+    "name": "annual/more_precip/historical",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 5992,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/annual/more_precip/historical/",
+    "depth": 3
+  },
+  "annual/more_precip/recent": {
+    "name": "annual/more_precip/recent",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 2234,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/annual/more_precip/recent/",
+    "depth": 3
+  },
+  "annual/more_precip/timeseries_overview": {
+    "name": "annual/more_precip/timeseries_overview",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt"
+      ],
+      "file_count": 11,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/annual/more_precip/timeseries_overview/",
+    "depth": 3
+  },
+  "annual/weather_phenomena": {
+    "name": "annual/weather_phenomena",
+    "children": [
+      "annual/weather_phenomena/historical",
+      "annual/weather_phenomena/recent",
+      "annual/weather_phenomena/timeseries_overview"
+    ],
+    "has_data": false,
+    "data_info": null,
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/annual/weather_phenomena/",
+    "depth": 2
+  },
+  "annual/weather_phenomena/historical": {
+    "name": "annual/weather_phenomena/historical",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 1026,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/annual/weather_phenomena/historical/",
+    "depth": 3
+  },
+  "annual/weather_phenomena/recent": {
+    "name": "annual/weather_phenomena/recent",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 27,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/annual/weather_phenomena/recent/",
+    "depth": 3
+  },
+  "annual/weather_phenomena/timeseries_overview": {
+    "name": "annual/weather_phenomena/timeseries_overview",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt"
+      ],
+      "file_count": 24,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/annual/weather_phenomena/timeseries_overview/",
+    "depth": 3
+  },
+  "daily": {
+    "name": "daily",
+    "children": [
+      "daily/kl",
+      "daily/more_precip",
+      "daily/more_weather_phenomena",
+      "daily/soil_temperature",
+      "daily/solar",
+      "daily/water_equiv",
+      "daily/weather_phenomena"
+    ],
+    "has_data": false,
+    "data_info": null,
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/daily/",
+    "depth": 1
+  },
+  "daily/kl": {
+    "name": "daily/kl",
+    "children": [
+      "daily/kl/historical",
+      "daily/kl/recent",
+      "daily/kl/timeseries_overview"
+    ],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".pdf"
+      ],
+      "file_count": 2,
+      "pdf_count": 2
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/daily/kl/",
+    "depth": 2
+  },
+  "daily/kl/historical": {
+    "name": "daily/kl/historical",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 1282,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/daily/kl/historical/",
+    "depth": 3
+  },
+  "daily/kl/recent": {
+    "name": "daily/kl/recent",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 577,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/daily/kl/recent/",
+    "depth": 3
+  },
+  "daily/kl/timeseries_overview": {
+    "name": "daily/kl/timeseries_overview",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt"
+      ],
+      "file_count": 42,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/daily/kl/timeseries_overview/",
+    "depth": 3
+  },
+  "daily/more_precip": {
+    "name": "daily/more_precip",
+    "children": [
+      "daily/more_precip/historical",
+      "daily/more_precip/recent",
+      "daily/more_precip/timeseries_overview"
+    ],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".pdf"
+      ],
+      "file_count": 2,
+      "pdf_count": 2
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/daily/more_precip/",
+    "depth": 2
+  },
+  "daily/more_precip/historical": {
+    "name": "daily/more_precip/historical",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 6106,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/daily/more_precip/historical/",
+    "depth": 3
+  },
+  "daily/more_precip/recent": {
+    "name": "daily/more_precip/recent",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 2307,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/daily/more_precip/recent/",
+    "depth": 3
+  },
+  "daily/more_precip/timeseries_overview": {
+    "name": "daily/more_precip/timeseries_overview",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt"
+      ],
+      "file_count": 12,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/daily/more_precip/timeseries_overview/",
+    "depth": 3
+  },
+  "daily/more_weather_phenomena": {
+    "name": "daily/more_weather_phenomena",
+    "children": [
+      "daily/more_weather_phenomena/historical",
+      "daily/more_weather_phenomena/recent",
+      "daily/more_weather_phenomena/timeseries_overview"
+    ],
+    "has_data": false,
+    "data_info": null,
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/daily/more_weather_phenomena/",
+    "depth": 2
+  },
+  "daily/more_weather_phenomena/historical": {
+    "name": "daily/more_weather_phenomena/historical",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 5325,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/daily/more_weather_phenomena/historical/",
+    "depth": 3
+  },
+  "daily/more_weather_phenomena/recent": {
+    "name": "daily/more_weather_phenomena/recent",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 20,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/daily/more_weather_phenomena/recent/",
+    "depth": 3
+  },
+  "daily/more_weather_phenomena/timeseries_overview": {
+    "name": "daily/more_weather_phenomena/timeseries_overview",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt"
+      ],
+      "file_count": 12,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/daily/more_weather_phenomena/timeseries_overview/",
+    "depth": 3
+  },
+  "daily/soil_temperature": {
+    "name": "daily/soil_temperature",
+    "children": [
+      "daily/soil_temperature/historical",
+      "daily/soil_temperature/recent",
+      "daily/soil_temperature/timeseries_overview"
+    ],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".pdf"
+      ],
+      "file_count": 2,
+      "pdf_count": 2
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/daily/soil_temperature/",
+    "depth": 2
+  },
+  "daily/soil_temperature/historical": {
+    "name": "daily/soil_temperature/historical",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 490,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/daily/soil_temperature/historical/",
+    "depth": 3
+  },
+  "daily/soil_temperature/recent": {
+    "name": "daily/soil_temperature/recent",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 321,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/daily/soil_temperature/recent/",
+    "depth": 3
+  },
+  "daily/soil_temperature/timeseries_overview": {
+    "name": "daily/soil_temperature/timeseries_overview",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt"
+      ],
+      "file_count": 15,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/daily/soil_temperature/timeseries_overview/",
+    "depth": 3
+  },
+  "daily/solar": {
+    "name": "daily/solar",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".pdf",
+        ".zip",
+        ".txt"
+      ],
+      "file_count": 56,
+      "pdf_count": 2
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/daily/solar/",
+    "depth": 2
+  },
+  "daily/water_equiv": {
+    "name": "daily/water_equiv",
+    "children": [
+      "daily/water_equiv/historical",
+      "daily/water_equiv/recent",
+      "daily/water_equiv/timeseries_overview"
+    ],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".pdf"
+      ],
+      "file_count": 2,
+      "pdf_count": 2
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/daily/water_equiv/",
+    "depth": 2
+  },
+  "daily/water_equiv/historical": {
+    "name": "daily/water_equiv/historical",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 1116,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/daily/water_equiv/historical/",
+    "depth": 3
+  },
+  "daily/water_equiv/recent": {
+    "name": "daily/water_equiv/recent",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 533,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/daily/water_equiv/recent/",
+    "depth": 3
+  },
+  "daily/water_equiv/timeseries_overview": {
+    "name": "daily/water_equiv/timeseries_overview",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt"
+      ],
+      "file_count": 12,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/daily/water_equiv/timeseries_overview/",
+    "depth": 3
+  },
+  "daily/weather_phenomena": {
+    "name": "daily/weather_phenomena",
+    "children": [
+      "daily/weather_phenomena/historical",
+      "daily/weather_phenomena/recent",
+      "daily/weather_phenomena/timeseries_overview"
+    ],
+    "has_data": false,
+    "data_info": null,
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/daily/weather_phenomena/",
+    "depth": 2
+  },
+  "daily/weather_phenomena/historical": {
+    "name": "daily/weather_phenomena/historical",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 1041,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/daily/weather_phenomena/historical/",
+    "depth": 3
+  },
+  "daily/weather_phenomena/recent": {
+    "name": "daily/weather_phenomena/recent",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 18,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/daily/weather_phenomena/recent/",
+    "depth": 3
+  },
+  "daily/weather_phenomena/timeseries_overview": {
+    "name": "daily/weather_phenomena/timeseries_overview",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt"
+      ],
+      "file_count": 27,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/daily/weather_phenomena/timeseries_overview/",
+    "depth": 3
+  },
+  "hourly": {
+    "name": "hourly",
+    "children": [
+      "hourly/air_temperature",
+      "hourly/cloud_type",
+      "hourly/cloudiness",
+      "hourly/dew_point",
+      "hourly/extreme_wind",
+      "hourly/moisture",
+      "hourly/precipitation",
+      "hourly/pressure",
+      "hourly/soil_temperature",
+      "hourly/solar",
+      "hourly/sun",
+      "hourly/visibility",
+      "hourly/weather_phenomena",
+      "hourly/wind",
+      "hourly/wind_synop"
+    ],
+    "has_data": false,
+    "data_info": null,
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/",
+    "depth": 1
+  },
+  "hourly/air_temperature": {
+    "name": "hourly/air_temperature",
+    "children": [
+      "hourly/air_temperature/historical",
+      "hourly/air_temperature/recent",
+      "hourly/air_temperature/timeseries_overview"
+    ],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".pdf"
+      ],
+      "file_count": 2,
+      "pdf_count": 2
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/air_temperature/",
+    "depth": 2
+  },
+  "hourly/air_temperature/historical": {
+    "name": "hourly/air_temperature/historical",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 637,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/air_temperature/historical/",
+    "depth": 3
+  },
+  "hourly/air_temperature/recent": {
+    "name": "hourly/air_temperature/recent",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 506,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/air_temperature/recent/",
+    "depth": 3
+  },
+  "hourly/air_temperature/timeseries_overview": {
+    "name": "hourly/air_temperature/timeseries_overview",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt"
+      ],
+      "file_count": 6,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/air_temperature/timeseries_overview/",
+    "depth": 3
+  },
+  "hourly/cloud_type": {
+    "name": "hourly/cloud_type",
+    "children": [
+      "hourly/cloud_type/historical",
+      "hourly/cloud_type/recent",
+      "hourly/cloud_type/timeseries_overview"
+    ],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".pdf"
+      ],
+      "file_count": 2,
+      "pdf_count": 2
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/cloud_type/",
+    "depth": 2
+  },
+  "hourly/cloud_type/historical": {
+    "name": "hourly/cloud_type/historical",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 596,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/cloud_type/historical/",
+    "depth": 3
+  },
+  "hourly/cloud_type/recent": {
+    "name": "hourly/cloud_type/recent",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 205,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/cloud_type/recent/",
+    "depth": 3
+  },
+  "hourly/cloud_type/timeseries_overview": {
+    "name": "hourly/cloud_type/timeseries_overview",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt"
+      ],
+      "file_count": 34,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/cloud_type/timeseries_overview/",
+    "depth": 3
+  },
+  "hourly/cloudiness": {
+    "name": "hourly/cloudiness",
+    "children": [
+      "hourly/cloudiness/historical",
+      "hourly/cloudiness/recent",
+      "hourly/cloudiness/timeseries_overview"
+    ],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".pdf"
+      ],
+      "file_count": 2,
+      "pdf_count": 2
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/cloudiness/",
+    "depth": 2
+  },
+  "hourly/cloudiness/historical": {
+    "name": "hourly/cloudiness/historical",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 595,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/cloudiness/historical/",
+    "depth": 3
+  },
+  "hourly/cloudiness/recent": {
+    "name": "hourly/cloudiness/recent",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 205,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/cloudiness/recent/",
+    "depth": 3
+  },
+  "hourly/cloudiness/timeseries_overview": {
+    "name": "hourly/cloudiness/timeseries_overview",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt"
+      ],
+      "file_count": 2,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/cloudiness/timeseries_overview/",
+    "depth": 3
+  },
+  "hourly/dew_point": {
+    "name": "hourly/dew_point",
+    "children": [
+      "hourly/dew_point/historical",
+      "hourly/dew_point/recent",
+      "hourly/dew_point/timeseries_overview"
+    ],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".pdf"
+      ],
+      "file_count": 2,
+      "pdf_count": 2
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/dew_point/",
+    "depth": 2
+  },
+  "hourly/dew_point/historical": {
+    "name": "hourly/dew_point/historical",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 706,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/dew_point/historical/",
+    "depth": 3
+  },
+  "hourly/dew_point/recent": {
+    "name": "hourly/dew_point/recent",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 586,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/dew_point/recent/",
+    "depth": 3
+  },
+  "hourly/dew_point/timeseries_overview": {
+    "name": "hourly/dew_point/timeseries_overview",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt"
+      ],
+      "file_count": 4,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/dew_point/timeseries_overview/",
+    "depth": 3
+  },
+  "hourly/extreme_wind": {
+    "name": "hourly/extreme_wind",
+    "children": [
+      "hourly/extreme_wind/historical",
+      "hourly/extreme_wind/recent",
+      "hourly/extreme_wind/timeseries_overview"
+    ],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".pdf"
+      ],
+      "file_count": 2,
+      "pdf_count": 2
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/extreme_wind/",
+    "depth": 2
+  },
+  "hourly/extreme_wind/historical": {
+    "name": "hourly/extreme_wind/historical",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 434,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/extreme_wind/historical/",
+    "depth": 3
+  },
+  "hourly/extreme_wind/recent": {
+    "name": "hourly/extreme_wind/recent",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 347,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/extreme_wind/recent/",
+    "depth": 3
+  },
+  "hourly/extreme_wind/timeseries_overview": {
+    "name": "hourly/extreme_wind/timeseries_overview",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt"
+      ],
+      "file_count": 2,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/extreme_wind/timeseries_overview/",
+    "depth": 3
+  },
+  "hourly/moisture": {
+    "name": "hourly/moisture",
+    "children": [
+      "hourly/moisture/historical",
+      "hourly/moisture/recent"
+    ],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".pdf"
+      ],
+      "file_count": 2,
+      "pdf_count": 2
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/moisture/",
+    "depth": 2
+  },
+  "hourly/moisture/historical": {
+    "name": "hourly/moisture/historical",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 705,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/moisture/historical/",
+    "depth": 3
+  },
+  "hourly/moisture/recent": {
+    "name": "hourly/moisture/recent",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 586,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/moisture/recent/",
+    "depth": 3
+  },
+  "hourly/precipitation": {
+    "name": "hourly/precipitation",
+    "children": [
+      "hourly/precipitation/historical",
+      "hourly/precipitation/recent"
+    ],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".pdf"
+      ],
+      "file_count": 2,
+      "pdf_count": 2
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/precipitation/",
+    "depth": 2
+  },
+  "hourly/precipitation/historical": {
+    "name": "hourly/precipitation/historical",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 1454,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/precipitation/historical/",
+    "depth": 3
+  },
+  "hourly/precipitation/recent": {
+    "name": "hourly/precipitation/recent",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 1371,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/precipitation/recent/",
+    "depth": 3
+  },
+  "hourly/pressure": {
+    "name": "hourly/pressure",
+    "children": [
+      "hourly/pressure/historical",
+      "hourly/pressure/recent",
+      "hourly/pressure/timeseries_overview"
+    ],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".pdf"
+      ],
+      "file_count": 2,
+      "pdf_count": 2
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/pressure/",
+    "depth": 2
+  },
+  "hourly/pressure/historical": {
+    "name": "hourly/pressure/historical",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 313,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/pressure/historical/",
+    "depth": 3
+  },
+  "hourly/pressure/recent": {
+    "name": "hourly/pressure/recent",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 213,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/pressure/recent/",
+    "depth": 3
+  },
+  "hourly/pressure/timeseries_overview": {
+    "name": "hourly/pressure/timeseries_overview",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt"
+      ],
+      "file_count": 4,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/pressure/timeseries_overview/",
+    "depth": 3
+  },
+  "hourly/soil_temperature": {
+    "name": "hourly/soil_temperature",
+    "children": [
+      "hourly/soil_temperature/historical",
+      "hourly/soil_temperature/recent",
+      "hourly/soil_temperature/timeseries_overview"
+    ],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".pdf"
+      ],
+      "file_count": 2,
+      "pdf_count": 2
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/soil_temperature/",
+    "depth": 2
+  },
+  "hourly/soil_temperature/historical": {
+    "name": "hourly/soil_temperature/historical",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 491,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/soil_temperature/historical/",
+    "depth": 3
+  },
+  "hourly/soil_temperature/recent": {
+    "name": "hourly/soil_temperature/recent",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 321,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/soil_temperature/recent/",
+    "depth": 3
+  },
+  "hourly/soil_temperature/timeseries_overview": {
+    "name": "hourly/soil_temperature/timeseries_overview",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt"
+      ],
+      "file_count": 12,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/soil_temperature/timeseries_overview/",
+    "depth": 3
+  },
+  "hourly/solar": {
+    "name": "hourly/solar",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".pdf",
+        ".zip",
+        ".txt"
+      ],
+      "file_count": 56,
+      "pdf_count": 2
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/solar/",
+    "depth": 2
+  },
+  "hourly/sun": {
+    "name": "hourly/sun",
+    "children": [
+      "hourly/sun/historical",
+      "hourly/sun/recent",
+      "hourly/sun/timeseries_overview"
+    ],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".pdf"
+      ],
+      "file_count": 2,
+      "pdf_count": 2
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/sun/",
+    "depth": 2
+  },
+  "hourly/sun/historical": {
+    "name": "hourly/sun/historical",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 637,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/sun/historical/",
+    "depth": 3
+  },
+  "hourly/sun/recent": {
+    "name": "hourly/sun/recent",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 243,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/sun/recent/",
+    "depth": 3
+  },
+  "hourly/sun/timeseries_overview": {
+    "name": "hourly/sun/timeseries_overview",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt"
+      ],
+      "file_count": 3,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/sun/timeseries_overview/",
+    "depth": 3
+  },
+  "hourly/visibility": {
+    "name": "hourly/visibility",
+    "children": [
+      "hourly/visibility/historical",
+      "hourly/visibility/recent",
+      "hourly/visibility/timeseries_overview"
+    ],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".pdf"
+      ],
+      "file_count": 2,
+      "pdf_count": 2
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/visibility/",
+    "depth": 2
+  },
+  "hourly/visibility/historical": {
+    "name": "hourly/visibility/historical",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 597,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/visibility/historical/",
+    "depth": 3
+  },
+  "hourly/visibility/recent": {
+    "name": "hourly/visibility/recent",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 204,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/visibility/recent/",
+    "depth": 3
+  },
+  "hourly/visibility/timeseries_overview": {
+    "name": "hourly/visibility/timeseries_overview",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt"
+      ],
+      "file_count": 2,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/visibility/timeseries_overview/",
+    "depth": 3
+  },
+  "hourly/weather_phenomena": {
+    "name": "hourly/weather_phenomena",
+    "children": [
+      "hourly/weather_phenomena/historical",
+      "hourly/weather_phenomena/recent",
+      "hourly/weather_phenomena/timeseries_overview"
+    ],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".pdf"
+      ],
+      "file_count": 2,
+      "pdf_count": 2
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/weather_phenomena/",
+    "depth": 2
+  },
+  "hourly/weather_phenomena/historical": {
+    "name": "hourly/weather_phenomena/historical",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 305,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/weather_phenomena/historical/",
+    "depth": 3
+  },
+  "hourly/weather_phenomena/recent": {
+    "name": "hourly/weather_phenomena/recent",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 203,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/weather_phenomena/recent/",
+    "depth": 3
+  },
+  "hourly/weather_phenomena/timeseries_overview": {
+    "name": "hourly/weather_phenomena/timeseries_overview",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt"
+      ],
+      "file_count": 2,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/weather_phenomena/timeseries_overview/",
+    "depth": 3
+  },
+  "hourly/wind": {
+    "name": "hourly/wind",
+    "children": [
+      "hourly/wind/historical",
+      "hourly/wind/recent",
+      "hourly/wind/timeseries_overview"
+    ],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".pdf"
+      ],
+      "file_count": 2,
+      "pdf_count": 2
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/wind/",
+    "depth": 2
+  },
+  "hourly/wind/historical": {
+    "name": "hourly/wind/historical",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 454,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/wind/historical/",
+    "depth": 3
+  },
+  "hourly/wind/recent": {
+    "name": "hourly/wind/recent",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 296,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/wind/recent/",
+    "depth": 3
+  },
+  "hourly/wind/timeseries_overview": {
+    "name": "hourly/wind/timeseries_overview",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt"
+      ],
+      "file_count": 5,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/wind/timeseries_overview/",
+    "depth": 3
+  },
+  "hourly/wind_synop": {
+    "name": "hourly/wind_synop",
+    "children": [
+      "hourly/wind_synop/historical",
+      "hourly/wind_synop/recent",
+      "hourly/wind_synop/timeseries_overview"
+    ],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".pdf"
+      ],
+      "file_count": 2,
+      "pdf_count": 2
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/wind_synop/",
+    "depth": 2
+  },
+  "hourly/wind_synop/historical": {
+    "name": "hourly/wind_synop/historical",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 432,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/wind_synop/historical/",
+    "depth": 3
+  },
+  "hourly/wind_synop/recent": {
+    "name": "hourly/wind_synop/recent",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 344,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/wind_synop/recent/",
+    "depth": 3
+  },
+  "hourly/wind_synop/timeseries_overview": {
+    "name": "hourly/wind_synop/timeseries_overview",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt"
+      ],
+      "file_count": 4,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/wind_synop/timeseries_overview/",
+    "depth": 3
+  },
+  "monthly": {
+    "name": "monthly",
+    "children": [
+      "monthly/climate_indices",
+      "monthly/kl",
+      "monthly/more_precip",
+      "monthly/weather_phenomena"
+    ],
+    "has_data": false,
+    "data_info": null,
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/monthly/",
+    "depth": 1
+  },
+  "monthly/climate_indices": {
+    "name": "monthly/climate_indices",
+    "children": [
+      "monthly/climate_indices/kl",
+      "monthly/climate_indices/precip"
+    ],
+    "has_data": false,
+    "data_info": null,
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/monthly/climate_indices/",
+    "depth": 2
+  },
+  "monthly/climate_indices/kl": {
+    "name": "monthly/climate_indices/kl",
+    "children": [
+      "monthly/climate_indices/kl/historical",
+      "monthly/climate_indices/kl/recent",
+      "monthly/climate_indices/kl/timeseries_overview"
+    ],
+    "has_data": false,
+    "data_info": null,
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/monthly/climate_indices/kl/",
+    "depth": 3
+  },
+  "monthly/climate_indices/kl/historical": {
+    "name": "monthly/climate_indices/kl/historical",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 1129,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/monthly/climate_indices/kl/historical/",
+    "depth": 4
+  },
+  "monthly/climate_indices/kl/recent": {
+    "name": "monthly/climate_indices/kl/recent",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 486,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/monthly/climate_indices/kl/recent/",
+    "depth": 4
+  },
+  "monthly/climate_indices/kl/timeseries_overview": {
+    "name": "monthly/climate_indices/kl/timeseries_overview",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt"
+      ],
+      "file_count": 18,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/monthly/climate_indices/kl/timeseries_overview/",
+    "depth": 4
+  },
+  "monthly/climate_indices/precip": {
+    "name": "monthly/climate_indices/precip",
+    "children": [
+      "monthly/climate_indices/precip/historical",
+      "monthly/climate_indices/precip/recent",
+      "monthly/climate_indices/precip/timeseries_overview"
+    ],
+    "has_data": false,
+    "data_info": null,
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/monthly/climate_indices/precip/",
+    "depth": 3
+  },
+  "monthly/climate_indices/precip/historical": {
+    "name": "monthly/climate_indices/precip/historical",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 6092,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/monthly/climate_indices/precip/historical/",
+    "depth": 4
+  },
+  "monthly/climate_indices/precip/recent": {
+    "name": "monthly/climate_indices/precip/recent",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 2353,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/monthly/climate_indices/precip/recent/",
+    "depth": 4
+  },
+  "monthly/climate_indices/precip/timeseries_overview": {
+    "name": "monthly/climate_indices/precip/timeseries_overview",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt"
+      ],
+      "file_count": 24,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/monthly/climate_indices/precip/timeseries_overview/",
+    "depth": 4
+  },
+  "monthly/kl": {
+    "name": "monthly/kl",
+    "children": [
+      "monthly/kl/historical",
+      "monthly/kl/recent",
+      "monthly/kl/timeseries_overview"
+    ],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".pdf"
+      ],
+      "file_count": 2,
+      "pdf_count": 2
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/monthly/kl/",
+    "depth": 2
+  },
+  "monthly/kl/historical": {
+    "name": "monthly/kl/historical",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 1172,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/monthly/kl/historical/",
+    "depth": 3
+  },
+  "monthly/kl/recent": {
+    "name": "monthly/kl/recent",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 505,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/monthly/kl/recent/",
+    "depth": 3
+  },
+  "monthly/kl/timeseries_overview": {
+    "name": "monthly/kl/timeseries_overview",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt"
+      ],
+      "file_count": 26,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/monthly/kl/timeseries_overview/",
+    "depth": 3
+  },
+  "monthly/more_precip": {
+    "name": "monthly/more_precip",
+    "children": [
+      "monthly/more_precip/historical",
+      "monthly/more_precip/recent",
+      "monthly/more_precip/timeseries_overview"
+    ],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".pdf"
+      ],
+      "file_count": 2,
+      "pdf_count": 2
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/monthly/more_precip/",
+    "depth": 2
+  },
+  "monthly/more_precip/historical": {
+    "name": "monthly/more_precip/historical",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 6118,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/monthly/more_precip/historical/",
+    "depth": 3
+  },
+  "monthly/more_precip/recent": {
+    "name": "monthly/more_precip/recent",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 2303,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/monthly/more_precip/recent/",
+    "depth": 3
+  },
+  "monthly/more_precip/timeseries_overview": {
+    "name": "monthly/more_precip/timeseries_overview",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt"
+      ],
+      "file_count": 11,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/monthly/more_precip/timeseries_overview/",
+    "depth": 3
+  },
+  "monthly/weather_phenomena": {
+    "name": "monthly/weather_phenomena",
+    "children": [
+      "monthly/weather_phenomena/historical",
+      "monthly/weather_phenomena/recent",
+      "monthly/weather_phenomena/timeseries_overview"
+    ],
+    "has_data": false,
+    "data_info": null,
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/monthly/weather_phenomena/",
+    "depth": 2
+  },
+  "monthly/weather_phenomena/historical": {
+    "name": "monthly/weather_phenomena/historical",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 1013,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/monthly/weather_phenomena/historical/",
+    "depth": 3
+  },
+  "monthly/weather_phenomena/recent": {
+    "name": "monthly/weather_phenomena/recent",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 18,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/monthly/weather_phenomena/recent/",
+    "depth": 3
+  },
+  "monthly/weather_phenomena/timeseries_overview": {
+    "name": "monthly/weather_phenomena/timeseries_overview",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt"
+      ],
+      "file_count": 24,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/monthly/weather_phenomena/timeseries_overview/",
+    "depth": 3
+  },
+  "multi_annual": {
+    "name": "multi_annual",
+    "children": [
+      "multi_annual/mean_61-90",
+      "multi_annual/mean_61-90_obsolete",
+      "multi_annual/mean_71-00",
+      "multi_annual/mean_71-00_obsolete",
+      "multi_annual/mean_81-10",
+      "multi_annual/mean_81-10_obsolete",
+      "multi_annual/mean_91-20"
+    ],
+    "has_data": false,
+    "data_info": null,
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/multi_annual/",
+    "depth": 1
+  },
+  "multi_annual/mean_61-90": {
+    "name": "multi_annual/mean_61-90",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt"
+      ],
+      "file_count": 15,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/multi_annual/mean_61-90/",
+    "depth": 2
+  },
+  "multi_annual/mean_61-90_obsolete": {
+    "name": "multi_annual/mean_61-90_obsolete",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".pdf",
+        ".txt"
+      ],
+      "file_count": 22,
+      "pdf_count": 2
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/multi_annual/mean_61-90_obsolete/",
+    "depth": 2
+  },
+  "multi_annual/mean_71-00": {
+    "name": "multi_annual/mean_71-00",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt"
+      ],
+      "file_count": 15,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/multi_annual/mean_71-00/",
+    "depth": 2
+  },
+  "multi_annual/mean_71-00_obsolete": {
+    "name": "multi_annual/mean_71-00_obsolete",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".pdf",
+        ".txt"
+      ],
+      "file_count": 16,
+      "pdf_count": 2
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/multi_annual/mean_71-00_obsolete/",
+    "depth": 2
+  },
+  "multi_annual/mean_81-10": {
+    "name": "multi_annual/mean_81-10",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt"
+      ],
+      "file_count": 15,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/multi_annual/mean_81-10/",
+    "depth": 2
+  },
+  "multi_annual/mean_81-10_obsolete": {
+    "name": "multi_annual/mean_81-10_obsolete",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".pdf",
+        ".txt"
+      ],
+      "file_count": 22,
+      "pdf_count": 2
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/multi_annual/mean_81-10_obsolete/",
+    "depth": 2
+  },
+  "multi_annual/mean_91-20": {
+    "name": "multi_annual/mean_91-20",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt"
+      ],
+      "file_count": 15,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/multi_annual/mean_91-20/",
+    "depth": 2
+  },
+  "subdaily": {
+    "name": "subdaily",
+    "children": [
+      "subdaily/air_temperature",
+      "subdaily/cloudiness",
+      "subdaily/extreme_wind",
+      "subdaily/moisture",
+      "subdaily/pressure",
+      "subdaily/soil",
+      "subdaily/standard_format",
+      "subdaily/visibility",
+      "subdaily/wind"
+    ],
+    "has_data": false,
+    "data_info": null,
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/subdaily/",
+    "depth": 1
+  },
+  "subdaily/air_temperature": {
+    "name": "subdaily/air_temperature",
+    "children": [
+      "subdaily/air_temperature/historical",
+      "subdaily/air_temperature/recent",
+      "subdaily/air_temperature/timeseries_overview"
+    ],
+    "has_data": false,
+    "data_info": null,
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/subdaily/air_temperature/",
+    "depth": 2
+  },
+  "subdaily/air_temperature/historical": {
+    "name": "subdaily/air_temperature/historical",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 1175,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/subdaily/air_temperature/historical/",
+    "depth": 3
+  },
+  "subdaily/air_temperature/recent": {
+    "name": "subdaily/air_temperature/recent",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 506,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/subdaily/air_temperature/recent/",
+    "depth": 3
+  },
+  "subdaily/air_temperature/timeseries_overview": {
+    "name": "subdaily/air_temperature/timeseries_overview",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt"
+      ],
+      "file_count": 6,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/subdaily/air_temperature/timeseries_overview/",
+    "depth": 3
+  },
+  "subdaily/cloudiness": {
+    "name": "subdaily/cloudiness",
+    "children": [
+      "subdaily/cloudiness/historical",
+      "subdaily/cloudiness/recent",
+      "subdaily/cloudiness/timeseries_overview"
+    ],
+    "has_data": false,
+    "data_info": null,
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/subdaily/cloudiness/",
+    "depth": 2
+  },
+  "subdaily/cloudiness/historical": {
+    "name": "subdaily/cloudiness/historical",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 1126,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/subdaily/cloudiness/historical/",
+    "depth": 3
+  },
+  "subdaily/cloudiness/recent": {
+    "name": "subdaily/cloudiness/recent",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 204,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/subdaily/cloudiness/recent/",
+    "depth": 3
+  },
+  "subdaily/cloudiness/timeseries_overview": {
+    "name": "subdaily/cloudiness/timeseries_overview",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt"
+      ],
+      "file_count": 6,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/subdaily/cloudiness/timeseries_overview/",
+    "depth": 3
+  },
+  "subdaily/extreme_wind": {
+    "name": "subdaily/extreme_wind",
+    "children": [
+      "subdaily/extreme_wind/historical",
+      "subdaily/extreme_wind/recent",
+      "subdaily/extreme_wind/timeseries_overview"
+    ],
+    "has_data": false,
+    "data_info": null,
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/subdaily/extreme_wind/",
+    "depth": 2
+  },
+  "subdaily/extreme_wind/historical": {
+    "name": "subdaily/extreme_wind/historical",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 888,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/subdaily/extreme_wind/historical/",
+    "depth": 3
+  },
+  "subdaily/extreme_wind/recent": {
+    "name": "subdaily/extreme_wind/recent",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 736,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/subdaily/extreme_wind/recent/",
+    "depth": 3
+  },
+  "subdaily/extreme_wind/timeseries_overview": {
+    "name": "subdaily/extreme_wind/timeseries_overview",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt"
+      ],
+      "file_count": 4,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/subdaily/extreme_wind/timeseries_overview/",
+    "depth": 3
+  },
+  "subdaily/moisture": {
+    "name": "subdaily/moisture",
+    "children": [
+      "subdaily/moisture/historical",
+      "subdaily/moisture/recent",
+      "subdaily/moisture/timeseries_overview"
+    ],
+    "has_data": false,
+    "data_info": null,
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/subdaily/moisture/",
+    "depth": 2
+  },
+  "subdaily/moisture/historical": {
+    "name": "subdaily/moisture/historical",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 1161,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/subdaily/moisture/historical/",
+    "depth": 3
+  },
+  "subdaily/moisture/recent": {
+    "name": "subdaily/moisture/recent",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 506,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/subdaily/moisture/recent/",
+    "depth": 3
+  },
+  "subdaily/moisture/timeseries_overview": {
+    "name": "subdaily/moisture/timeseries_overview",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt"
+      ],
+      "file_count": 12,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/subdaily/moisture/timeseries_overview/",
+    "depth": 3
+  },
+  "subdaily/pressure": {
+    "name": "subdaily/pressure",
+    "children": [
+      "subdaily/pressure/historical",
+      "subdaily/pressure/recent",
+      "subdaily/pressure/timeseries_overview"
+    ],
+    "has_data": false,
+    "data_info": null,
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/subdaily/pressure/",
+    "depth": 2
+  },
+  "subdaily/pressure/historical": {
+    "name": "subdaily/pressure/historical",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 492,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/subdaily/pressure/historical/",
+    "depth": 3
+  },
+  "subdaily/pressure/recent": {
+    "name": "subdaily/pressure/recent",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 208,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/subdaily/pressure/recent/",
+    "depth": 3
+  },
+  "subdaily/pressure/timeseries_overview": {
+    "name": "subdaily/pressure/timeseries_overview",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt"
+      ],
+      "file_count": 3,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/subdaily/pressure/timeseries_overview/",
+    "depth": 3
+  },
+  "subdaily/soil": {
+    "name": "subdaily/soil",
+    "children": [
+      "subdaily/soil/historical",
+      "subdaily/soil/recent",
+      "subdaily/soil/timeseries_overview"
+    ],
+    "has_data": false,
+    "data_info": null,
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/subdaily/soil/",
+    "depth": 2
+  },
+  "subdaily/soil/historical": {
+    "name": "subdaily/soil/historical",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 1030,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/subdaily/soil/historical/",
+    "depth": 3
+  },
+  "subdaily/soil/recent": {
+    "name": "subdaily/soil/recent",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 35,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/subdaily/soil/recent/",
+    "depth": 3
+  },
+  "subdaily/soil/timeseries_overview": {
+    "name": "subdaily/soil/timeseries_overview",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt"
+      ],
+      "file_count": 2,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/subdaily/soil/timeseries_overview/",
+    "depth": 3
+  },
+  "subdaily/standard_format": {
+    "name": "subdaily/standard_format",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".gz",
+        ".pdf",
+        ".txt"
+      ],
+      "file_count": 165,
+      "pdf_count": 5
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/subdaily/standard_format/",
+    "depth": 2
+  },
+  "subdaily/visibility": {
+    "name": "subdaily/visibility",
+    "children": [
+      "subdaily/visibility/historical",
+      "subdaily/visibility/recent",
+      "subdaily/visibility/timeseries_overview"
+    ],
+    "has_data": false,
+    "data_info": null,
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/subdaily/visibility/",
+    "depth": 2
+  },
+  "subdaily/visibility/historical": {
+    "name": "subdaily/visibility/historical",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 1065,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/subdaily/visibility/historical/",
+    "depth": 3
+  },
+  "subdaily/visibility/recent": {
+    "name": "subdaily/visibility/recent",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 204,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/subdaily/visibility/recent/",
+    "depth": 3
+  },
+  "subdaily/visibility/timeseries_overview": {
+    "name": "subdaily/visibility/timeseries_overview",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt"
+      ],
+      "file_count": 2,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/subdaily/visibility/timeseries_overview/",
+    "depth": 3
+  },
+  "subdaily/wind": {
+    "name": "subdaily/wind",
+    "children": [
+      "subdaily/wind/historical",
+      "subdaily/wind/recent",
+      "subdaily/wind/timeseries_overview"
+    ],
+    "has_data": false,
+    "data_info": null,
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/subdaily/wind/",
+    "depth": 2
+  },
+  "subdaily/wind/historical": {
+    "name": "subdaily/wind/historical",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 1142,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/subdaily/wind/historical/",
+    "depth": 3
+  },
+  "subdaily/wind/recent": {
+    "name": "subdaily/wind/recent",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt",
+        ".zip"
+      ],
+      "file_count": 236,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/subdaily/wind/recent/",
+    "depth": 3
+  },
+  "subdaily/wind/timeseries_overview": {
+    "name": "subdaily/wind/timeseries_overview",
+    "children": [],
+    "has_data": true,
+    "data_info": {
+      "file_types": [
+        ".txt"
+      ],
+      "file_count": 6,
+      "pdf_count": null
+    },
+    "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/subdaily/wind/timeseries_overview/",
+    "depth": 3
+  }
+}

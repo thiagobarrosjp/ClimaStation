@@ -1054,3 +1054,19 @@ https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_
 }
 
 </pre>
+
+- 2025-07-09:
+- Changed the v1_universal_schema.json to a truly timestamp-centric record format. 
+- Created the file example_data_record.json to serve as an example with real data using the v1_universal_schema.json. The file is still empty.
+- Created a new folder structure under /data/. At the higher levels this structure looks like this:
+<pre>
+- data/
+-- germany
+--- 0_debug/
+--- 1_crawl_dwd/
+--- 2_downloaded_files/
+--- 3_parsed_files/
+--- 4_merged_files/
+</pre>
+- The script create_dwd_folder_structure.py inside 1_crawl_dwd was used to create a folder structure inside 2_downloaded_files. Basis for this structure is the file dwd_structure.json.
+- Updated the script crawl_dwd.py to use the new folder structure and the new file names.
