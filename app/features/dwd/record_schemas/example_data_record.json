@@ -1,0 +1,94 @@
+{
+    "timestamp": {
+        "value": "1993-04-28T12:30:00",
+        "time_reference": "UTC"
+    },
+    "countries": {
+        "DE": {
+            "stations": {
+                "3": {
+                    "station": {
+                        "station_id": "3",
+                        "station_name": "Unknown"
+                    },
+                    "location": {
+                        "latitude": 0.0,
+                        "longitude": 0.0,
+                        "station_altitude_m": 0
+                    },
+                    "measurements": {
+                        "10_minutes_air_temperature": {
+                            "source_reference": {
+                                "data_zip": "10minutenwerte_TU_00003_19930428_19991231_hist.zip",
+                                "metadata_zip": "",
+                                "description_pdf": ""
+                            },
+                            "parameters": {
+                                "air_temperature": {
+                                    "value": 24.9,
+                                    "unit": "C",
+                                    "parameter_description": {
+                                        "de": "Lufttemperatur",
+                                        "en": "Air Temperature"
+                                    },
+                                    "data_source": {
+                                        "de": "DWD",
+                                        "en": "DWD"
+                                    }
+                                },
+                                "ground_temperature": {
+                                    "value": 28.4,
+                                    "unit": "C",
+                                    "parameter_description": {
+                                        "de": "Temperatur 5 cm ueber Boden",
+                                        "en": "Air Temp. 5 cm above ground"
+                                    },
+                                    "data_source": {
+                                        "de": "DWD",
+                                        "en": "DWD"
+                                    }
+                                },
+                                "air_pressure": {
+                                    "value": 987.3,
+                                    "unit": "hPa",
+                                    "parameter_description": {
+                                        "de": "Luftdruck",
+                                        "en": "Air Pressure"
+                                    },
+                                    "data_source": {
+                                        "de": "DWD",
+                                        "en": "DWD"
+                                    }
+                                },
+                                "humidity": {
+                                    "value": 23.0,
+                                    "unit": "%",
+                                    "parameter_description": {
+                                        "de": "Relative Luftfeuchtigkeit",
+                                        "en": "Relative Humidity"
+                                    },
+                                    "data_source": {
+                                        "de": "DWD",
+                                        "en": "DWD"
+                                    }
+                                },
+                                "dew_point": {
+                                    "value": 2.4,
+                                    "unit": "C",
+                                    "parameter_description": {
+                                        "de": "Taupunkt",
+                                        "en": "Dew Point"
+                                    },
+                                    "data_source": {
+                                        "de": "DWD",
+                                        "en": "DWD"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

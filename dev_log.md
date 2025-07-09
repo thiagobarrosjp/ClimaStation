@@ -1070,3 +1070,5 @@ https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_
 </pre>
 - The script create_dwd_folder_structure.py inside 1_crawl_dwd was used to create a folder structure inside 2_downloaded_files. Basis for this structure is the file dwd_structure.json.
 - Updated the script crawl_dwd.py to use the new folder structure and the new file names.
+- Manually uploaded two zip files to the folder 2_downloaded_files.
+- Created the script parse_single_zip.py.
