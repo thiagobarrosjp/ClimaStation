@@ -1072,3 +1072,8 @@ https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_
 - Updated the script crawl_dwd.py to use the new folder structure and the new file names.
 - Manually uploaded two zip files to the folder 2_downloaded_files.
 - Created the script parse_single_zip.py.
+
+- 2025-07-10:
+- I changed so much I don't even know where to start. 
+- Parsing will be done by specialized scripts. I created the script parse_germany_10_minutes_air_temperature.py to parse only the dataset 10_minutes_air_temperature. For now, it can only parse the zip files from the historical folder and add the parsed data. 
+- But the code is an absolute mess. 
