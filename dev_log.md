@@ -831,69 +831,7 @@ CLIMASTATION-BACKEND
 - Validated 30+ DWD PDF files manually and excluded 4 special cases that don’t follow the standard structure (multi-annual mean datasets and subdaily template)
 - Created pdf_description_manual.pretty.json. 
 - Updated `README.md` in `tools/dwd_pipeline/` to reflect this final schema approach
-- The current folder structure:
-<pre>
-CLIMASTATION-BACKEND		
-    - .vscode\
-        -- settings.json
-    - app\
-        -- features\
-            --- dwd\  
-                ---- record_schemas\ 
-                    ----- field_map.json  
-                    ----- field_map.py  
-                    ----- README.md  
-                    ----- v1_universal_schema.json  
-                ---- __init__.py
-                ---- metadata_parser.py  
-                ---- record_validator.py  
-                ---- schemas.py            
-            --- tools\
-                ---- dwd_pipeline\ 
-                    ---- field_descriptions\
-                        ----- pdf_description_manual.pretty.json
-                    ---- __init__.py 
-                    ---- build_station_summary.py                       
-                    ---- crawl_dwd.py  
-                    ---- download_samples.py   
-                    ---- extract_dataset_fields.py  
-                    ---- inspect_archives.py                      
-                    ---- README.md     
-                    ---- utils.py                   
-            --- __init__.py  
-        -- __init__.py
-    - data\          
-        -- 0_debug\  
-            --- crawl_dwd_debug.log  
-            --- download_samples_debug.log  
-            --- extract_dataset_fields_debug.log  
-            --- inspect_archives_debug.log  
-            --- station_summary_debug.log    
-        -- 1_structure\    
-            --- [timestamp]_structure.json  
-            --- [timestamp]_tree.txt  
-            --- [timestamp]_urls.jsonl    
-        -- 2_samples\    
-            --- raw\
-            --- downloaded_files.txt              
-        -- 3_inspection\ 
-            --- [timestamp]_archive_inspection.jsonl
-            --- [timestamp]_archive_inspection.pretty.json
-        -- 4_summaries\  
-            --- [timestamp]_station_and dataset_summary.pretty.json  
-        -- 5_matching\  
-            --- station_profile.merged.pretty.json  
-        -- 6_fields  
-            --- dataset_fields.json
-        -- README.md       
-    - tests\
-        -- test_dwd_pipeline.py	
-    - .env
-    - .gitignore
-    - dev_log.md  
-    - README.md  
-    - requirements.txt
-</pre>
+
 
 
 - 2025-07-06:
@@ -1077,3 +1015,85 @@ https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_
 - I changed so much I don't even know where to start. 
 - Parsing will be done by specialized scripts. I created the script parse_germany_10_minutes_air_temperature.py to parse only the dataset 10_minutes_air_temperature. For now, it can only parse the zip files from the historical folder and add the parsed data. 
 - But the code is an absolute mess. 
+
+2025-07-12:
+- Cleaning up and refactoring the current folder structure and scripts.
+- The current folder structure:
+<pre>
+CLIMASTATION-BACKEND		
+    - .vscode\
+        -- settings.json
+    - app\
+        -- config\
+            --- ten_minutes_air_temperature_config.py
+        -- features\
+            --- dwd\  
+                ---- record_schemas\ 
+                    ----- field_map.json  
+                    ----- field_map.py  
+                    ----- README.md  
+                    ----- v1_universal_schema.json  
+                ---- __init__.py          
+            --- tools\
+                ---- dwd_pipeline\
+                    ---- archives\ 
+                        ----- climastation_data_pipeline.md
+                        ----- crawl_dwd.py
+                        ----- download_samples.py
+                        ----- parse_germany_10_minutes_air_temperature.py
+                        ----- utils.py
+                    ---- field_descriptions\
+                        ----- pdf_description_manual.pretty.json
+                    ---- io\
+                        ----- zip_handler.py
+                    ---- main\
+                        ----- parse_10_minutes_air_temperature.py
+                    ---- parsing\
+                        ----- raw_parser.py
+                        ----- sensor_metadata.py
+                    ---- utils\
+                        ----- logger.py
+                    ---- __init__.py                      
+            --- __init__.py  
+        -- __init__.py
+        -- io\
+            --- zip_handler.py
+        -- main\
+            --- parse_10_minutes_air_temperature.py
+        -- parsing\
+            --- raw_parser.py
+            --- sensor_metadata.py
+        -- utils\
+            --- logger.py
+    - data\          
+        -- 0_debug\  
+            --- crawl_dwd_debug.log  
+            --- download_samples_debug.log  
+            --- extract_dataset_fields_debug.log  
+            --- inspect_archives_debug.log  
+            --- station_summary_debug.log    
+        -- 1_structure\    
+            --- [timestamp]_structure.json  
+            --- [timestamp]_tree.txt  
+            --- [timestamp]_urls.jsonl    
+        -- 2_samples\    
+            --- raw\
+            --- downloaded_files.txt              
+        -- 3_inspection\ 
+            --- [timestamp]_archive_inspection.jsonl
+            --- [timestamp]_archive_inspection.pretty.json
+        -- 4_summaries\  
+            --- [timestamp]_station_and dataset_summary.pretty.json  
+        -- 5_matching\  
+            --- station_profile.merged.pretty.json  
+        -- 6_fields  
+            --- dataset_fields.json
+        -- README.md       
+    - tests\
+        -- test_dwd_pipeline.py	
+    - .env
+    - .gitignore
+    - dev_log.md  
+    - README.md  
+    - requirements.txt
+</pre>
