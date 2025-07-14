@@ -1025,6 +1025,7 @@ CLIMASTATION-BACKEND
         -- settings.json
     - app\
         -- config\
+            --- __init__.py
             --- ten_minutes_air_temperature_config.py
         -- features\
             --- dwd\  
@@ -1044,27 +1045,22 @@ CLIMASTATION-BACKEND
                         ----- utils.py
                     ---- field_descriptions\
                         ----- pdf_description_manual.pretty.json
-                    ---- io\
-                        ----- zip_handler.py
-                    ---- main\
-                        ----- parse_10_minutes_air_temperature.py
-                    ---- parsing\
-                        ----- raw_parser.py
-                        ----- sensor_metadata.py
-                    ---- utils\
-                        ----- logger.py
-                    ---- __init__.py                      
+                    ---- __init__.py
+                    ---- pretty_print_jsonl.py                      
             --- __init__.py  
-        -- __init__.py
-        -- io\
+        -- io_helpers\
             --- zip_handler.py
         -- main\
-            --- parse_10_minutes_air_temperature.py
+            --- __init__.py
+            --- parse_10_minutes_air_temperature_akt.py
+            --- parse_10_minutes_air_temperature_hist.py
+            --- parse_10_minutes_air_temperature_now.py
         -- parsing\
             --- raw_parser.py
             --- sensor_metadata.py
         -- utils\
             --- logger.py
+        -- __init__.py
     - data\          
         -- 0_debug\  
             --- crawl_dwd_debug.log  
@@ -1072,23 +1068,13 @@ CLIMASTATION-BACKEND
             --- extract_dataset_fields_debug.log  
             --- inspect_archives_debug.log  
             --- station_summary_debug.log    
-        -- 1_structure\    
-            --- [timestamp]_structure.json  
-            --- [timestamp]_tree.txt  
-            --- [timestamp]_urls.jsonl    
-        -- 2_samples\    
-            --- raw\
-            --- downloaded_files.txt              
-        -- 3_inspection\ 
-            --- [timestamp]_archive_inspection.jsonl
-            --- [timestamp]_archive_inspection.pretty.json
-        -- 4_summaries\  
-            --- [timestamp]_station_and dataset_summary.pretty.json  
-        -- 5_matching\  
-            --- station_profile.merged.pretty.json  
-        -- 6_fields  
-            --- dataset_fields.json
-        -- README.md       
+        -- 1_crawl_dwd\ 
+            --- create_dwd_folder_structure.py
+            --- dwd_structure.json  
+            --- dwd_tree.txt  
+            --- dwd_urls.jsonl    
+        -- 2_downloaded_files\                           
+        -- 3_parsed_files\     
     - tests\
         -- test_dwd_pipeline.py	
     - .env
