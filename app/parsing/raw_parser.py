@@ -1,3 +1,26 @@
+"""
+Raw Weather Data Parser - Complete Fixed Version
+
+This script processes German weather station ZIP files containing 10-minute air temperature data.
+It extracts raw measurement data and metadata, then outputs structured JSONL files.
+
+KEY FIX: Uses PARAM_MAP for CSV column processing instead of PARAM_NAME_MAP
+This ensures actual measurement data is extracted from columns like TT_10, PP_10, etc.
+
+Expected Input Structure:
+├── data/germany/2_downloaded_files/10_minutes/air_temperature/
+│   ├── historical/
+│   │   ├── zehn_min_tu_[STATION_ID]_[DATE_RANGE].zip  # Raw data ZIP files
+│   │   └── zehn_min_tu_Beschreibung_Stationen.txt     # Station descriptions
+│   └── meta_data/
+│       └── Meta_Daten_zehn_min_tu_[STATION_ID].zip    # Metadata ZIP files
+
+Expected Output Structure:
+├── data/germany/3_parsed_files/parsed_10_minutes/parsed_air_temperature/
+│   └── parsed_historical/
+│       └── parsed_zehn_min_tu_[STATION_ID]_[DATE_RANGE].jsonl
+"""
+
 import json
 import orjson
 import io
@@ -18,12 +41,14 @@ from config.ten_minutes_air_temperature_config import (
 from io_helpers.zip_handler import extract_txt_files_from_zip
 from parsing.sensor_metadata import parse_sensor_metadata, load_sensor_metadata
 
+
 def safe_int_conversion(value: str, default: int = 0) -> int:
     """Safely convert string to int with fallback."""
     try:
         return int(str(value).strip())
     except (ValueError, TypeError):
         return default
+
 
 def safe_float_conversion(value: str, default: float = 0.0) -> float:
     """Safely convert string to float with fallback."""
@@ -32,88 +57,13 @@ def safe_float_conversion(value: str, default: float = 0.0) -> float:
     except (ValueError, TypeError):
         return default
 
-def load_station_info(station_info_file: Path) -> Optional[pd.DataFrame]:
-    """Load station information from file with error handling."""
-    if not station_info_file.exists():
-        return None
-    
-    try:
-        df = pd.read_fwf(
-            station_info_file,
-            skiprows=2,
-            header=None,
-            names=["station_id", "von_datum", "bis_datum", "station_altitude_m", 
-                   "latitude", "longitude", "station_name", "state", "delivery"],
-            dtype=str
-        )
-        df["station_id"] = df["station_id"].astype(str).str.strip().str.lstrip("0")
-        return df.apply(lambda col: col.str.strip() if col.dtype == "object" else col)
-    except Exception as e:
-        logging.error(f"Failed to load station info from {station_info_file}: {e}")
-        return None
-
-def get_station_info(station_info_df: Optional[pd.DataFrame], station_id: int, date_int: int, logger) -> dict:
-    """Get station information for specific station and date."""
-    if station_info_df is None:
-        return {}
-    
-    try:
-        df = station_info_df[station_info_df['station_id'] == str(station_id)]
-        for _, row in df.iterrows():
-            start = safe_int_conversion(row['von_datum'])
-            end = safe_int_conversion(row['bis_datum'])
-            
-            if start <= date_int <= end:
-                return row.to_dict()
-    except Exception as e:
-        logger.warning(f"Error getting station info for {station_id}: {e}")
-    
-    return {}
-
-def find_matching_row(df: pd.DataFrame, date: int, logger) -> dict:
-    """Find matching row in DataFrame for given date."""
-    for _, row in df.iterrows():
-        try:
-            start = safe_int_conversion(row['Von_Datum'])
-            end = safe_int_conversion(row['Bis_Datum'])
-            
-            if start <= date <= end:
-                return row.to_dict()
-        except Exception as e:
-            logger.debug(f"[find_matching_row] Failed to process row: {e}")
-            continue
-    
-    return {}
-
-def load_metadata_df(path: Path, logger) -> pd.DataFrame:
-    """Load metadata DataFrame from file."""
-    try:
-        with open(path, encoding='latin-1') as f:
-            lines = []
-            for line in f:
-                if line.startswith("Legende"):
-                    break
-                if not line.startswith("generiert"):
-                    lines.append(line)
-        
-        df = pd.read_csv(
-            io.StringIO("".join(lines)), 
-            sep=';', 
-            skipinitialspace=True, 
-            dtype=str
-        )
-        df = df.apply(lambda col: col.str.strip() if col.dtype == "object" else col)
-        logger.debug(f"Parsed metadata from {path.name} with {len(df)} rows")
-        return df
-    except Exception as e:
-        logger.error(f"Failed to load metadata from {path}: {e}")
-        return pd.DataFrame()
 
 def normalize_columns(df: pd.DataFrame, column_map: dict) -> pd.DataFrame:
     """Normalize DataFrame columns using provided mapping."""
     df.columns = df.columns.str.strip()
     df.rename(columns=column_map, inplace=True)
     return df
+
 
 def process_zip(raw_zip_path: Path, station_info_file: Path, logger):
     """Process weather data ZIP file."""
@@ -146,6 +96,15 @@ def process_zip(raw_zip_path: Path, station_info_file: Path, logger):
             encoding='latin-1'
         )
         
+        # Debug: Log the actual columns found
+        logger.info(f"📋 Raw CSV columns: {list(raw_df.columns)}")
+        logger.info(f"📊 Raw data shape: {raw_df.shape}")
+        logger.info(f"🔧 PARAM_MAP keys: {list(PARAM_MAP.keys())}")
+        
+        # Check which measurement columns are available
+        available_measurement_cols = [col for col in raw_df.columns if col in PARAM_MAP]
+        logger.info(f"📈 Available measurement columns: {available_measurement_cols}")
+        
         # Validate required columns
         if "MESS_DATUM" not in raw_df.columns:
             logger.error(f"MESS_DATUM column not found in {raw_txt_files[0]}")
@@ -161,6 +120,7 @@ def process_zip(raw_zip_path: Path, station_info_file: Path, logger):
             
         first_date = raw_df["timestamp"].min().normalize().date()
         last_date = raw_df["timestamp"].max().normalize().date()
+        logger.info(f"📅 Date range: {first_date} to {last_date}")
         
         # === Load metadata ===
         if not meta_zip.exists():
@@ -298,61 +258,62 @@ def process_zip(raw_zip_path: Path, station_info_file: Path, logger):
                 # Sensors metadata with better error handling
                 sensors = []
                 try:
-                    valid_sensor_meta = sensor_meta_df[
-                        (sensor_meta_df["from_date"].astype(str) <= end.strftime("%Y%m%d")) &
-                        (sensor_meta_df["to_date"].astype(str) >= start.strftime("%Y%m%d"))
-                    ]
+                    # Filter sensor metadata for the current date range
+                    date_int = int(start.strftime("%Y%m%d"))
+                    sensors = parse_sensor_metadata(sensor_meta_df, station_id, date_int, logger)
                     
-                    for _, meta_row in valid_sensor_meta.iterrows():
-                        param_raw = str(meta_row.get("parameter", ""))
-                        param_entry = PARAM_NAME_MAP.get(param_raw, {"en": param_raw, "de": param_raw})
-                        
-                        sensor_type = str(meta_row.get("sensor_type", "")).strip()
-                        method = str(meta_row.get("measurement_method", "")).strip()
-                        
-                        sensors.append({
-                            "measured_variable": {
-                                "de": param_entry.get("de", param_raw),
-                                "en": param_entry.get("en", param_raw)
-                            },
-                            "sensor_type": {
-                                "de": SENSOR_TYPE_TRANSLATIONS.get(sensor_type, {"de": sensor_type, "en": sensor_type}).get("de", sensor_type),
-                                "en": SENSOR_TYPE_TRANSLATIONS.get(sensor_type, {"de": sensor_type, "en": sensor_type}).get("en", sensor_type)
-                            },
-                            "measurement_method": {
-                                "de": MEASUREMENT_METHOD_TRANSLATIONS.get(method, {"de": method, "en": method}).get("de", method),
-                                "en": MEASUREMENT_METHOD_TRANSLATIONS.get(method, {"de": method, "en": method}).get("en", method)
-                            },
-                            "sensor_height_m": safe_float_conversion(meta_row.get("sensor_height_m", "0"))
-                        })
                 except Exception as e:
                     logger.warning(f"Failed to process sensor metadata: {e}")
                 
-                # Measurements with better error handling
+                # === FIXED MEASUREMENTS PROCESSING ===
                 measurements = []
+                logger.info(f"🔧 Processing {len(df_range)} measurements for date range {start} to {end}")
+                
+                # Count successful parameter extractions for debugging
+                param_extraction_counts = {param: 0 for param in PARAM_MAP.values()}
+                
                 for _, row in df_range.iterrows():
                     try:
                         params = {}
-                        for raw_key, param_info in PARAM_NAME_MAP.items():
-                            if raw_key in row and pd.notna(row[raw_key]):
-                                # Handle both dict and string formats
-                                if isinstance(param_info, dict):
-                                    target_key = param_info.get("en", raw_key)
-                                else:
-                                    target_key = param_info
-                                
-                                try:
-                                    params[target_key] = float(row[raw_key])
-                                except (ValueError, TypeError):
-                                    params[target_key] = None
                         
-                        measurements.append({
-                            "timestamp": row["timestamp"].strftime("%Y-%m-%dT%H:%M:%S"),
-                            "parameters": params
-                        })
+                        # Use PARAM_MAP instead of PARAM_NAME_MAP for CSV column processing
+                        for csv_column, english_name in PARAM_MAP.items():
+                            if csv_column in row and pd.notna(row[csv_column]):
+                                try:
+                                    # Convert to float, handling potential string values
+                                    raw_value = str(row[csv_column]).strip()
+                                    if raw_value and raw_value != '-999':  # Skip missing data markers
+                                        value = float(raw_value)
+                                        params[english_name] = value
+                                        param_extraction_counts[english_name] += 1
+                                except (ValueError, TypeError):
+                                    logger.debug(f"Could not convert {csv_column} value '{row[csv_column]}' to float")
+                                    continue
+                        
+                        # Only add measurement if it has at least one parameter
+                        if params:
+                            measurements.append({
+                                "timestamp": row["timestamp"].strftime("%Y-%m-%dT%H:%M:%S"),
+                                "parameters": params
+                            })
+                        
                     except Exception as e:
                         logger.debug(f"Failed to process measurement row: {e}")
                         continue
+                
+                # Log parameter extraction statistics
+                logger.info(f"📊 Parameter extraction counts:")
+                for param, count in param_extraction_counts.items():
+                    if count > 0:
+                        logger.info(f"   {param}: {count:,} values")
+                
+                logger.info(f"✅ Processed {len(measurements)} measurements with data")
+                
+                # Log sample measurement for debugging
+                if measurements:
+                    sample_params = measurements[0]["parameters"]
+                    logger.info(f"📋 Sample measurement parameters: {list(sample_params.keys())}")
+                    logger.info(f"📋 Sample values: {sample_params}")
                 
                 output_obj = {
                     "station_id": station_id,

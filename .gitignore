@@ -7,6 +7,7 @@
 __pycache__/
 *.py[cod]
 *.pyo
+*.pyc
 
 # === Virtual environments ===
 .venv/
@@ -30,32 +31,18 @@ Thumbs.db
 # Ignore all generated data — keep only README.md or .gitkeep to preserve folder structure
 
 # Debug logs
-data/0_debug/*
-!data/0_debug/.gitkeep
+data/germany/0_debug/*
+!data/germany/0_debug/.gitkeep
 
-# Structure output
-data/1_structure/*
-!data/1_structure/.gitkeep
+# Downloaded files (raw data - can be large)
+data/germany/2_downloaded_files/*
+!data/germany/2_downloaded_files/.gitkeep
+!data/germany/2_downloaded_files/README.md
 
-# Sample downloads (can be regenerated)
-data/2_samples/*
-!data/2_samples/.gitkeep
-
-# Inspection results
-data/3_inspection/*
-!data/3_inspection/.gitkeep
-
-# Summaries
-data/4_summaries/*
-!data/4_summaries/.gitkeep
-
-# Matched metadata profiles
-data/5_matching/*
-!data/5_matching/.gitkeep
-
-# Extracted field sets
-data/6_fields/*
-!data/6_fields/.gitkeep
+# Parsed files (processed output - can be large)
+data/germany/3_parsed_files/*
+!data/germany/3_parsed_files/.gitkeep
+!data/germany/3_parsed_files/README.md
 
 # === Backup or development files ===
 *.old
@@ -63,6 +50,64 @@ data/6_fields/*
 *.swp
 *.swo
 
+# === Temporary extraction folders ===
+*/_temp_raw/
+*/_temp_meta/
+
+# === Large data files ===
+*.zip
+*.gz
+*.tar
+*.7z
+
 # === Optional: allow placeholder files to preserve empty dirs ===
 # Uncomment this if you're using README.md files instead of .gitkeep
 # !data/**/README.md
+
+# === IDE specific files ===
+.idea/
+*.iml
+.project
+.pydevproject
+
+# === Jupyter notebook checkpoints ===
+.ipynb_checkpoints/
+
+# === Coverage reports ===
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+
+# === Distribution / packaging ===
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# === PyInstaller ===
+*.manifest
+*.spec
+
+# === Unit test / coverage reports ===
+.pytest_cache/
+.tox/
+.nox/
+
+# === mypy ===
+.mypy_cache/
+.dmypy.json
+dmypy.json
