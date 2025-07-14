@@ -1037,7 +1037,7 @@ CLIMASTATION-BACKEND
                 ---- __init__.py          
             --- tools\
                 ---- dwd_pipeline\
-                    ---- archives\ 
+                    ---- legacy\ 
                         ----- climastation_data_pipeline.md
                         ----- crawl_dwd.py
                         ----- download_samples.py

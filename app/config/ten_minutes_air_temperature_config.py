@@ -106,6 +106,14 @@ COLUMN_NAME_MAP = {
     "Geberhoehe ueber Grund [m]": "sensor_height_m",
     "Geraetetyp Name": "sensor_type",
     "Messverfahren": "measurement_method",
-    "Parameter": "parameter"
+    "Parameter": "parameter",
+    "Parameterbeschreibung": "parameter_description",
+    "Einheit": "unit",
+    "Datenquelle (Strukturversion=SV)": "data_source",
+    "Zusatz-Info": "extra_info",
+    "Besonderheiten": "special_notes",
+    "Literaturhinweis": "reference",
+    "eor": "eor",
 }
+
 

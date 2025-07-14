@@ -4,7 +4,7 @@ from typing import List, Dict
 import pandas as pd
 
 from config.ten_minutes_air_temperature_config import (
-    PARAM_NAME_MAP,
+    PARAM_NAME_MAP, COLUMN_NAME_MAP,
     SENSOR_TYPE_TRANSLATIONS,
     MEASUREMENT_METHOD_TRANSLATIONS
 )
@@ -23,7 +23,7 @@ def load_sensor_metadata(meta_files: List[Path], logger) -> pd.DataFrame:
             with open(path, encoding='latin-1') as f:
                 lines = []
                 for line in f:
-                    if line.startswith("generiert"):
+                    if line.startswith("generiert") or line.startswith("Legende"):
                         break
                     lines.append(line)
 
@@ -36,15 +36,7 @@ def load_sensor_metadata(meta_files: List[Path], logger) -> pd.DataFrame:
 
             # Normalize column names
             df.columns = [col.strip().lower() for col in df.columns]
-
-            # Ensure all expected columns exist after normalization
-            expected_columns = [
-                'parameter', 'stations_id', 'von_datum', 'bis_datum',
-                'geraetetyp name', 'messverfahren', 'geberhoehe ueber grund [m]'
-            ]
-            for col in expected_columns:
-                if col not in df.columns:
-                    df[col] = ""
+            df.rename(columns=COLUMN_NAME_MAP, inplace=True)
 
             df = df.apply(lambda col: col.str.strip() if col.dtype == "object" else col)
             all_frames.append(df)

@@ -33,5 +33,6 @@
   // Python env file for local dev secrets
   "python.envFile": "${workspaceFolder}/.env",
   // Light type-checking
-  "python.analysis.typeCheckingMode": "basic"
+  "python.analysis.typeCheckingMode": "basic",
+  "python.defaultInterpreterPath": "${workspaceFolder}/.venv/Scripts/python.exe"
 }
