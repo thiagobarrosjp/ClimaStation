@@ -4,6 +4,14 @@ from pathlib import Path
 from config.ten_minutes_air_temperature_config import RAW_BASE
 from utils.logger import setup_logger
 from parsing.raw_parser import process_zip
+from config.ten_minutes_air_temperature_config import (
+    RAW_BASE, PARSED_BASE,
+    STATION_INFO_FILE_HISTORICAL,
+    STATION_INFO_FILE_RECENT,
+    STATION_INFO_FILE_NOW
+)
+
+station_info_file = STATION_INFO_FILE_NOW
 
 DEBUG_LOG = Path("data/germany/0_debug/parse_10_minutes_air_temperature_now.debug.log")
 
@@ -18,7 +26,8 @@ def main():
 
     for zip_path in zip_files:
         logger.info(f"🔍 Processing {zip_path.name}")
-        process_zip(zip_path, logger)
+        process_zip(zip_path, station_info_file, logger)
+
 
     logger.info("✅ All files processed.")
 

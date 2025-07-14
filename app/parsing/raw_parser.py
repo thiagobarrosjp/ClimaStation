@@ -1,11 +1,14 @@
 """
-Raw Weather Data Parser - Complete Fixed Version
+Raw Weather Data Parser - Final Working Version
 
 This script processes German weather station ZIP files containing 10-minute air temperature data.
 It extracts raw measurement data and metadata, then outputs structured JSONL files.
 
-KEY FIX: Uses PARAM_MAP for CSV column processing instead of PARAM_NAME_MAP
-This ensures actual measurement data is extracted from columns like TT_10, PP_10, etc.
+KEY FIXES:
+1. Uses PARAM_MAP for CSV column processing instead of PARAM_NAME_MAP
+2. Keeps all measurement data including -999 values
+3. Fixed sensor metadata by combining parameter and device metadata files
+4. Better error handling and logging
 
 Expected Input Structure:
 ├── data/germany/2_downloaded_files/10_minutes/air_temperature/
@@ -99,7 +102,6 @@ def process_zip(raw_zip_path: Path, station_info_file: Path, logger):
         # Debug: Log the actual columns found
         logger.info(f"📋 Raw CSV columns: {list(raw_df.columns)}")
         logger.info(f"📊 Raw data shape: {raw_df.shape}")
-        logger.info(f"🔧 PARAM_MAP keys: {list(PARAM_MAP.keys())}")
         
         # Check which measurement columns are available
         available_measurement_cols = [col for col in raw_df.columns if col in PARAM_MAP]
@@ -169,6 +171,7 @@ def process_zip(raw_zip_path: Path, station_info_file: Path, logger):
             logger.warning(f"No metadata entries found for station_id {station_id}")
             return
         
+        # Load sensor metadata using the fixed loader
         sensor_meta_df = load_sensor_metadata(meta_files, logger)
         
         # Build parameter intervals with better error handling
@@ -255,47 +258,45 @@ def process_zip(raw_zip_path: Path, station_info_file: Path, logger):
                 if df_range.empty:
                     continue
                 
-                # Sensors metadata with better error handling
+                # Sensors metadata using the fixed parser
                 sensors = []
                 try:
-                    # Filter sensor metadata for the current date range
                     date_int = int(start.strftime("%Y%m%d"))
                     sensors = parse_sensor_metadata(sensor_meta_df, station_id, date_int, logger)
+                    logger.info(f"🔧 Found {len(sensors)} sensors for date range {start} to {end}")
                     
                 except Exception as e:
                     logger.warning(f"Failed to process sensor metadata: {e}")
                 
-                # === FIXED MEASUREMENTS PROCESSING ===
+                # === MEASUREMENTS PROCESSING (KEEPING ALL DATA INCLUDING -999) ===
                 measurements = []
                 logger.info(f"🔧 Processing {len(df_range)} measurements for date range {start} to {end}")
                 
-                # Count successful parameter extractions for debugging
+                # Count parameter extractions for debugging
                 param_extraction_counts = {param: 0 for param in PARAM_MAP.values()}
                 
                 for _, row in df_range.iterrows():
                     try:
                         params = {}
                         
-                        # Use PARAM_MAP instead of PARAM_NAME_MAP for CSV column processing
+                        # Use PARAM_MAP for CSV column processing - KEEP ALL VALUES INCLUDING -999
                         for csv_column, english_name in PARAM_MAP.items():
                             if csv_column in row and pd.notna(row[csv_column]):
                                 try:
-                                    # Convert to float, handling potential string values
+                                    # Convert to float, but KEEP all values including -999
                                     raw_value = str(row[csv_column]).strip()
-                                    if raw_value and raw_value != '-999':  # Skip missing data markers
-                                        value = float(raw_value)
-                                        params[english_name] = value
-                                        param_extraction_counts[english_name] += 1
+                                    value = float(raw_value)
+                                    params[english_name] = value
+                                    param_extraction_counts[english_name] += 1
                                 except (ValueError, TypeError):
                                     logger.debug(f"Could not convert {csv_column} value '{row[csv_column]}' to float")
                                     continue
                         
-                        # Only add measurement if it has at least one parameter
-                        if params:
-                            measurements.append({
-                                "timestamp": row["timestamp"].strftime("%Y-%m-%dT%H:%M:%S"),
-                                "parameters": params
-                            })
+                        # Add measurement even if some parameters are missing
+                        measurements.append({
+                            "timestamp": row["timestamp"].strftime("%Y-%m-%dT%H:%M:%S"),
+                            "parameters": params
+                        })
                         
                     except Exception as e:
                         logger.debug(f"Failed to process measurement row: {e}")
@@ -304,16 +305,19 @@ def process_zip(raw_zip_path: Path, station_info_file: Path, logger):
                 # Log parameter extraction statistics
                 logger.info(f"📊 Parameter extraction counts:")
                 for param, count in param_extraction_counts.items():
-                    if count > 0:
-                        logger.info(f"   {param}: {count:,} values")
+                    logger.info(f"   {param}: {count:,} values")
                 
-                logger.info(f"✅ Processed {len(measurements)} measurements with data")
+                logger.info(f"✅ Processed {len(measurements)} measurements (keeping all data including -999)")
                 
                 # Log sample measurement for debugging
                 if measurements:
                     sample_params = measurements[0]["parameters"]
                     logger.info(f"📋 Sample measurement parameters: {list(sample_params.keys())}")
-                    logger.info(f"📋 Sample values: {sample_params}")
+                
+                # Log sample sensor for debugging
+                if sensors:
+                    sample_sensor = sensors[0]
+                    logger.info(f"📋 Sample sensor: {sample_sensor['measured_variable']['en']} ({sample_sensor['sensor_type']['en']})")
                 
                 output_obj = {
                     "station_id": station_id,
