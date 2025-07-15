@@ -1063,6 +1063,7 @@ CLIMASTATION-BACKEND
         -- parsing\
             --- raw_parser.py
             --- sensor_metadata.py
+            --- station_info_parser.py
         -- utils\
             --- logger.py
         -- __init__.py
