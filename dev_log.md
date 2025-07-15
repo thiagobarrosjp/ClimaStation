@@ -1018,10 +1018,16 @@ https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_
 
 2025-07-12:
 - Cleaning up and refactoring the current folder structure and scripts.
+
+2025-07-15:
+- Didn't describe the changes from the last few days. But with the help of v0 I was able to refactor and improve all the scripts.
 - The current folder structure:
 <pre>
 CLIMASTATION-BACKEND		
+    - .venv\
     - .vscode\
+        -- .env
+        -- launch.json
         -- settings.json
     - app\
         -- config\
@@ -1032,26 +1038,25 @@ CLIMASTATION-BACKEND
                 ---- record_schemas\ 
                     ----- field_map.json  
                     ----- field_map.py  
-                    ----- README.md  
-                    ----- v1_universal_schema.json  
+                     ----- v1_universal_schema.json  
                 ---- __init__.py          
             --- tools\
                 ---- dwd_pipeline\
+                    ---- field_descriptions\
+                        ----- pdf_description_manual.pretty.json
                     ---- legacy\ 
                         ----- climastation_data_pipeline.md
                         ----- crawl_dwd.py
                         ----- download_samples.py
                         ----- parse_germany_10_minutes_air_temperature.py
                         ----- utils.py
-                    ---- field_descriptions\
-                        ----- pdf_description_manual.pretty.json
-                    ---- __init__.py
-                    ---- pretty_print_jsonl.py                      
+                    ---- __init__.py                
             --- __init__.py  
         -- io_helpers\
             --- zip_handler.py
         -- main\
             --- __init__.py
+            --- jsonl_to_pretty_json.py
             --- parse_10_minutes_air_temperature_akt.py
             --- parse_10_minutes_air_temperature_hist.py
             --- parse_10_minutes_air_temperature_now.py
@@ -1062,12 +1067,9 @@ CLIMASTATION-BACKEND
             --- logger.py
         -- __init__.py
     - data\          
-        -- 0_debug\  
-            --- crawl_dwd_debug.log  
-            --- download_samples_debug.log  
-            --- extract_dataset_fields_debug.log  
-            --- inspect_archives_debug.log  
-            --- station_summary_debug.log    
+        -- 0_debug\
+            --- jsonl_to_pretty_json.debug.log
+            --- parse_germany_10_minutes_air_temperature.debug.log 
         -- 1_crawl_dwd\ 
             --- create_dwd_folder_structure.py
             --- dwd_structure.json  
@@ -1075,9 +1077,6 @@ CLIMASTATION-BACKEND
             --- dwd_urls.jsonl    
         -- 2_downloaded_files\                           
         -- 3_parsed_files\     
-    - tests\
-        -- test_dwd_pipeline.py	
-    - .env
     - .gitignore
     - dev_log.md  
     - README.md  
