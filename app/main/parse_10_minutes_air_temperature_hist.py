@@ -50,8 +50,8 @@ except ImportError:
 # Import station info parser with fallback
 try:
     from app.parsing.station_info_parser import (
-        parse_station_info_file_enhanced,
-        get_station_info_enhanced
+        parse_station_info_file,
+        get_station_info
     )
     STATION_PARSER_AVAILABLE = True
 except ImportError:
@@ -207,7 +207,7 @@ def validate_station_info(station_info_path: Path, logger) -> Dict[str, Any]:
     if STATION_PARSER_AVAILABLE:
         try:
             if 'parse_station_info_file_enhanced' in globals():
-                station_df = parse_station_info_file_enhanced(station_info_path, logger)
+                station_df = parse_station_info_file(station_info_path, logger)
                 validation_info['validation_passed'] = station_df is not None and not station_df.empty
             else:
                 station_df = parse_station_info_file(station_info_path, logger)

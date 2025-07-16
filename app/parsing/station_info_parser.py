@@ -1,11 +1,58 @@
 """
-Station Information Parser for Fixed-Width Format Files
+Station Information Parser for German Weather Station Description Files
 
-This module parses the German weather station description files which are in
-fixed-width format rather than CSV format.
+This module parses the German weather station description files which contain
+station metadata in a space-separated format with fixed column headers.
+
+AUTHOR: ClimaStation Backend Pipeline
+VERSION: Simplified version with single function variants
+LAST UPDATED: 2025-01-15
+
+EXPECTED INPUT FILES:
+- Station description file: zehn_min_tu_Beschreibung_Stationen.txt
+  Format: Space-separated values with header and separator lines
+  Location: data/germany/2_downloaded_files/10_minutes/air_temperature/historical/
+  
+  Expected structure:
+  Stations_id von_datum bis_datum Stationshoehe geoBreite geoLaenge Stationsname Bundesland Abgabe
+  ----------- --------- --------- ------------- --------- --------- ----------------------------------------- ---------- ------
+  00003 19930429 20110331    202    50.7827    6.0941    Aachen    Nordrhein-Westfalen    Frei
+  00044 20070209 20250710    44    52.9336    8.2370 Großenkneten    Niedersachsen    Frei
+
+EXPECTED OUTPUT:
+- pandas DataFrame with standardized columns:
+  - station_id: 5-digit station ID (e.g., "00003")
+  - station_name: Station name (e.g., "Aachen")
+  - latitude: Latitude in decimal degrees (e.g., 50.7827)
+  - longitude: Longitude in decimal degrees (e.g., 6.0941)
+  - station_height: Altitude in meters (e.g., 202.0)
+  - state: German state name (e.g., "Nordrhein-Westfalen")
+  - from_date: Start date as datetime
+  - to_date: End date as datetime
+  - availability: Data availability status (e.g., "Frei")
+
+USAGE:
+    from app.parsing.station_info_parser import parse_station_info_file, get_station_info
+    
+    # Parse station description file
+    station_df = parse_station_info_file(file_path, logger)
+    
+    # Look up specific station
+    station_info = get_station_info(station_df, station_id=3, logger)
+
+KEY FEATURES:
+- Handles space-separated format (not fixed-width)
+- Robust German state name detection
+- Proper date parsing (YYYYMMDD format)
+- Coordinate validation for German geography
+- Comprehensive error handling and logging
+- Fills missing values with descriptive placeholders
+- German-specific region handling
+- Dynamic validation (no hardcoded station data)
 """
 
 import pandas as pd
+from pandas import Series
 from pathlib import Path
 from typing import Optional, Dict, Any, List, Tuple
 import re
@@ -14,141 +61,46 @@ from datetime import datetime, date
 import traceback
 
 
-def detect_column_positions_enhanced(header_line: str, separator_line: str, logger: logging.Logger) -> List[Tuple[str, int, int]]:
+def parse_station_info_file(file_path: Path, logger: logging.Logger) -> Optional[pd.DataFrame]:
     """
-    ENHANCED: Detect column positions from header and separator lines with fixed positions.
+    Parse the German weather station description file.
     
-    The German station files have a specific fixed-width format. Instead of trying to parse
-    the separator line dynamically, we use the known column positions for reliability.
+    This function handles the space-separated format used by German weather service
+    station description files. The file contains a header line, separator line,
+    and data lines with station metadata.
     
     Args:
-        header_line: Header line with column names
-        separator_line: Separator line with dashes indicating column boundaries
-        logger: Logger instance
-        
-    Returns:
-        List of tuples (column_name, start_pos, end_pos)
-        
-    Example:
-        positions = detect_column_positions_enhanced(header_line, separator_line, logger)
-        # Returns: [("station_id", 0, 11), ("from_date", 12, 21), ...]
-    """
-    logger.debug("🔍 Detecting column positions from header and separator")
-    logger.debug(f"   📋 Header: {header_line}")
-    logger.debug(f"   📏 Separator: {separator_line}")
-    
-    # ENHANCED: Use fixed column positions based on the known German station file format
-    # This is more reliable than trying to parse the separator line dynamically
-    column_specs = [
-        ('station_id', 0, 11),          # Stations_id: positions 0-10
-        ('from_date', 12, 21),          # von_datum: positions 12-20  
-        ('to_date', 22, 31),            # bis_datum: positions 22-30
-        ('station_height', 32, 45),     # Stationshoehe: positions 32-44
-        ('latitude', 46, 57),           # geoBreite: positions 46-56
-        ('longitude', 58, 69),          # geoLaenge: positions 58-68
-        ('station_name', 70, 110),      # Stationsname: positions 70-109
-        ('state', 111, 150),            # Bundesland: positions 111-149
-        ('availability', 151, 160)      # Abgabe: positions 151-159 (optional)
-    ]
-    
-    logger.info(f"   ✅ Using enhanced fixed column positions for German station file format")
-    for i, (name, start, end) in enumerate(column_specs, 1):
-        logger.debug(f"   📊 Column {i}: '{name}' at positions {start}-{end}")
-    
-    return column_specs
-
-
-def clean_station_data_enhanced(raw_data: str, logger: logging.Logger) -> str:
-    """
-    ENHANCED: Clean raw station data string for better parsing.
-    
-    Args:
-        raw_data: Raw data string from station file
-        logger: Logger instance
-        
-    Returns:
-        Cleaned data string
-    """
-    # Remove extra whitespace and normalize line endings
-    cleaned = raw_data.strip()
-    
-    # Handle encoding issues
-    try:
-        # Try to decode and re-encode to handle any encoding issues
-        if isinstance(cleaned, bytes):
-            cleaned = cleaned.decode('latin-1', errors='replace')
-        
-        # Normalize whitespace but preserve structure
-        lines = cleaned.split('\n')
-        cleaned_lines = []
-        
-        for line in lines:
-            # Remove trailing whitespace but preserve leading structure
-            cleaned_line = line.rstrip()
-            if cleaned_line:  # Skip empty lines
-                cleaned_lines.append(cleaned_line)
-        
-        cleaned = '\n'.join(cleaned_lines)
-        
-    except Exception as e:
-        logger.debug(f"   ⚠️  Data cleaning warning: {e}")
-    
-    return cleaned
-
-
-def parse_station_info_file_enhanced(file_path: Path, logger: logging.Logger) -> Optional[pd.DataFrame]:
-    """
-    ENHANCED: Parse the fixed-width station description file with improved error handling.
-    
-    This is the main parsing function that handles the complex fixed-width format
-    used by German weather service station description files.
-    
-    Args:
-        file_path: Path to the station description file
+        file_path: Path to the station description file (zehn_min_tu_Beschreibung_Stationen.txt)
         logger: Logger instance for detailed logging
         
     Returns:
         DataFrame with station information or None if parsing fails
         
-    The function handles:
-    - Fixed-width format parsing with enhanced column detection
-    - German text encoding (latin-1) with error recovery
-    - Header detection and column position calculation
-    - Data validation and cleaning with quality checks
-    - Date parsing and conversion with error handling
-    - Coordinate and altitude parsing with validation
-    - Comprehensive error reporting and debugging
-    
+    File Format Expected:
+        Line 1: Header with column names
+        Line 2: Separator line with dashes
+        Line 3+: Data lines with space-separated values
+        
     Example:
-        station_df = parse_station_info_file_enhanced(
-            Path("zehn_min_tu_Beschreibung_Stationen.txt"), 
-            logger
-        )
+        Stations_id von_datum bis_datum Stationshoehe geoBreite geoLaenge Stationsname Bundesland Abgabe
+        ----------- --------- --------- ------------- --------- --------- ----------------------------------------- ---------- ------
+        00003 19930429 20110331    202    50.7827    6.0941    Aachen    Nordrhein-Westfalen    Frei
     """
     if not file_path.exists():
         logger.warning(f"❌ Station info file not found: {file_path}")
         return None
     
-    logger.info(f"📋 Parsing station info file with enhanced features: {file_path.name}")
+    logger.info(f"📋 Parsing station info file: {file_path.name}")
     logger.info(f"   📄 File size: {file_path.stat().st_size / 1024:.1f} KB")
     
     try:
-        # Read the entire file with enhanced encoding handling
-        try:
-            with open(file_path, 'r', encoding='latin-1') as f:
-                content = f.read()
-        except UnicodeDecodeError as e:
-            logger.warning(f"   ⚠️  Encoding issue, trying with error handling: {e}")
-            with open(file_path, 'r', encoding='latin-1', errors='replace') as f:
-                content = f.read()
-        
-        # Clean the content
-        content = clean_station_data_enhanced(content, logger)
-        lines = content.split('\n')
+        # Read the entire file with German encoding
+        with open(file_path, 'r', encoding='latin-1') as f:
+            lines = f.readlines()
         
         logger.info(f"   📊 Read {len(lines)} lines from file")
         
-        # Find the header line and separator line with enhanced detection
+        # Identify header, separator, and data lines
         header_line = None
         separator_line = None
         data_start_idx = None
@@ -156,13 +108,13 @@ def parse_station_info_file_enhanced(file_path: Path, logger: logging.Logger) ->
         for i, line in enumerate(lines):
             line_stripped = line.strip()
             
-            # Look for header line (contains column names) - enhanced detection
+            # Look for header line (contains column names)
             if ('Stations_id' in line or 'stations_id' in line) and ('von_datum' in line or 'from_date' in line):
                 header_line = line_stripped
                 logger.info(f"   📋 Found header at line {i+1}: {header_line[:60]}...")
                 
-            # Look for separator line (dashes indicating column boundaries) - enhanced detection
-            elif (line_stripped.startswith('---') or line_stripped.startswith('===')) and len(line_stripped) > 20:
+            # Look for separator line (dashes indicating column boundaries)
+            elif line_stripped.startswith('---') and len(line_stripped) > 20:
                 separator_line = line_stripped
                 data_start_idx = i + 1
                 logger.info(f"   📏 Found separator at line {i+1}, data starts at line {data_start_idx+1}")
@@ -171,93 +123,129 @@ def parse_station_info_file_enhanced(file_path: Path, logger: logging.Logger) ->
         if not header_line:
             logger.error("❌ Could not find header line in station info file")
             logger.debug("   🔍 Looking for lines containing 'Stations_id' and 'von_datum'")
-            # Show first few lines for debugging
-            for i, line in enumerate(lines[:10]):
-                logger.debug(f"   Line {i+1}: {line[:80]}...")
             return None
             
         if data_start_idx is None:
             logger.error("❌ Could not find separator line in station info file")
-            logger.debug("   🔍 Looking for lines starting with '---' or '==='")
-            # Show lines around header for debugging
-            header_idx = next((i for i, line in enumerate(lines) if 'Stations_id' in line), -1)
-            if header_idx >= 0:
-                for i in range(max(0, header_idx-2), min(len(lines), header_idx+5)):
-                    logger.debug(f"   Line {i+1}: {lines[i][:80]}...")
+            logger.debug("   🔍 Looking for lines starting with '---'")
             return None
         
-        # Detect column positions with enhanced method
-        column_specs = detect_column_positions_enhanced(header_line, separator_line or "", logger)
-        
-        if not column_specs:
-            logger.error("❌ Could not detect column positions")
-            return None
-        
-        # Parse data lines with enhanced error handling
+        # Parse data lines using space-separated approach
         logger.info(f"📊 Parsing data lines starting from line {data_start_idx+1}")
-        station_data = []
+        stations = []
         lines_processed = 0
         lines_skipped = 0
         parsing_errors = []
         
+        # Process each data line
         for i, line in enumerate(lines[data_start_idx:], data_start_idx + 1):
-            line = line.rstrip('\n\r')
+            line = line.strip()
             
             # Skip empty lines
-            if not line.strip():
-                lines_skipped += 1
-                continue
-                
-            # Skip lines that are too short to contain meaningful data
-            if len(line) < 50:
-                logger.debug(f"   ⚠️  Skipping short line {i}: '{line.strip()}'")
+            if not line:
                 lines_skipped += 1
                 continue
             
             try:
-                row_data = {}
+                # Split line by whitespace
+                parts = line.split()
                 
-                # Extract data for each column using enhanced fixed positions
-                for col_name, start, end in column_specs:
-                    if start < len(line):
-                        if end <= len(line):
-                            value = line[start:end].strip()
-                        else:
-                            # Handle lines shorter than expected
-                            value = line[start:].strip()
-                        
-                        # Enhanced value cleaning
-                        if value and value not in ['', '-', 'N/A', 'NULL']:
-                            row_data[col_name] = value
-                        else:
-                            row_data[col_name] = None
+                # Need at least 6 parts: station_id, von_datum, bis_datum, hoehe, breite, laenge
+                if len(parts) < 6:
+                    logger.debug(f"   ⚠️  Skipping line {i} - insufficient parts: {len(parts)}")
+                    lines_skipped += 1
+                    continue
+                
+                # Extract basic fields
+                station_id = parts[0]
+                von_datum = parts[1]
+                bis_datum = parts[2]
+                hoehe = parts[3]
+                breite = parts[4]
+                laenge = parts[5]
+                
+                # Everything after position 5 contains station name, state, and availability
+                remaining_parts = parts[6:] if len(parts) > 6 else []
+                
+                # Parse station name, state, and availability from remaining parts
+                availability = "no availability info"  # Default value
+                state = "no state info available"      # Default value
+                station_name = "no station name available"  # Default value
+                
+                if remaining_parts:
+                    # Check if last part is "Frei" (availability status)
+                    if remaining_parts[-1] == "Frei":
+                        availability = "Frei"
+                        name_state_parts = remaining_parts[:-1]
                     else:
-                        row_data[col_name] = None
+                        name_state_parts = remaining_parts
+                    
+                    # German states (Bundesländer) - comprehensive list
+                    german_states = [
+                        'Nordrhein-Westfalen', 'Baden-Württemberg', 'Bayern', 'Niedersachsen',
+                        'Hessen', 'Rheinland-Pfalz', 'Sachsen', 'Thüringen', 'Brandenburg',
+                        'Sachsen-Anhalt', 'Schleswig-Holstein', 'Mecklenburg-Vorpommern',
+                        'Saarland', 'Berlin', 'Bremen', 'Hamburg'
+                    ]
+                    
+                    # Try to identify the German state in the remaining text
+                    remaining_text = ' '.join(name_state_parts)
+                    
+                    state_found = False
+                    for german_state in german_states:
+                        if german_state in remaining_text:
+                            state = german_state
+                            # Remove state from remaining text to get station name
+                            station_name = remaining_text.replace(german_state, '').strip()
+                            if not station_name:  # If station name becomes empty after removing state
+                                station_name = "no station name available"
+                            state_found = True
+                            break
+                    
+                    # Fallback: if no known state found, assume last word is state
+                    if not state_found and len(name_state_parts) > 1:
+                        state = name_state_parts[-1]
+                        station_name = ' '.join(name_state_parts[:-1])
+                        if not station_name:
+                            station_name = "no station name available"
+                    elif not state_found and len(name_state_parts) == 1:
+                        station_name = name_state_parts[0]
+                        state = "no state info available"
                 
-                # Enhanced validation for essential fields
-                station_id = row_data.get('station_id')
-                station_name = row_data.get('station_name')
-                
-                if station_id and station_name and len(station_id) >= 5:
-                    # Clean station_id - take only the first 5 digits and ensure it's numeric
-                    clean_station_id = station_id[:5] if len(station_id) >= 5 else station_id
+                # Validate essential fields
+                if station_id and len(station_id) >= 3:
+                    # Clean and standardize station_id (ensure 5 digits with leading zeros)
+                    clean_station_id = station_id.zfill(5)
                     
                     # Validate station_id is numeric
                     try:
                         int(clean_station_id)
-                        row_data['station_id'] = clean_station_id.zfill(5)  # Ensure 5 digits with leading zeros
-                        
-                        station_data.append(row_data)
-                        lines_processed += 1
-                        
-                        # Log first few stations for debugging
-                        if lines_processed <= 3:
-                            logger.debug(f"   📊 Station {lines_processed}: {clean_station_id} - {station_name[:30]}...")
                     except ValueError:
                         logger.debug(f"   ⚠️  Line {i} has non-numeric station_id: '{station_id}'")
                         lines_skipped += 1
+                        continue
+                    
+                    # Create station data record with default values for missing data
+                    station_data = {
+                        'station_id': clean_station_id,
+                        'from_date': von_datum if von_datum else "no start date available",
+                        'to_date': bis_datum if bis_datum else "no end date available",
+                        'station_height': hoehe if hoehe else "no altitude available",
+                        'latitude': breite if breite else "no latitude available",
+                        'longitude': laenge if laenge else "no longitude available",
+                        'station_name': station_name,
+                        'state': state,
+                        'availability': availability
+                    }
+                    
+                    stations.append(station_data)
+                    lines_processed += 1
+                    
+                    # Log first few stations for debugging
+                    if lines_processed <= 3:
+                        logger.debug(f"   📊 Station {lines_processed}: {clean_station_id} - {station_name} ({state})")
                 else:
-                    error_msg = f"Line {i} missing essential fields: station_id='{station_id}', station_name='{station_name}'"
+                    error_msg = f"Line {i} missing essential fields: station_id='{station_id}'"
                     logger.debug(f"   ⚠️  {error_msg}")
                     parsing_errors.append(error_msg)
                     lines_skipped += 1
@@ -271,7 +259,8 @@ def parse_station_info_file_enhanced(file_path: Path, logger: logging.Logger) ->
         
         logger.info(f"   ✅ Processed {lines_processed} stations, skipped {lines_skipped} lines")
         
-        if parsing_errors and len(parsing_errors) <= 10:  # Show first 10 errors
+        # Log parsing errors if any (but limit output)
+        if parsing_errors and len(parsing_errors) <= 10:
             logger.debug("   📋 Parsing errors encountered:")
             for error in parsing_errors[:10]:
                 logger.debug(f"      - {error}")
@@ -280,75 +269,95 @@ def parse_station_info_file_enhanced(file_path: Path, logger: logging.Logger) ->
             for error in parsing_errors[:10]:
                 logger.debug(f"      - {error}")
         
-        if not station_data:
+        if not stations:
             logger.error("❌ No valid station data found")
             return None
         
-        # Create DataFrame with enhanced processing
-        logger.info("🔄 Creating DataFrame and cleaning data with enhanced features...")
-        df = pd.DataFrame(station_data)
+        # Create DataFrame and perform data cleaning
+        logger.info("🔄 Creating DataFrame and cleaning data...")
+        df = pd.DataFrame(stations)
         
-        # Enhanced data cleaning and conversion
+        # Clean station IDs (ensure consistent 5-digit format)
         logger.info("   🧹 Cleaning station IDs...")
         df['station_id'] = df['station_id'].astype(str).str.strip().str.zfill(5)
         
-        # Convert numeric fields with enhanced error handling
+        # Convert numeric fields with proper error handling
         logger.info("   🔢 Converting numeric fields...")
         numeric_fields = ['station_height', 'latitude', 'longitude']
         
         for field in numeric_fields:
             if field in df.columns:
-                # Handle German decimal format (comma as decimal separator) and various formats
-                df[field] = df[field].astype(str).str.replace(',', '.').str.strip()
+                # Create a mask for rows that don't have placeholder text
+                valid_mask = ~df[field].astype(str).str.contains('no .* available', regex=True)
                 
-                # Remove any non-numeric characters except decimal point and minus sign
-                df[field] = df[field].str.replace(r'[^\d.-]', '', regex=True)
-                
-                # Convert to numeric with enhanced error handling
-                original_count = len(df)
-                df[field] = pd.to_numeric(df[field], errors='coerce')
-                
-                # Log conversion results
-                valid_count = df[field].notna().sum()
-                invalid_count = original_count - valid_count
-                logger.debug(f"      {field}: {valid_count}/{original_count} valid values")
-                if invalid_count > 0:
-                    logger.debug(f"         {invalid_count} invalid values converted to NaN")
+                # Only convert numeric values, leave placeholder text as is
+                if valid_mask.any():
+                    # Handle German decimal format (comma as decimal separator)
+                    df.loc[valid_mask, field] = df.loc[valid_mask, field].astype(str).str.replace(',', '.').str.strip()
+                    
+                    # Remove any non-numeric characters except decimal point and minus sign
+                    df.loc[valid_mask, field] = df.loc[valid_mask, field].str.replace(r'[^\d.-]', '', regex=True)
+                    
+                    # Convert to numeric with error handling
+                    original_count = valid_mask.sum()
+                    df.loc[valid_mask, field] = pd.to_numeric(df.loc[valid_mask, field], errors='coerce')
+                    
+                    # Replace NaN values with placeholder text
+                    nan_mask = df[field].isna() & valid_mask
+                    df.loc[nan_mask, field] = f"no {field} value available"
+                    
+                    # Log conversion results
+                    valid_count = df.loc[valid_mask, field].notna().sum()
+                    invalid_count = original_count - valid_count
+                    logger.debug(f"      {field}: {valid_count}/{original_count} valid values")
+                    if invalid_count > 0:
+                        logger.debug(f"         {invalid_count} invalid values replaced with placeholder")
         
-        # Convert date fields with enhanced error handling
+        # Convert date fields with proper format handling
         logger.info("   📅 Converting date fields...")
         date_fields = ['from_date', 'to_date']
         
         for field in date_fields:
             if field in df.columns:
-                # Clean date strings
-                df[field] = df[field].astype(str).str.strip()
+                # Create a mask for rows that don't have placeholder text
+                valid_mask = ~df[field].astype(str).str.contains('no .* available', regex=True)
                 
-                # Convert YYYYMMDD format to datetime with enhanced error handling
-                original_count = len(df)
-                df[field] = pd.to_datetime(df[field], format='%Y%m%d', errors='coerce')
-                
-                # Log conversion results
-                valid_count = df[field].notna().sum()
-                invalid_count = original_count - valid_count
-                logger.debug(f"      {field}: {valid_count}/{original_count} valid dates")
-                if invalid_count > 0:
-                    logger.debug(f"         {invalid_count} invalid dates converted to NaT")
+                if valid_mask.any():
+                    # Clean date strings
+                    df.loc[valid_mask, field] = df.loc[valid_mask, field].astype(str).str.strip()
+                    
+                    # Convert YYYYMMDD format to datetime
+                    original_count = valid_mask.sum()
+                    df.loc[valid_mask, field] = pd.to_datetime(df.loc[valid_mask, field], format='%Y%m%d', errors='coerce')
+                    
+                    # Replace NaT values with placeholder text
+                    nat_mask = df[field].isna() & valid_mask
+                    df.loc[nat_mask, field] = f"no {field} value available"
+                    
+                    # Log conversion results
+                    valid_count = df.loc[valid_mask, field].notna().sum()
+                    invalid_count = original_count - valid_count
+                    logger.debug(f"      {field}: {valid_count}/{original_count} valid dates")
+                    if invalid_count > 0:
+                        logger.debug(f"         {invalid_count} invalid dates replaced with placeholder")
         
-        # Clean text fields with enhanced processing
+        # Clean text fields
         logger.info("   📝 Cleaning text fields...")
-        text_fields = ['station_name', 'state']
+        text_fields = ['station_name', 'state', 'availability']
         
         for field in text_fields:
             if field in df.columns:
-                # Remove extra whitespace and handle encoding issues
+                # Remove extra whitespace and handle null values
                 df[field] = df[field].astype(str).str.strip()
-                df[field] = df[field].replace(['nan', 'None', 'NULL', ''], None)
                 
-                # Clean up German characters and encoding issues
-                df[field] = df[field].str.replace(r'\s+', ' ', regex=True)  # Multiple spaces to single
+                # Replace empty or null values with appropriate placeholder
+                empty_mask = df[field].isin(['nan', 'None', 'NULL', '', 'null'])
+                df.loc[empty_mask, field] = f"no {field} available"
+                
+                # Clean up multiple spaces
+                df[field] = df[field].str.replace(r'\s+', ' ', regex=True)
         
-        # Enhanced validation and summary
+        # Validation and quality checks
         logger.info("📊 Final dataset summary:")
         logger.info(f"   📈 Total stations: {len(df)}")
         
@@ -358,30 +367,73 @@ def parse_station_info_file_enhanced(file_path: Path, logger: logging.Logger) ->
             logger.info(f"   🆔 Unique stations: {unique_stations}")
             logger.info(f"   🆔 Station ID range: {id_range}")
         
+        # Validate coordinates (should be reasonable for Germany)
         if 'latitude' in df.columns and 'longitude' in df.columns:
-            valid_coords = df[['latitude', 'longitude']].notna().all(axis=1).sum()
+            # Count only numeric coordinates (not placeholder text)
+            numeric_lat_mask = pd.to_numeric(df['latitude'], errors='coerce').notna()
+            numeric_lon_mask = pd.to_numeric(df['longitude'], errors='coerce').notna()
+            valid_coords = (numeric_lat_mask & numeric_lon_mask).sum()
+            
             if valid_coords > 0:
-                lat_range = f"{df['latitude'].min():.2f}° to {df['latitude'].max():.2f}°"
-                lon_range = f"{df['longitude'].min():.2f}° to {df['longitude'].max():.2f}°"
+                numeric_lats = pd.to_numeric(df['latitude'], errors='coerce').dropna()
+                numeric_lons = pd.to_numeric(df['longitude'], errors='coerce').dropna()
+                
+                lat_min, lat_max = numeric_lats.min(), numeric_lats.max()
+                lon_min, lon_max = numeric_lons.min(), numeric_lons.max()
+                
+                # Check if coordinates are reasonable for Germany (47-55°N, 5-15°E)
+                reasonable_lat = (47 <= lat_min <= 55) and (47 <= lat_max <= 55)
+                reasonable_lon = (5 <= lon_min <= 15) and (5 <= lon_max <= 15)
+                
                 logger.info(f"   🌍 Valid coordinates: {valid_coords}/{len(df)}")
-                logger.info(f"   🌍 Latitude range: {lat_range}")
-                logger.info(f"   🌍 Longitude range: {lon_range}")
+                logger.info(f"   🌍 Latitude range: {lat_min:.2f}° to {lat_max:.2f}°")
+                logger.info(f"   🌍 Longitude range: {lon_min:.2f}° to {lon_max:.2f}°")
+                
+                if not reasonable_lat or not reasonable_lon:
+                    logger.warning("   ⚠️  Coordinate ranges seem unreasonable for Germany")
+                    logger.warning("   ⚠️  Expected: Lat 47-55°N, Lon 5-15°E")
             else:
                 logger.warning("   ⚠️  No valid coordinates found")
         
+        # Validate altitudes (should be reasonable for Germany: -10m to 3000m)
         if 'station_height' in df.columns:
-            valid_heights = df['station_height'].notna().sum()
+            numeric_alt_mask = pd.to_numeric(df['station_height'], errors='coerce').notna()
+            valid_heights = numeric_alt_mask.sum()
+            
             if valid_heights > 0:
-                alt_range = f"{df['station_height'].min():.0f}m to {df['station_height'].max():.0f}m"
+                numeric_alts = pd.to_numeric(df['station_height'], errors='coerce').dropna()
+                alt_min, alt_max = numeric_alts.min(), numeric_alts.max()
+                reasonable_alt = (-10 <= alt_min <= 3000) and (-10 <= alt_max <= 3000)
+                
                 logger.info(f"   🏔️  Valid altitudes: {valid_heights}/{len(df)}")
-                logger.info(f"   🏔️  Altitude range: {alt_range}")
+                logger.info(f"   🏔️  Altitude range: {alt_min:.0f}m to {alt_max:.0f}m")
+                
+                if not reasonable_alt:
+                    logger.warning("   ⚠️  Altitude ranges seem unreasonable for Germany")
+                    logger.warning("   ⚠️  Expected: -10m to 3000m")
             else:
                 logger.warning("   ⚠️  No valid altitudes found")
         
-        # Log sample stations
+        # Validate dates
+        if 'from_date' in df.columns and 'to_date' in df.columns:
+            from_date_mask = pd.to_datetime(df['from_date'], errors='coerce').notna()
+            to_date_mask = pd.to_datetime(df['to_date'], errors='coerce').notna()
+            valid_dates = (from_date_mask & to_date_mask).sum()
+            
+            logger.info(f"   📅 Valid date ranges: {valid_dates}/{len(df)}")
+            
+            if valid_dates > 0:
+                valid_from_dates = pd.to_datetime(df['from_date'], errors='coerce').dropna()
+                valid_to_dates = pd.to_datetime(df['to_date'], errors='coerce').dropna()
+                
+                earliest_date = valid_from_dates.min()
+                latest_date = valid_to_dates.max()
+                logger.info(f"   📅 Overall date range: {earliest_date.date()} to {latest_date.date()}")
+        
+        # Log sample stations for verification
         logger.debug("   📋 Sample stations:")
         for i, (_, row) in enumerate(df.head(3).iterrows()):
-            state_info = row.get('state', 'Unknown state')
+            state_info = row.get('state', 'no state info available')
             logger.debug(f"      {i+1}. {row['station_id']}: {row['station_name']} ({state_info})")
         
         logger.info(f"✅ Successfully parsed station info file: {len(df)} stations")
@@ -393,15 +445,16 @@ def parse_station_info_file_enhanced(file_path: Path, logger: logging.Logger) ->
         return None
 
 
-def get_station_info_enhanced(station_df: pd.DataFrame, station_id: int, logger: logging.Logger) -> Optional[Dict[str, Any]]:
+def get_station_info(station_df: pd.DataFrame, station_id: int, logger: logging.Logger) -> Optional[Dict[str, Any]]:
     """
-    ENHANCED: Get station information for a specific station ID with improved lookup.
+    Get station information for a specific station ID.
     
     This function looks up a specific station in the parsed station DataFrame
-    and returns a standardized dictionary with station metadata.
+    and returns a standardized dictionary with station metadata. For German stations,
+    the region field is set to indicate that regions are not applicable in Germany.
     
     Args:
-        station_df: DataFrame with station information from parse_station_info_file_enhanced
+        station_df: DataFrame with station information from parse_station_info_file
         station_id: Station ID to look up (e.g., 3 for station 00003)
         logger: Logger instance
         
@@ -409,16 +462,16 @@ def get_station_info_enhanced(station_df: pd.DataFrame, station_id: int, logger:
         Dictionary with station information or None if not found:
         {
             'station_id': '00003',
-            'station_name': 'AACHEN-ORSBACH',
+            'station_name': 'Aachen',
             'latitude': 50.7827,
             'longitude': 6.0941,
             'station_altitude_m': 202.0,
             'state': 'Nordrhein-Westfalen',
-            'region': 'Nordrhein-Westfalen'
+            'region': 'regions not applicable for Germany'
         }
         
     Example:
-        station_info = get_station_info_enhanced(station_df, station_id=3, logger)
+        station_info = get_station_info(station_df, station_id=3, logger)
         if station_info:
             print(f"Station: {station_info['station_name']}")
             print(f"Location: {station_info['latitude']}, {station_info['longitude']}")
@@ -427,14 +480,14 @@ def get_station_info_enhanced(station_df: pd.DataFrame, station_id: int, logger:
         logger.warning("❌ No station data available for lookup")
         return None
     
-    # Enhanced station ID formatting - try multiple formats
+    # Try multiple station ID formats for robust lookup
     station_id_formats = [
-        str(station_id).zfill(5),  # 5-digit with leading zeros (preferred)
-        str(station_id),           # As-is
-        f"{station_id:05d}",       # Alternative 5-digit formatting
+        str(station_id).zfill(5),  # 5-digit with leading zeros (preferred): "00003"
+        str(station_id),           # As-is: "3"
+        f"{station_id:05d}",       # Alternative 5-digit formatting: "00003"
     ]
     
-    logger.debug(f"🔍 Looking up station {station_id} with enhanced search")
+    logger.debug(f"🔍 Looking up station {station_id}")
     logger.debug(f"   📋 Trying formats: {station_id_formats}")
     
     # Try each format until we find a match
@@ -451,16 +504,16 @@ def get_station_info_enhanced(station_df: pd.DataFrame, station_id: int, logger:
     if station_rows.empty:
         logger.warning(f"❌ Station {station_id} not found in station info")
         
-        # Enhanced debugging information
+        # Provide debugging information
         available_stations = station_df['station_id'].unique()
         logger.debug(f"   📋 Available station IDs (first 10): {list(available_stations[:10])}")
         
-        # Check if there are similar station IDs
+        # Check for similar station IDs
         similar_stations = [sid for sid in available_stations if str(station_id) in str(sid)]
         if similar_stations:
             logger.debug(f"   🔍 Similar station IDs found: {similar_stations}")
         
-        # Check for partial matches
+        # Check for partial matches (last 3 digits)
         partial_matches = [sid for sid in available_stations if sid.endswith(str(station_id).zfill(3))]
         if partial_matches:
             logger.debug(f"   🔍 Partial matches (last 3 digits): {partial_matches}")
@@ -472,39 +525,144 @@ def get_station_info_enhanced(station_df: pd.DataFrame, station_id: int, logger:
     
     logger.debug(f"   ✅ Found station: {station_row['station_name']}")
     
-    # Create standardized station info dictionary with enhanced error handling
+    # Create standardized station info dictionary with comprehensive error handling
     try:
+        # Helper function to safely extract scalar values from pandas objects
+        def to_scalar(value):
+            """Convert pandas Series/objects to scalar values safely."""
+            # Handle pandas Series
+            if hasattr(value, 'iloc'):
+                try:
+                    if len(value) > 0:
+                        return value.iloc[0]
+                    else:
+                        return None
+                except (TypeError, AttributeError):
+                    # If len() fails, try to get the value directly
+                    try:
+                        return value.iloc[0]
+                    except (IndexError, AttributeError):
+                        return None
+            
+            # Handle pandas scalar values that might still have pandas types
+            if hasattr(value, 'item'):
+                try:
+                    return value.item()
+                except (ValueError, AttributeError):
+                    pass
+            
+            # Return as-is if it's already a scalar
+            return value
+        
+        # Helper function to safely check if a scalar value is null/empty
+        def is_null_or_empty(scalar_value):
+            """Check if a scalar value is null or empty."""
+            if scalar_value is None:
+                return True
+            try:
+                if pd.isna(scalar_value):
+                    return True
+            except (TypeError, ValueError):
+                # pd.isna might fail on some types, that's okay
+                pass
+            return str(scalar_value).strip() == ''
+        
+        # Helper function to safely extract values with fallbacks
+        def safe_extract(field_name, default_value):
+            value = station_row[field_name]
+            scalar_value = to_scalar(value)
+            
+            if is_null_or_empty(scalar_value):
+                return default_value
+            return scalar_value
+        
+        # Helper function to safely convert to float
+        def safe_float(field_name, default_value):
+            value = station_row[field_name]
+            scalar_value = to_scalar(value)
+
+            # If it's a Series, extract its first element (or bail out)
+            if isinstance(scalar_value, Series):
+                if scalar_value.empty:
+                    return default_value
+                try:
+                    scalar_value = scalar_value.iloc[0]
+                except (IndexError, AttributeError):
+                    return default_value  # couldn’t pull a valid element
+
+            # Now scalar_value is either None, a primitive, or NaN
+            if scalar_value is None:
+                return default_value
+
+            # placeholder string?
+            if isinstance(scalar_value, str) and 'no ' in scalar_value and 'available' in scalar_value:
+                return default_value
+
+            # pandas NA?
+            try:
+                if pd.isna(scalar_value):
+                    return default_value
+            except (TypeError, ValueError):
+                pass
+
+            # finally, try float conversion
+            if not isinstance(scalar_value, (int, float, str)):
+                return default_value
+
+            try:
+                return float(scalar_value)
+            except (ValueError, TypeError):
+                return default_value
+        
         station_info = {
-            'station_id': str(station_row['station_id']) if pd.notna(station_row['station_id']) else '',
-            'station_name': str(station_row['station_name']) if pd.notna(station_row['station_name']) else '',
-            'latitude': float(station_row['latitude']) if pd.notna(station_row['latitude']) else 0.0,
-            'longitude': float(station_row['longitude']) if pd.notna(station_row['longitude']) else 0.0,
-            'station_altitude_m': float(station_row['station_height']) if pd.notna(station_row['station_height']) else 0.0,
-            'state': str(station_row['state']) if pd.notna(station_row['state']) else '',
-            'region': str(station_row['state']) if pd.notna(station_row['state']) else ''  # Use state as region
+            'station_id': str(safe_extract('station_id', 'no station ID available')),
+            'station_name': str(safe_extract('station_name', 'no station name available')),
+            'latitude': safe_float('latitude', 'no latitude value available'),
+            'longitude': safe_float('longitude', 'no longitude value available'),
+            'station_altitude_m': safe_float('station_height', 'no altitude value available'),
+            'state': str(safe_extract('state', 'no state info available')),
+            'region': 'regions not applicable for Germany'  # German-specific region handling
         }
         
-        # Enhanced validation of retrieved data
+        # Data quality assessment
         data_quality_issues = []
         
-        if station_info['latitude'] == 0.0 and station_info['longitude'] == 0.0:
+        # Check for missing or invalid coordinates
+        if isinstance(station_info['latitude'], str) or isinstance(station_info['longitude'], str):
             data_quality_issues.append("Missing coordinates")
+        elif not (47 <= station_info['latitude'] <= 55) or not (5 <= station_info['longitude'] <= 15):
+            data_quality_issues.append("Coordinates outside expected German range")
         
-        if not station_info['station_name']:
+        # Check for missing station name
+        if 'no station name' in str(station_info['station_name']):
             data_quality_issues.append("Missing station name")
         
-        if station_info['station_altitude_m'] == 0.0:
+        # Check for unreasonable altitude
+        if isinstance(station_info['station_altitude_m'], str):
             data_quality_issues.append("Missing altitude")
+        elif not (-10 <= station_info['station_altitude_m'] <= 3000):
+            data_quality_issues.append("Altitude outside expected German range")
         
-        if not station_info['state']:
+        # Check for missing state information
+        if 'no state info' in str(station_info['state']):
             data_quality_issues.append("Missing state information")
         
         # Log the retrieved information with quality assessment
         logger.debug(f"   📊 Station info retrieved:")
         logger.debug(f"      🏢 Name: {station_info['station_name']}")
-        logger.debug(f"      📍 Coordinates: {station_info['latitude']:.4f}°N, {station_info['longitude']:.4f}°E")
-        logger.debug(f"      🏔️  Altitude: {station_info['station_altitude_m']:.0f}m")
+        
+        if isinstance(station_info['latitude'], (int, float)) and isinstance(station_info['longitude'], (int, float)):
+            logger.debug(f"      📍 Coordinates: {station_info['latitude']:.4f}°N, {station_info['longitude']:.4f}°E")
+        else:
+            logger.debug(f"      📍 Coordinates: {station_info['latitude']}, {station_info['longitude']}")
+        
+        if isinstance(station_info['station_altitude_m'], (int, float)):
+            logger.debug(f"      🏔️  Altitude: {station_info['station_altitude_m']:.0f}m")
+        else:
+            logger.debug(f"      🏔️  Altitude: {station_info['station_altitude_m']}")
+        
         logger.debug(f"      🏛️  State: {station_info['state']}")
+        logger.debug(f"      🌍 Region: {station_info['region']}")
         
         if data_quality_issues:
             logger.debug(f"      ⚠️  Data quality issues: {', '.join(data_quality_issues)}")
@@ -518,343 +676,22 @@ def get_station_info_enhanced(station_df: pd.DataFrame, station_id: int, logger:
         return None
 
 
-def validate_station_data_enhanced(station_df: pd.DataFrame, logger: logging.Logger) -> Dict[str, Any]:
-    """
-    ENHANCED: Validate parsed station data and provide comprehensive quality metrics.
-    
-    This function performs comprehensive validation of the parsed station data
-    to identify potential issues and provide detailed quality metrics.
-    
-    Args:
-        station_df: DataFrame with parsed station information
-        logger: Logger instance
-        
-    Returns:
-        Dictionary with validation results and quality metrics
-        
-    Example:
-        validation_results = validate_station_data_enhanced(station_df, logger)
-        print(f"Data quality score: {validation_results['quality_score']:.2f}")
-        print(f"Issues found: {len(validation_results['issues'])}")
-    """
-    if station_df is None or station_df.empty:
-        logger.warning("❌ No station data to validate")
-        return {
-            'quality_score': 0.0, 
-            'issues': ['No data available'],
-            'metrics': {},
-            'total_stations': 0,
-            'recommendations': ['Ensure station data file exists and is readable']
-        }
-    
-    logger.info(f"🔍 Validating station data with enhanced checks ({len(station_df)} stations)")
-    
-    issues = []
-    quality_metrics = {}
-    recommendations = []
-    
-    # Check for required columns
-    required_columns = ['station_id', 'station_name', 'latitude', 'longitude']
-    missing_columns = [col for col in required_columns if col not in station_df.columns]
-    
-    if missing_columns:
-        issues.append(f"Missing required columns: {missing_columns}")
-        logger.warning(f"   ❌ Missing columns: {missing_columns}")
-        recommendations.append("Verify station file format and column headers")
-    
-    # Enhanced station ID validation
-    if 'station_id' in station_df.columns:
-        # Check for duplicates
-        duplicate_ids = station_df['station_id'].duplicated().sum()
-        if duplicate_ids > 0:
-            issues.append(f"Found {duplicate_ids} duplicate station IDs")
-            logger.warning(f"   ⚠️  {duplicate_ids} duplicate station IDs found")
-            recommendations.append("Review data source for duplicate entries")
-        
-        # Check ID format consistency
-        invalid_format_ids = station_df[~station_df['station_id'].str.match(r'^\d{5}$')]['station_id'].count()
-        if invalid_format_ids > 0:
-            issues.append(f"Found {invalid_format_ids} station IDs with invalid format")
-            logger.warning(f"   ⚠️  {invalid_format_ids} station IDs don't match 5-digit format")
-            recommendations.append("Standardize station ID format to 5 digits with leading zeros")
-        
-        quality_metrics['unique_stations'] = station_df['station_id'].nunique()
-        quality_metrics['total_stations'] = len(station_df)
-        quality_metrics['duplicate_rate'] = duplicate_ids / len(station_df) if len(station_df) > 0 else 0
-    
-    # Enhanced coordinate validation
-    if 'latitude' in station_df.columns and 'longitude' in station_df.columns:
-        # Check for reasonable coordinate ranges (Germany is roughly 47-55°N, 6-15°E)
-        # Extended ranges to account for neighboring countries and territories
-        invalid_lat = ((station_df['latitude'] < 45) | (station_df['latitude'] > 57)).sum()
-        invalid_lon = ((station_df['longitude'] < 4) | (station_df['longitude'] > 17)).sum()
-        
-        if invalid_lat > 0:
-            issues.append(f"Found {invalid_lat} stations with latitude outside expected range (45-57°N)")
-            logger.warning(f"   ⚠️  {invalid_lat} stations with invalid latitude")
-            recommendations.append("Review stations with coordinates outside Germany/Central Europe")
-        
-        if invalid_lon > 0:
-            issues.append(f"Found {invalid_lon} stations with longitude outside expected range (4-17°E)")
-            logger.warning(f"   ⚠️  {invalid_lon} stations with invalid longitude")
-            recommendations.append("Review stations with coordinates outside Germany/Central Europe")
-        
-        # Check for missing coordinates
-        missing_coords = (station_df['latitude'].isna() | station_df['longitude'].isna()).sum()
-        if missing_coords > 0:
-            issues.append(f"Found {missing_coords} stations with missing coordinates")
-            logger.warning(f"   ⚠️  {missing_coords} stations with missing coordinates")
-            recommendations.append("Obtain coordinate data for stations with missing location info")
-        
-        # Check for suspicious coordinates (0,0 or very similar values)
-        zero_coords = ((station_df['latitude'] == 0) & (station_df['longitude'] == 0)).sum()
-        if zero_coords > 0:
-            issues.append(f"Found {zero_coords} stations with (0,0) coordinates")
-            logger.warning(f"   ⚠️  {zero_coords} stations with (0,0) coordinates")
-            recommendations.append("Verify coordinate data for stations at (0,0)")
-        
-        quality_metrics['valid_coordinates'] = len(station_df) - missing_coords - invalid_lat - invalid_lon - zero_coords
-        quality_metrics['coordinate_completeness'] = (len(station_df) - missing_coords) / len(station_df) if len(station_df) > 0 else 0
-    
-    # Enhanced station name validation
-    if 'station_name' in station_df.columns:
-        empty_names = station_df['station_name'].isna().sum()
-        if empty_names > 0:
-            issues.append(f"Found {empty_names} stations with missing names")
-            logger.warning(f"   ⚠️  {empty_names} stations with missing names")
-            recommendations.append("Obtain station names for unnamed stations")
-        
-        # Check for very short names (likely incomplete)
-        short_names = (station_df['station_name'].str.len() < 3).sum()
-        if short_names > 0:
-            issues.append(f"Found {short_names} stations with very short names (< 3 characters)")
-            logger.warning(f"   ⚠️  {short_names} stations with very short names")
-            recommendations.append("Review stations with unusually short names")
-        
-        quality_metrics['named_stations'] = len(station_df) - empty_names
-        quality_metrics['name_completeness'] = (len(station_df) - empty_names) / len(station_df) if len(station_df) > 0 else 0
-    
-    # Enhanced altitude validation
-    if 'station_height' in station_df.columns:
-        missing_altitude = station_df['station_height'].isna().sum()
-        
-        # Check for reasonable altitude ranges (Germany: -4m to 2962m, extended for safety)
-        invalid_altitude = ((station_df['station_height'] < -10) | (station_df['station_height'] > 3000)).sum()
-        
-        if missing_altitude > 0:
-            issues.append(f"Found {missing_altitude} stations with missing altitude")
-            logger.warning(f"   ⚠️  {missing_altitude} stations with missing altitude")
-        
-        if invalid_altitude > 0:
-            issues.append(f"Found {invalid_altitude} stations with altitude outside expected range (-10m to 3000m)")
-            logger.warning(f"   ⚠️  {invalid_altitude} stations with invalid altitude")
-            recommendations.append("Review stations with extreme altitude values")
-        
-        quality_metrics['valid_altitudes'] = len(station_df) - missing_altitude - invalid_altitude
-        quality_metrics['altitude_completeness'] = (len(station_df) - missing_altitude) / len(station_df) if len(station_df) > 0 else 0
-    
-    # Enhanced date validation
-    date_fields = ['from_date', 'to_date']
-    for field in date_fields:
-        if field in station_df.columns:
-            missing_dates = station_df[field].isna().sum()
-            if missing_dates > 0:
-                issues.append(f"Found {missing_dates} stations with missing {field}")
-                logger.warning(f"   ⚠️  {missing_dates} stations with missing {field}")
-            
-            quality_metrics[f'{field}_completeness'] = (len(station_df) - missing_dates) / len(station_df) if len(station_df) > 0 else 0
-    
-    # Calculate overall quality score with enhanced weighting
-    total_stations = len(station_df)
-    if total_stations > 0:
-        valid_coords = quality_metrics.get('valid_coordinates', 0)
-        named_stations = quality_metrics.get('named_stations', 0)
-        unique_stations = quality_metrics.get('unique_stations', 0)
-        valid_altitudes = quality_metrics.get('valid_altitudes', 0)
-        
-        # Enhanced quality score calculation
-        quality_score = (
-            (valid_coords / total_stations * 0.3) +           # Coordinates: 30%
-            (named_stations / total_stations * 0.25) +        # Names: 25%
-            (unique_stations / total_stations * 0.25) +       # Uniqueness: 25%
-            (valid_altitudes / total_stations * 0.2)          # Altitudes: 20%
-        )
-    else:
-        quality_score = 0.0
-    
-    # Enhanced logging of validation results
-    logger.info(f"   📊 Enhanced validation results:")
-    logger.info(f"      ✅ Valid coordinates: {quality_metrics.get('valid_coordinates', 0)}/{total_stations}")
-    logger.info(f"      ✅ Named stations: {quality_metrics.get('named_stations', 0)}/{total_stations}")
-    logger.info(f"      ✅ Unique stations: {quality_metrics.get('unique_stations', 0)}/{total_stations}")
-    logger.info(f"      ✅ Valid altitudes: {quality_metrics.get('valid_altitudes', 0)}/{total_stations}")
-    logger.info(f"      📈 Overall quality score: {quality_score:.2f}/1.00")
-    
-    # Quality assessment
-    if quality_score >= 0.9:
-        quality_assessment = "Excellent"
-    elif quality_score >= 0.8:
-        quality_assessment = "Good"
-    elif quality_score >= 0.7:
-        quality_assessment = "Fair"
-    elif quality_score >= 0.5:
-        quality_assessment = "Poor"
-    else:
-        quality_assessment = "Very Poor"
-    
-    logger.info(f"      🎯 Data quality assessment: {quality_assessment}")
-    
-    if issues:
-        logger.warning(f"   ⚠️  Issues found: {len(issues)}")
-        for i, issue in enumerate(issues[:10], 1):  # Show first 10 issues
-            logger.warning(f"      {i}. {issue}")
-        if len(issues) > 10:
-            logger.warning(f"      ... and {len(issues) - 10} more issues")
-    else:
-        logger.info("   ✅ No validation issues found")
-    
-    if recommendations:
-        logger.info(f"   💡 Recommendations: {len(recommendations)}")
-        for i, rec in enumerate(recommendations[:5], 1):  # Show first 5 recommendations
-            logger.info(f"      {i}. {rec}")
-    
-    return {
-        'quality_score': quality_score,
-        'quality_assessment': quality_assessment,
-        'issues': issues,
-        'recommendations': recommendations,
-        'metrics': quality_metrics,
-        'total_stations': total_stations
-    }
-
-
-def find_stations_by_name_enhanced(station_df: pd.DataFrame, name_pattern: str, logger: logging.Logger) -> List[Dict[str, Any]]:
-    """
-    ENHANCED: Find stations by name pattern with fuzzy matching.
-    
-    Args:
-        station_df: DataFrame with station information
-        name_pattern: Pattern to search for (supports partial matches)
-        logger: Logger instance
-        
-    Returns:
-        List of matching station dictionaries
-        
-    Example:
-        matches = find_stations_by_name_enhanced(station_df, "AACHEN", logger)
-        # Returns stations with "AACHEN" in the name
-    """
-    if station_df is None or station_df.empty:
-        logger.warning("❌ No station data available for search")
-        return []
-    
-    if 'station_name' not in station_df.columns:
-        logger.warning("❌ No station_name column available for search")
-        return []
-    
-    logger.info(f"🔍 Searching for stations matching pattern: '{name_pattern}'")
-    
-    # Case-insensitive search
-    pattern_lower = name_pattern.lower()
-    matches = station_df[station_df['station_name'].str.lower().str.contains(pattern_lower, na=False)]
-    
-    logger.info(f"   ✅ Found {len(matches)} matching stations")
-    
-    # Convert to list of dictionaries
-    results = []
-    for _, row in matches.iterrows():
-        station_info = get_station_info_enhanced(pd.DataFrame([row]), row['station_id'], logger)
-        if station_info:
-            results.append(station_info)
-    
-    return results
-
-
-def get_stations_in_region_enhanced(station_df: pd.DataFrame, lat_min: float, lat_max: float, 
-                                  lon_min: float, lon_max: float, logger: logging.Logger) -> List[Dict[str, Any]]:
-    """
-    ENHANCED: Get stations within a geographic bounding box.
-    
-    Args:
-        station_df: DataFrame with station information
-        lat_min: Minimum latitude
-        lat_max: Maximum latitude
-        lon_min: Minimum longitude
-        lon_max: Maximum longitude
-        logger: Logger instance
-        
-    Returns:
-        List of stations within the specified region
-        
-    Example:
-        # Get stations in North Rhine-Westphalia region
-        nrw_stations = get_stations_in_region_enhanced(
-            station_df, 50.3, 52.5, 5.9, 9.5, logger
-        )
-    """
-    if station_df is None or station_df.empty:
-        logger.warning("❌ No station data available for region search")
-        return []
-    
-    required_cols = ['latitude', 'longitude']
-    if not all(col in station_df.columns for col in required_cols):
-        logger.warning(f"❌ Missing required columns for region search: {required_cols}")
-        return []
-    
-    logger.info(f"🌍 Searching for stations in region: {lat_min}°-{lat_max}°N, {lon_min}°-{lon_max}°E")
-    
-    # Filter stations within bounding box
-    mask = (
-        (station_df['latitude'] >= lat_min) & (station_df['latitude'] <= lat_max) &
-        (station_df['longitude'] >= lon_min) & (station_df['longitude'] <= lon_max) &
-        station_df['latitude'].notna() & station_df['longitude'].notna()
-    )
-    
-    matches = station_df[mask]
-    logger.info(f"   ✅ Found {len(matches)} stations in specified region")
-    
-    # Convert to list of dictionaries
-    results = []
-    for _, row in matches.iterrows():
-        station_info = get_station_info_enhanced(pd.DataFrame([row]), row['station_id'], logger)
-        if station_info:
-            results.append(station_info)
-    
-    return results
-
-
-# Legacy function names for backward compatibility
-def parse_station_info_file(file_path: Path, logger: logging.Logger) -> Optional[pd.DataFrame]:
-    """Legacy function name - redirects to enhanced version."""
-    logger.debug("🔄 Using enhanced station info parsing (legacy function name)")
-    return parse_station_info_file_enhanced(file_path, logger)
-
-
-def get_station_info(station_df: pd.DataFrame, station_id: int, logger: logging.Logger) -> Optional[Dict[str, Any]]:
-    """Legacy function name - redirects to enhanced version."""
-    logger.debug("🔄 Using enhanced station info lookup (legacy function name)")
-    return get_station_info_enhanced(station_df, station_id, logger)
-
-
-def validate_station_data(station_df: pd.DataFrame, logger: logging.Logger) -> Dict[str, Any]:
-    """Legacy function name - redirects to enhanced version."""
-    logger.debug("🔄 Using enhanced station data validation (legacy function name)")
-    return validate_station_data_enhanced(station_df, logger)
-
-
 if __name__ == "__main__":
     """
-    Test the enhanced station info parser functionality when run directly.
+    Test the station info parser functionality when run directly.
     
-    This provides comprehensive testing to verify that the parser is working correctly.
+    This provides comprehensive testing to verify that the parser is working correctly
+    with real German weather station description files.
+    
     Run this file directly to test: python -m app.parsing.station_info_parser
     """
-    import traceback
+    import sys
     
-    print("Testing ClimaStation Enhanced Station Info Parser...")
+    print("🧪 Testing ClimaStation Station Info Parser...")
+    print("=" * 60)
     
-    # Create a proper test logger
-    test_logger = logging.getLogger("test_station_parser_enhanced")
+    # Create a test logger
+    test_logger = logging.getLogger("test_station_parser")
     test_logger.setLevel(logging.DEBUG)
     
     # Add console handler for test output
@@ -864,43 +701,111 @@ if __name__ == "__main__":
     test_logger.addHandler(console_handler)
     
     # Test file path (adjust as needed for your setup)
-    test_file_path = Path("data/1_raw/station_info/historical_stations.txt")
+    test_file_path = Path("data/germany/2_downloaded_files/10_minutes/air_temperature/historical/zehn_min_tu_Beschreibung_Stationen.txt")
+    
+    # Alternative paths to try
+    alternative_paths = [
+        Path("G:/00_code-files/ClimaStation/data/germany/2_downloaded_files/10_minutes/air_temperature/historical/zehn_min_tu_Beschreibung_Stationen.txt"),
+        Path("zehn_min_tu_Beschreibung_Stationen.txt"),
+        Path("data/station_info/zehn_min_tu_Beschreibung_Stationen.txt")
+    ]
+    
+    # Find the test file
+    actual_test_file = None
+    for path in [test_file_path] + alternative_paths:
+        if path.exists():
+            actual_test_file = path
+            break
+    
+    if not actual_test_file:
+        print("❌ Test file not found. Tried these paths:")
+        for path in [test_file_path] + alternative_paths:
+            print(f"   - {path}")
+        print("\nPlease ensure the station description file is available.")
+        sys.exit(1)
     
     try:
-        print(f"\n🧪 Testing enhanced station info parsing with file: {test_file_path}")
+        print(f"\n🧪 Testing station info parsing with file: {actual_test_file}")
         
         # Test parsing
-        station_df = parse_station_info_file_enhanced(test_file_path, test_logger)
+        station_df = parse_station_info_file(actual_test_file, test_logger)
         
-        if station_df is not None:
+        if station_df is not None and not station_df.empty:
             print(f"✅ Successfully parsed {len(station_df)} stations")
             
-            # Test validation
-            validation_results = validate_station_data_enhanced(station_df, test_logger)
-            print(f"📊 Data quality score: {validation_results['quality_score']:.2f}")
+            # Show sample of parsed data
+            print(f"\n📊 Sample of parsed stations:")
+            sample_df = station_df.head(5)[['station_id', 'station_name', 'latitude', 'longitude', 'state']]
+            print(sample_df.to_string(index=False))
             
-            # Test station lookup
-            if len(station_df) > 0:
-                test_station_id = int(station_df.iloc[0]['station_id'])
-                station_info = get_station_info_enhanced(station_df, test_station_id, test_logger)
+            # Test station lookup - dynamically test the first available station
+            available_stations = station_df['station_id'].unique()
+            if len(available_stations) > 0:
+                # Get the first station ID and convert to integer for testing
+                first_station_id_str = available_stations[0]
+                try:
+                    first_station_id = int(first_station_id_str)
+                except ValueError:
+                    first_station_id = int(first_station_id_str.lstrip('0')) if first_station_id_str.lstrip('0') else 0
+                
+                print(f"\n🔍 Testing station lookup for station {first_station_id} (ID: {first_station_id_str})...")
+                station_info = get_station_info(station_df, first_station_id, test_logger)
                 
                 if station_info:
                     print(f"✅ Station lookup test successful:")
-                    print(f"   Station: {station_info['station_name']}")
-                    print(f"   Location: {station_info['latitude']:.4f}°N, {station_info['longitude']:.4f}°E")
+                    print(f"   🏢 Station: {station_info['station_name']}")
+                    
+                    if isinstance(station_info['latitude'], (int, float)) and isinstance(station_info['longitude'], (int, float)):
+                        print(f"   📍 Location: {station_info['latitude']:.4f}°N, {station_info['longitude']:.4f}°E")
+                        
+                        # Dynamic coordinate validation - check if within German bounds
+                        if 47 <= station_info['latitude'] <= 55 and 5 <= station_info['longitude'] <= 15:
+                            print("   ✅ Coordinates are within expected German bounds")
+                        else:
+                            print("   ⚠️  Coordinates are outside expected German bounds")
+                            print("      Expected: Lat 47-55°N, Lon 5-15°E")
+                    else:
+                        print(f"   📍 Location: {station_info['latitude']}, {station_info['longitude']}")
+                    
+                    if isinstance(station_info['station_altitude_m'], (int, float)):
+                        print(f"   🏔️  Altitude: {station_info['station_altitude_m']:.0f}m")
+                        
+                        # Dynamic altitude validation
+                        if -10 <= station_info['station_altitude_m'] <= 3000:
+                            print("   ✅ Altitude is within expected German range")
+                        else:
+                            print("   ⚠️  Altitude is outside expected German range (-10m to 3000m)")
+                    else:
+                        print(f"   🏔️  Altitude: {station_info['station_altitude_m']}")
+                    
+                    print(f"   🏛️  State: {station_info['state']}")
+                    print(f"   🌍 Region: {station_info['region']}")
+                    
                 else:
                     print("❌ Station lookup test failed")
             
-            # Test search functionality
-            if len(station_df) > 0:
-                search_results = find_stations_by_name_enhanced(station_df, "BERLIN", test_logger)
-                print(f"🔍 Found {len(search_results)} stations matching 'BERLIN'")
+            # Test a few more stations dynamically
+            print(f"\n🔍 Testing additional station lookups...")
+            test_station_ids = available_stations[:3]  # Test first 3 available stations
             
-            print("✅ All enhanced tests completed successfully!")
+            for station_id_str in test_station_ids:
+                try:
+                    test_id = int(station_id_str.lstrip('0')) if station_id_str.lstrip('0') else 0
+                    station_info = get_station_info(station_df, test_id, test_logger)
+                    if station_info:
+                        print(f"   ✅ Station {station_id_str}: {station_info['station_name']} ({station_info['state']})")
+                    else:
+                        print(f"   ❌ Station {station_id_str}: Not found")
+                except ValueError:
+                    print(f"   ⚠️  Station {station_id_str}: Invalid ID format")
+            
+            print("\n✅ All tests completed successfully!")
             
         else:
             print("❌ Failed to parse station info file")
+            sys.exit(1)
             
     except Exception as e:
         print(f"💥 Test failed with error: {e}")
         print(f"🔍 Traceback: {traceback.format_exc()}")
+        sys.exit(1)
