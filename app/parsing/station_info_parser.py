@@ -385,13 +385,7 @@ def parse_station_info_file(file_path: Path, logger: logging.Logger) -> Optional
                 reasonable_lat = (47 <= lat_min <= 55) and (47 <= lat_max <= 55)
                 reasonable_lon = (5 <= lon_min <= 15) and (5 <= lon_max <= 15)
                 
-                logger.info(f"   🌍 Valid coordinates: {valid_coords}/{len(df)}")
-                logger.info(f"   🌍 Latitude range: {lat_min:.2f}° to {lat_max:.2f}°")
-                logger.info(f"   🌍 Longitude range: {lon_min:.2f}° to {lon_max:.2f}°")
                 
-                if not reasonable_lat or not reasonable_lon:
-                    logger.warning("   ⚠️  Coordinate ranges seem unreasonable for Germany")
-                    logger.warning("   ⚠️  Expected: Lat 47-55°N, Lon 5-15°E")
             else:
                 logger.warning("   ⚠️  No valid coordinates found")
         

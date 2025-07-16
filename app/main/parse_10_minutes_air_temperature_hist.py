@@ -366,30 +366,24 @@ def main():
         print("   Please verify these paths are correct for your setup.")
         print()
     
-    # Set up logging with timestamp
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    debug_log_path = Path(f"data/0_debug/parse_10_minutes_air_temperature_hist_{timestamp}.debug.log")
     
     # Clear existing log file and set up fresh logger
-    if debug_log_path.exists():
-        debug_log_path.unlink()
-        print(f"🗑️  Cleared previous log file: {debug_log_path.name}")
     
     if HAS_LOGGER:
-        logger = setup_logger(debug_log_path)
+        logger = setup_logger(script_name="parse_10_minutes_air_temperature_hist")
     else:
-        logger = setup_fallback_logger(debug_log_path)
+        logger = setup_fallback_logger(Path("data/germany/0_debug/parse_10_minutes_air_temperature_hist.debug.log"))
         logger.warning("⚠️  Using fallback logger - utils.logger not found")
     
     # Log startup information
     logger.info("🚀 Starting COMPLETE ENHANCED 10-minute air temperature parser")
     logger.info(f"📁 Raw data directory: {RAW_BASE}")
     logger.info(f"📄 Station info file: {STATION_INFO_FILE_HISTORICAL}")
-    logger.info(f"🔄 Fresh log file created: {debug_log_path.name}")
+    logger.info("🔄 Fresh log file created: parse_10_minutes_air_temperature_hist.debug.log")
     logger.info("✨ Enhanced features: comprehensive error handling, detailed statistics")
     logger.info(f"⚙️  Configuration loaded: {CONFIG_LOADED}")
     
-    print(f"📄 Log file: {debug_log_path}")
+    print("📄 Log file: data/germany/0_debug/parse_10_minutes_air_temperature_hist.debug.log")
     print()
 
     # Discover ZIP files
@@ -453,9 +447,9 @@ def main():
         print("💥 No files were processed successfully")
     
     logger.info("🏁 Complete enhanced processing finished")
-    logger.info(f"📄 Full log available at: {debug_log_path}")
+    logger.info(f"📄 Full log available at: data/germany/0_debug/parse_10_minutes_air_temperature_hist.debug.log")
     print("🏁 Complete enhanced processing finished")
-    print(f"📄 Full log available at: {debug_log_path}")
+    print(f"📄 Full log available at: data/germany/0_debug/parse_10_minutes_air_temperature_hist.debug.log")
 
 
 if __name__ == "__main__":

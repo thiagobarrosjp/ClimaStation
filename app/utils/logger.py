@@ -1,266 +1,209 @@
 """
-Logging Utility with Overwrite Support for ClimaStation Pipeline
+Enhanced logging utility for ClimaStation weather data processing pipeline.
 
-This module provides centralized logging functionality for the weather data processing pipeline.
-It creates structured log files with timestamps and appropriate formatting, supporting both
-append and overwrite modes for different use cases.
+Purpose:
+- Provides structured logging with consistent formatting
+- Supports both console and file output with different log levels
+- Creates timestamped log files in Germany-specific debug directory
+- Handles log rotation and cleanup
 
-AUTHOR: ClimaStation Backend Pipeline
-VERSION: Enhanced for production use
-LAST UPDATED: 2025-01-15
+Input: Script name, optional log file path
+Output: Configured logger instance, log files in data/germany/0_debug/
 
-KEY FEATURES:
-- File-based logging with UTF-8 encoding for international characters
-- Configurable log levels (DEBUG, INFO, WARNING, ERROR)
-- Prevents duplicate handlers when called multiple times
-- Support for both append and overwrite modes
-- Automatic directory creation
-- Clean log file management
-
-EXPECTED OUTPUT:
-CLIMASTATION-BACKEND/
-├── data/
-│   └── 0_debug/
-│       ├── parse_10_minutes_air_temperature_hist.debug.log
-│       ├── jsonl_to_pretty_json.debug.log
-│       └── [other_script_name].debug.log
-
-USAGE:
-    from app.utils.logger import setup_logger, get_logger, clear_log_file
-    
-    # Set up a new logger (overwrites existing log)
-    logger = setup_logger(Path("data/0_debug/my_script.log"), overwrite=True)
-    
-    # Get an existing logger
-    logger = get_logger("my_logger")
-    
-    # Clear a log file
-    clear_log_file(Path("data/0_debug/old_log.log"))
+Usage:
+    from app.utils.logger import setup_logger
+    logger = setup_logger(script_name="parse_air_temperature")
+    logger.info("Processing started")
 """
 
 import logging
+import sys
 from pathlib import Path
+from datetime import datetime
 from typing import Optional
 
 
 def setup_logger(
-    log_path: Path, 
-    level: int = logging.DEBUG, 
-    logger_name: str = "climastation_logger", 
-    overwrite: bool = False
+    log_file_path: Optional[Path] = None, 
+    script_name: Optional[str] = None,
+    console_level: int = logging.INFO,
+    file_level: int = logging.DEBUG
 ) -> logging.Logger:
     """
-    Set up a file-based logger with proper formatting and UTF-8 encoding.
-    
-    This function creates a logger that writes to both file and optionally console.
-    It handles directory creation, prevents duplicate handlers, and supports both
-    append and overwrite modes for flexible log management.
+    Setup enhanced logger with console and file handlers.
     
     Args:
-        log_path: Path where log file should be created (directories created automatically)
-        level: Logging level (default: DEBUG for detailed logging)
-        logger_name: Name for the logger instance (default: "climastation_logger")
-        overwrite: If True, overwrites existing log file; if False, appends (default: False)
-        
+        log_file_path: Optional custom log file path
+        script_name: Script name for automatic log file naming
+        console_level: Console logging level (default: INFO)
+        file_level: File logging level (default: DEBUG)
+    
     Returns:
-        Configured logger instance ready for use
-        
-    Example:
-        # Create a fresh log file for a new run
-        logger = setup_logger(Path("data/0_debug/parser.log"), overwrite=True)
-        logger.info("Processing started")
-        
-        # Append to existing log file
-        logger = setup_logger(Path("data/0_debug/parser.log"), overwrite=False)
-        logger.info("Additional processing")
+        Configured logger instance
     """
-    # Ensure log directory exists (create parent directories if needed)
-    log_path.parent.mkdir(parents=True, exist_ok=True)
-
-    # Get or create logger with specified name
-    logger = logging.getLogger(logger_name)
-    logger.setLevel(level)
-
-    # Clear existing handlers if we want to overwrite or if this is a fresh setup
-    # This prevents duplicate log entries when the same logger is set up multiple times
-    if overwrite or not logger.handlers:
-        # Remove and close existing handlers to prevent resource leaks
-        for handler in logger.handlers[:]:
-            logger.removeHandler(handler)
-            handler.close()
-        
-        # Determine file mode based on overwrite setting
-        file_mode = 'w' if overwrite else 'a'
-        
-        # Create file handler with UTF-8 encoding for international characters
-        file_handler = logging.FileHandler(log_path, mode=file_mode, encoding='utf-8')
-        
-        # Create formatter with timestamp and clear message format
-        formatter = logging.Formatter(
-            '%(asctime)s — %(levelname)s — %(message)s',
-            datefmt='%Y-%m-%d %H:%M:%S'
-        )
-        
-        file_handler.setFormatter(formatter)
-        logger.addHandler(file_handler)
-        
-        # Optional: Add console handler for immediate feedback
-        # Uncomment the following lines if you want console output too:
-        # console_handler = logging.StreamHandler()
-        # console_handler.setFormatter(formatter)
-        # logger.addHandler(console_handler)
-        
-        # Log the logger setup (only when creating new handlers)
-        if overwrite:
-            logger.debug(f"Logger '{logger_name}' initialized with fresh log file: {log_path}")
-        else:
-            logger.debug(f"Logger '{logger_name}' initialized, appending to: {log_path}")
-
-    return logger
-
-
-def get_logger(logger_name: str = "climastation_logger") -> logging.Logger:
-    """
-    Get an existing logger instance by name.
     
-    This function retrieves a previously configured logger. If the logger
-    doesn't exist, it returns a basic logger instance. This is useful for
-    accessing the same logger from multiple modules.
+    # Create logger
+    logger = logging.getLogger('climastation_logger')
+    logger.setLevel(logging.DEBUG)
     
-    Args:
-        logger_name: Name of the logger to retrieve (default: "climastation_logger")
+    # Clear existing handlers to avoid duplicates
+    logger.handlers.clear()
+    
+    # Determine log file path
+    if log_file_path is None and script_name:
+        # Use Germany-specific debug folder with static naming
+        log_dir = Path("data/germany/0_debug")
+        log_dir.mkdir(parents=True, exist_ok=True)
         
-    Returns:
-        Existing logger instance or new basic logger if not found
-        
-    Example:
-        # In main script
-        logger = setup_logger(Path("data/0_debug/main.log"))
-        
-        # In another module
-        logger = get_logger()  # Gets the same logger instance
-        logger.info("Message from another module")
-    """
-    logger = logging.getLogger(logger_name)
+        # Static filename without timestamp - will overwrite previous version
+        log_file_path = log_dir / f"{script_name}.debug.log"
+    elif log_file_path is None:
+        # Fallback to default location
+        log_dir = Path("data/germany/0_debug")
+        log_dir.mkdir(parents=True, exist_ok=True)
+        log_file_path = log_dir / "climastation.debug.log"
     
-    # If logger has no handlers, it hasn't been set up yet
-    if not logger.handlers:
-        # Return a basic logger with warning
-        logger.setLevel(logging.WARNING)
-        logger.warning(f"Logger '{logger_name}' requested but not set up. Use setup_logger() first.")
+    # Create formatters
+    console_formatter = logging.Formatter(
+        '%(asctime)s — %(levelname)s — %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
     
-    return logger
-
-
-def clear_log_file(log_path: Path) -> bool:
-    """
-    Clear/delete an existing log file.
+    file_formatter = logging.Formatter(
+        '%(asctime)s — %(levelname)s — %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
     
-    This function safely removes a log file if it exists. Useful for
-    cleaning up old logs or ensuring fresh starts for new processing runs.
-    
-    Args:
-        log_path: Path to the log file to clear/delete
-        
-    Returns:
-        True if file was cleared/deleted successfully, False if file didn't exist
-        
-    Example:
-        # Clear old log before starting new processing
-        if clear_log_file(Path("data/0_debug/old_process.log")):
-            print("Old log file cleared")
-        else:
-            print("No old log file to clear")
-    """
-    try:
-        if log_path.exists():
-            log_path.unlink()
-            return True
-        return False
-    except (OSError, PermissionError) as e:
-        # Handle cases where file is locked or permission denied
-        print(f"Warning: Could not clear log file {log_path}: {e}")
-        return False
-
-
-def setup_console_logger(logger_name: str = "console_logger", level: int = logging.INFO) -> logging.Logger:
-    """
-    Set up a console-only logger for immediate feedback.
-    
-    This function creates a logger that only outputs to console, useful for
-    scripts that need immediate feedback without file logging.
-    
-    Args:
-        logger_name: Name for the console logger (default: "console_logger")
-        level: Logging level (default: INFO for general messages)
-        
-    Returns:
-        Console-only logger instance
-        
-    Example:
-        # For quick debugging or user feedback
-        console_logger = setup_console_logger()
-        console_logger.info("Quick status update")
-    """
-    logger = logging.getLogger(logger_name)
-    logger.setLevel(level)
-    
-    # Clear existing handlers
-    for handler in logger.handlers[:]:
-        logger.removeHandler(handler)
-        handler.close()
-    
-    # Add only console handler
-    console_handler = logging.StreamHandler()
-    formatter = logging.Formatter('%(levelname)s — %(message)s')
-    console_handler.setFormatter(formatter)
+    # Console handler
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setLevel(console_level)
+    console_handler.setFormatter(console_formatter)
     logger.addHandler(console_handler)
     
+    # File handler - use 'w' mode to overwrite previous log
+    if log_file_path:
+        file_handler = logging.FileHandler(log_file_path, mode='w', encoding='utf-8')
+        file_handler.setLevel(file_level)
+        file_handler.setFormatter(file_formatter)
+        logger.addHandler(file_handler)
+        
+        # Log the initialization
+        logger.debug(f"Logger 'climastation_logger' initialized, writing to: {log_file_path}")
+    
     return logger
 
 
-# Module-level convenience functions for common use cases
-def quick_file_logger(log_file_name: str, overwrite: bool = True) -> logging.Logger:
+def get_logger() -> logging.Logger:
     """
-    Quickly set up a file logger in the standard debug directory.
+    Get existing logger instance.
+    
+    Returns:
+        Existing logger or creates new one if none exists
+    """
+    logger = logging.getLogger('climastation_logger')
+    
+    if not logger.handlers:
+        # No logger configured, create default
+        return setup_logger(script_name="default")
+    
+    return logger
+
+
+def log_processing_start(logger: logging.Logger, script_name: str, input_path: str) -> None:
+    """
+    Log standardized processing start message.
     
     Args:
-        log_file_name: Name of the log file (e.g., "my_script.log")
-        overwrite: Whether to overwrite existing log (default: True)
-        
-    Returns:
-        Configured file logger
-        
-    Example:
-        logger = quick_file_logger("data_processing.log")
-        logger.info("Processing started")
+        logger: Logger instance
+        script_name: Name of the processing script
+        input_path: Input data path
     """
-    log_path = Path("data/0_debug") / log_file_name
-    return setup_logger(log_path, overwrite=overwrite)
+    logger.info("=" * 80)
+    logger.info(f"🚀 Starting {script_name}")
+    logger.info(f"📁 Input path: {input_path}")
+    logger.info(f"🕐 Started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    logger.info("=" * 80)
 
 
+def log_processing_end(logger: logging.Logger, script_name: str, success: bool, duration: float) -> None:
+    """
+    Log standardized processing end message.
+    
+    Args:
+        logger: Logger instance
+        script_name: Name of the processing script
+        success: Whether processing was successful
+        duration: Processing duration in seconds
+    """
+    status = "✅ COMPLETED" if success else "❌ FAILED"
+    logger.info("=" * 80)
+    logger.info(f"{status}: {script_name}")
+    logger.info(f"⏱️  Duration: {duration:.2f} seconds")
+    logger.info(f"🕐 Finished at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    logger.info("=" * 80)
+
+
+def log_file_processing(logger: logging.Logger, file_name: str, file_size: int, records: int) -> None:
+    """
+    Log standardized file processing message.
+    
+    Args:
+        logger: Logger instance
+        file_name: Name of processed file
+        file_size: File size in bytes
+        records: Number of records processed
+    """
+    size_mb = file_size / (1024 * 1024)
+    logger.info(f"📄 Processed: {file_name}")
+    logger.info(f"💾 Size: {size_mb:.2f} MB")
+    logger.info(f"📊 Records: {records:,}")
+
+
+def log_error_with_context(logger: logging.Logger, error: Exception, context: str) -> None:
+    """
+    Log error with additional context information.
+    
+    Args:
+        logger: Logger instance
+        error: Exception that occurred
+        context: Additional context about where/when error occurred
+    """
+    logger.error(f"❌ Error in {context}: {str(error)}")
+    logger.debug(f"❌ Full error details: {repr(error)}", exc_info=True)
+
+
+def log_validation_results(logger: logging.Logger, total: int, valid: int, invalid: int) -> None:
+    """
+    Log standardized validation results.
+    
+    Args:
+        logger: Logger instance
+        total: Total records processed
+        valid: Number of valid records
+        invalid: Number of invalid records
+    """
+    success_rate = (valid / total * 100) if total > 0 else 0
+    logger.info(f"📊 Validation Results:")
+    logger.info(f"   📈 Total records: {total:,}")
+    logger.info(f"   ✅ Valid records: {valid:,}")
+    logger.info(f"   ❌ Invalid records: {invalid:,}")
+    logger.info(f"   📊 Success rate: {success_rate:.1f}%")
+
+
+# Example usage and testing
 if __name__ == "__main__":
-    """
-    Test the logger functionality when run directly.
+    # Test the logger setup
+    test_logger = setup_logger(script_name="test_logger")
     
-    This provides a simple test to verify that the logger is working correctly.
-    Run this file directly to test: python -m app.utils.logger
-    """
-    print("Testing ClimaStation Logger...")
+    test_logger.info("Testing logger functionality")
+    test_logger.debug("This is a debug message")
+    test_logger.warning("This is a warning message")
+    test_logger.error("This is an error message")
     
-    # Test file logger
-    test_log_path = Path("data/0_debug/logger_test.log")
-    logger = setup_logger(test_log_path, overwrite=True)
+    # Test utility functions
+    log_processing_start(test_logger, "test_script", "/test/input/path")
+    log_file_processing(test_logger, "test_file.zip", 1024000, 5000)
+    log_validation_results(test_logger, 5000, 4950, 50)
+    log_processing_end(test_logger, "test_script", True, 45.67)
     
-    logger.debug("Debug message test")
-    logger.info("Info message test")
-    logger.warning("Warning message test")
-    logger.error("Error message test")
-    
-    print(f"✅ Test log created at: {test_log_path}")
-    
-    # Test console logger
-    console_logger = setup_console_logger()
-    console_logger.info("Console logger test - you should see this message")
-    
-    print("✅ Logger testing complete")
+    print(f"Test log written to: data/germany/0_debug/test_logger.debug.log")

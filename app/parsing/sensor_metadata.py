@@ -6,11 +6,11 @@ station metadata files. It combines parameter metadata with device specification
 to create comprehensive sensor descriptions.
 
 AUTHOR: ClimaStation Backend Pipeline
-VERSION: Clean single-function version
-LAST UPDATED: 2025-01-15
+VERSION: Fixed header detection version
+LAST UPDATED: 2025-07-16
 
 KEY FUNCTIONALITY:
-- Loads parameter metadata (what was measured when)
+- Loads parameter metadata (what was measured when) with proper header detection
 - Loads device metadata (sensor specifications and calibration info)
 - Combines metadata with flexible date matching
 - Provides comprehensive sensor descriptions with bilingual translations
@@ -24,6 +24,12 @@ USAGE:
     
     # Parse sensors for specific station and date
     sensors = parse_sensor_metadata(sensor_df, station_id, date_int, logger)
+
+FIXES APPLIED:
+- Added proper header row detection similar to station_info_parser.py
+- Fixed CSV parsing to skip header and separator lines
+- Enhanced error handling for malformed metadata files
+- Added better debugging for metadata parsing issues
 """
 
 import pandas as pd
@@ -66,9 +72,52 @@ def normalize_columns(df: pd.DataFrame, column_map: dict) -> pd.DataFrame:
     return df
 
 
+def detect_data_start_line(file_path: Path, encoding: str = 'latin-1') -> int:
+    """
+    Detect where actual data starts by finding header and separator lines.
+    Similar logic to station_info_parser.py
+    
+    Args:
+        file_path: Path to the metadata file
+        encoding: File encoding to use
+        
+    Returns:
+        Line number where data starts (0-based), or 0 if no header detected
+    """
+    try:
+        with open(file_path, 'r', encoding=encoding) as f:
+            lines = f.readlines()
+        
+        header_line = None
+        separator_line = None
+        
+        for i, line in enumerate(lines):
+            line_stripped = line.strip()
+            
+            # Look for header line (contains column names like "Stations_ID", "Parameter", etc.)
+            if ('Stations_ID' in line or 'Parameter' in line or 'Stationsname' in line) and ';' in line:
+                header_line = i
+                continue
+            
+            # Look for separator line (contains "---" or similar)
+            if header_line is not None and ('---' in line_stripped or line_stripped.startswith('-') or 'eor' in line_stripped):
+                separator_line = i
+                break
+        
+        if header_line is not None and separator_line is not None:
+            return separator_line + 1  # Data starts after separator
+        elif header_line is not None:
+            return header_line + 1  # Data starts after header if no separator
+        else:
+            return 0  # No header detected, start from beginning
+            
+    except Exception as e:
+        return 0  # Fallback to start from beginning
+
+
 def load_parameter_metadata(meta_files: List[Path], logger: logging.Logger) -> pd.DataFrame:
     """
-    Load parameter metadata from metadata files.
+    Load parameter metadata from metadata files with proper header detection.
     
     Args:
         meta_files: List of metadata file paths
@@ -86,29 +135,83 @@ def load_parameter_metadata(meta_files: List[Path], logger: logging.Logger) -> p
     try:
         logger.info(f"📋 Loading parameter metadata: {param_file.name}")
         
+        # Detect where data actually starts
+        skip_rows = detect_data_start_line(param_file)
+        
+        if skip_rows > 0:
+            logger.debug(f"   📏 Skipping {skip_rows} header/separator lines")
+        
+        # Read CSV with proper header handling
         param_df = pd.read_csv(
             param_file, 
             sep=';', 
             skipinitialspace=True, 
             encoding='latin-1', 
-            dtype=str
+            dtype=str,
+            skiprows=skip_rows,  # Skip header and separator lines
+            header=None  # Don't treat first data row as header
         )
+        
+        # Remove empty rows and rows that might be footers
+        param_df = param_df.dropna(how='all')  # Remove completely empty rows
+        
+        # Filter out any remaining header-like rows
+        if not param_df.empty:
+            # Remove rows where first column contains header-like text
+            header_indicators = ['Stations_ID', 'Parameter', 'generiert:', 'Legende:', 'eor']
+            mask = ~param_df.iloc[:, 0].astype(str).str.contains('|'.join(header_indicators), na=False, case=False)
+            param_df = param_df[mask]
+        
+        if param_df.empty:
+            logger.warning("   ⚠️  No data rows found after header filtering")
+            return pd.DataFrame()
+        
+        # Assign proper column names based on expected structure
+        expected_columns = [
+            'station_id', 'from_date', 'to_date', 'station_name', 
+            'parameter', 'parameter_description', 'unit', 'data_source',
+            'additional_info', 'special_notes', 'literature_reference', 'eor'
+        ]
+        
+        # Adjust column names to match actual data
+        actual_columns = min(len(param_df.columns), len(expected_columns))
+        param_df.columns = expected_columns[:actual_columns]
         
         # Clean and normalize
         param_df = param_df.apply(lambda col: col.str.strip() if col.dtype == "object" else col)
         param_df = normalize_columns(param_df, COLUMN_NAME_MAP)
         
+        # Remove any rows with 'eor' or other footer indicators
+        if 'eor' in param_df.columns:
+            param_df = param_df[param_df['eor'] != 'eor']
+        
+        # Final cleanup - remove any rows that still look like headers
+        if 'station_id' in param_df.columns:
+            param_df = param_df[param_df['station_id'].astype(str).str.strip() != 'station_id']
+        if 'parameter' in param_df.columns:
+            param_df = param_df[param_df['parameter'].astype(str).str.strip() != 'parameter']
+        
         logger.info(f"   ✅ Loaded {len(param_df)} parameter entries")
+        
+        # Debug: Show sample of loaded data
+        if not param_df.empty and logger.level <= logging.DEBUG:
+            logger.debug("   📋 Sample parameter entries:")
+            for idx, (i, row) in enumerate(param_df.head(3).iterrows(), 1):
+                station_id = row.get('station_id', 'N/A')
+                parameter = row.get('parameter', 'N/A')
+                logger.debug(f"      {idx}. Station {station_id}: {parameter}")
+        
         return param_df
         
     except Exception as e:
         logger.error(f"❌ Failed to load parameter metadata: {e}")
+        logger.debug(f"   📋 Full error: {traceback.format_exc()}")
         return pd.DataFrame()
 
 
 def load_device_metadata(meta_files: List[Path], logger: logging.Logger) -> pd.DataFrame:
     """
-    Load device metadata from metadata files.
+    Load device metadata from metadata files with proper header detection.
     
     Args:
         meta_files: List of metadata file paths
@@ -126,23 +229,61 @@ def load_device_metadata(meta_files: List[Path], logger: logging.Logger) -> pd.D
     try:
         logger.info(f"🔧 Loading device metadata: {device_file.name}")
         
+        # Detect where data actually starts
+        skip_rows = detect_data_start_line(device_file)
+        
+        if skip_rows > 0:
+            logger.debug(f"   📏 Skipping {skip_rows} header/separator lines")
+        
+        # Read CSV with proper header handling
         device_df = pd.read_csv(
             device_file, 
             sep=';', 
             skipinitialspace=True, 
             encoding='latin-1', 
-            dtype=str
+            dtype=str,
+            skiprows=skip_rows,  # Skip header and separator lines
+            header=None  # Don't treat first data row as header
         )
+        
+        # Remove empty rows
+        device_df = device_df.dropna(how='all')
+        
+        # Filter out any remaining header-like rows
+        if not device_df.empty:
+            header_indicators = ['Stations_ID', 'Stationsname', 'generiert:', 'eor']
+            mask = ~device_df.iloc[:, 0].astype(str).str.contains('|'.join(header_indicators), na=False, case=False)
+            device_df = device_df[mask]
+        
+        if device_df.empty:
+            logger.warning("   ⚠️  No data rows found after header filtering")
+            return pd.DataFrame()
+        
+        # Assign proper column names based on expected structure
+        expected_columns = [
+            'station_id', 'station_name', 'longitude', 'latitude', 'station_height',
+            'sensor_height_m', 'from_date', 'to_date', 'sensor_type', 
+            'measurement_method', 'eor'
+        ]
+        
+        # Adjust column names to match actual data
+        actual_columns = min(len(device_df.columns), len(expected_columns))
+        device_df.columns = expected_columns[:actual_columns]
         
         # Clean and normalize
         device_df = device_df.apply(lambda col: col.str.strip() if col.dtype == "object" else col)
         device_df = normalize_columns(device_df, COLUMN_NAME_MAP)
+        
+        # Remove any rows with 'eor' or other footer indicators
+        if 'eor' in device_df.columns:
+            device_df = device_df[device_df['eor'] != 'eor']
         
         logger.info(f"   ✅ Loaded {len(device_df)} device entries")
         return device_df
         
     except Exception as e:
         logger.error(f"❌ Failed to load device metadata: {e}")
+        logger.debug(f"   📋 Full error: {traceback.format_exc()}")
         return pd.DataFrame()
 
 
@@ -178,7 +319,15 @@ def combine_metadata(param_df: pd.DataFrame, device_df: pd.DataFrame, logger: lo
             param_from_date = str(param_row.get('from_date', '')).strip()
             param_to_date = str(param_row.get('to_date', '')).strip()
             
+            # Skip rows with missing essential data
             if not all([station_id, parameter, param_from_date, param_to_date]):
+                logger.debug(f"Skipping row with missing data: station_id={station_id}, parameter={parameter}")
+                continue
+            
+            # Skip obvious header remnants
+            if (station_id.lower() in ['stations_id', 'station_id'] or 
+                parameter.lower() in ['parameter', 'parameterbeschreibung']):
+                logger.debug(f"Skipping header row: station_id={station_id}, parameter={parameter}")
                 continue
             
             # Convert parameter dates to integers for comparison
@@ -186,6 +335,7 @@ def combine_metadata(param_df: pd.DataFrame, device_df: pd.DataFrame, logger: lo
                 param_from_int = int(param_from_date)
                 param_to_int = int(param_to_date)
             except ValueError:
+                logger.debug(f"Invalid date format: from={param_from_date}, to={param_to_date}")
                 continue
             
             # Find matching device entries with flexible date matching
@@ -238,7 +388,10 @@ def combine_metadata(param_df: pd.DataFrame, device_df: pd.DataFrame, logger: lo
             combined_rows.append(combined_row)
             
         except Exception as e:
-            logger.debug(f"Failed to process parameter row: {e}")
+            # More informative error logging
+            param_info = str(param_row.get('parameter', 'unknown'))[:50]
+            station_info = str(param_row.get('station_id', 'unknown'))
+            logger.debug(f"Failed to process parameter row: Station {station_info}, Parameter {param_info} - Error: {e}")
             continue
     
     if combined_rows:
