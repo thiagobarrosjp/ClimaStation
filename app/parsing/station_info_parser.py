@@ -1,17 +1,32 @@
 """
 Station Information Parser for German Weather Station Description Files
 
-This module parses the German weather station description files which contain
-station metadata in a space-separated format with fixed column headers.
+SCRIPT IDENTIFICATION: DWD10TAH3I
+- DWD: Deutscher Wetterdienst data source
+- 10T: 10-minute air temperature dataset
+- AH: Air temperature Historical data
+- 3: Station processing component
+- I: Station Info parsing pipeline component
 
-AUTHOR: ClimaStation Backend Pipeline
-VERSION: Simplified version with single function variants
-LAST UPDATED: 2025-01-15
+PURPOSE:
+Parses German weather station description files which contain station metadata 
+in a space-separated format with fixed column headers. Provides comprehensive 
+station information lookup with German-specific validation and error handling.
+
+KEY FUNCTIONALITY:
+- Handles space-separated format (not fixed-width) with robust parsing
+- Robust German state name detection and coordinate validation
+- Proper date parsing (YYYYMMDD format) with comprehensive error handling
+- Coordinate validation for German geography (47-55°N, 5-15°E)
+- Fills missing values with descriptive placeholders
+- German-specific region handling and altitude validation
+- Dynamic validation (no hardcoded station data)
+- Comprehensive logging and debugging support
 
 EXPECTED INPUT FILES:
 - Station description file: zehn_min_tu_Beschreibung_Stationen.txt
   Format: Space-separated values with header and separator lines
-  Location: data/germany/2_downloaded_files/10_minutes/air_temperature/historical/
+  Location: data/dwd/1_raw/historical/
   
   Expected structure:
   Stations_id von_datum bis_datum Stationshoehe geoBreite geoLaenge Stationsname Bundesland Abgabe
@@ -33,6 +48,9 @@ EXPECTED OUTPUT:
 
 USAGE:
     from app.parsing.station_info_parser import parse_station_info_file, get_station_info
+    from app.utils.logger import setup_logger
+    
+    logger = setup_logger("DWD10TAH3I", script_name="station_info_parser")
     
     # Parse station description file
     station_df = parse_station_info_file(file_path, logger)
@@ -40,15 +58,9 @@ USAGE:
     # Look up specific station
     station_info = get_station_info(station_df, station_id=3, logger)
 
-KEY FEATURES:
-- Handles space-separated format (not fixed-width)
-- Robust German state name detection
-- Proper date parsing (YYYYMMDD format)
-- Coordinate validation for German geography
-- Comprehensive error handling and logging
-- Fills missing values with descriptive placeholders
-- German-specific region handling
-- Dynamic validation (no hardcoded station data)
+AUTHOR: ClimaStation Backend Pipeline
+VERSION: Enhanced with script identification codes and new logging system
+LAST UPDATED: 2025-01-17
 """
 
 import pandas as pd
@@ -60,8 +72,15 @@ import logging
 from datetime import datetime, date
 import traceback
 
+# Import logger utility
+try:
+    from app.utils.logger import setup_logger
+    HAS_LOGGER = True
+except ImportError:
+    HAS_LOGGER = False
 
-def parse_station_info_file(file_path: Path, logger: logging.Logger) -> Optional[pd.DataFrame]:
+
+def parse_station_info_file(file_path: Path, logger: logging.Logger, parent_log_file: Optional[Path] = None) -> Optional[pd.DataFrame]:
     """
     Parse the German weather station description file.
     
@@ -71,7 +90,8 @@ def parse_station_info_file(file_path: Path, logger: logging.Logger) -> Optional
     
     Args:
         file_path: Path to the station description file (zehn_min_tu_Beschreibung_Stationen.txt)
-        logger: Logger instance for detailed logging
+        logger: Logger instance (with DWD10TAH3I code for traceability)
+        parent_log_file: Optional path to parent script's log file for centralized logging
         
     Returns:
         DataFrame with station information or None if parsing fails
@@ -86,6 +106,18 @@ def parse_station_info_file(file_path: Path, logger: logging.Logger) -> Optional
         ----------- --------- --------- ------------- --------- --------- ----------------------------------------- ---------- ------
         00003 19930429 20110331    202    50.7827    6.0941    Aachen    Nordrhein-Westfalen    Frei
     """
+    # If we have a parent log file, create a new logger that writes to it
+    if logger is None and HAS_LOGGER:
+        logger = setup_logger("DWD10TAH3I", script_name="station_info_parser")
+    elif logger is None:
+        # Fallback logger if utils.logger not available
+        logger = logging.getLogger("station_info_parser_fallback")
+        logger.setLevel(logging.DEBUG)
+        handler = logging.StreamHandler()
+        formatter = logging.Formatter('%(asctime)s — [DWD10TAH3I] — %(levelname)s %(message)s')
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+    
     if not file_path.exists():
         logger.warning(f"❌ Station info file not found: {file_path}")
         return None
@@ -385,7 +417,12 @@ def parse_station_info_file(file_path: Path, logger: logging.Logger) -> Optional
                 reasonable_lat = (47 <= lat_min <= 55) and (47 <= lat_max <= 55)
                 reasonable_lon = (5 <= lon_min <= 15) and (5 <= lon_max <= 15)
                 
+                logger.info(f"   📍 Valid coordinates: {valid_coords}/{len(df)}")
+                logger.info(f"   📍 Coordinate ranges: {lat_min:.4f}°N to {lat_max:.4f}°N, {lon_min:.4f}°E to {lon_max:.4f}°E")
                 
+                if not (reasonable_lat and reasonable_lon):
+                    logger.warning("   ⚠️  Coordinate ranges seem unreasonable for Germany")
+                    logger.warning("   ⚠️  Expected: Lat 47-55°N, Lon 5-15°E")
             else:
                 logger.warning("   ⚠️  No valid coordinates found")
         
@@ -450,7 +487,7 @@ def get_station_info(station_df: pd.DataFrame, station_id: int, logger: logging.
     Args:
         station_df: DataFrame with station information from parse_station_info_file
         station_id: Station ID to look up (e.g., 3 for station 00003)
-        logger: Logger instance
+        logger: Logger instance (with DWD10TAH3I code for traceability)
         
     Returns:
         Dictionary with station information or None if not found:
@@ -582,7 +619,7 @@ def get_station_info(station_df: pd.DataFrame, station_id: int, logger: logging.
                 try:
                     scalar_value = scalar_value.iloc[0]
                 except (IndexError, AttributeError):
-                    return default_value  # couldn’t pull a valid element
+                    return default_value  # couldn't pull a valid element
 
             # Now scalar_value is either None, a primitive, or NaN
             if scalar_value is None:
@@ -681,25 +718,29 @@ if __name__ == "__main__":
     """
     import sys
     
-    print("🧪 Testing ClimaStation Station Info Parser...")
+    print("🧪 Testing ClimaStation Station Info Parser [DWD10TAH3I]...")
     print("=" * 60)
     
-    # Create a test logger
-    test_logger = logging.getLogger("test_station_parser")
-    test_logger.setLevel(logging.DEBUG)
+    # Set up test logger with script identification
+    if HAS_LOGGER:
+        test_logger = setup_logger("DWD10TAH3I", script_name="station_info_parser_test")
+    else:
+        # Fallback logger for testing
+        test_logger = logging.getLogger("test_station_parser")
+        test_logger.setLevel(logging.DEBUG)
+        
+        # Add console handler for test output
+        console_handler = logging.StreamHandler()
+        formatter = logging.Formatter('%(levelname)s — [DWD10TAH3I] %(message)s')
+        console_handler.setFormatter(formatter)
+        test_logger.addHandler(console_handler)
     
-    # Add console handler for test output
-    console_handler = logging.StreamHandler()
-    formatter = logging.Formatter('%(levelname)s - %(message)s')
-    console_handler.setFormatter(formatter)
-    test_logger.addHandler(console_handler)
-    
-    # Test file path (adjust as needed for your setup)
-    test_file_path = Path("data/germany/2_downloaded_files/10_minutes/air_temperature/historical/zehn_min_tu_Beschreibung_Stationen.txt")
+    # Test file path (updated for new folder structure)
+    test_file_path = Path("data/dwd/1_raw/historical/zehn_min_tu_Beschreibung_Stationen.txt")
     
     # Alternative paths to try
     alternative_paths = [
-        Path("G:/00_code-files/ClimaStation/data/germany/2_downloaded_files/10_minutes/air_temperature/historical/zehn_min_tu_Beschreibung_Stationen.txt"),
+        Path("data/germany/2_downloaded_files/10_minutes/air_temperature/historical/zehn_min_tu_Beschreibung_Stationen.txt"),
         Path("zehn_min_tu_Beschreibung_Stationen.txt"),
         Path("data/station_info/zehn_min_tu_Beschreibung_Stationen.txt")
     ]
@@ -712,23 +753,23 @@ if __name__ == "__main__":
             break
     
     if not actual_test_file:
-        print("❌ Test file not found. Tried these paths:")
+        test_logger.error("❌ Test file not found. Tried these paths:")
         for path in [test_file_path] + alternative_paths:
-            print(f"   - {path}")
-        print("\nPlease ensure the station description file is available.")
+            test_logger.error(f"   - {path}")
+        test_logger.error("Please ensure the station description file is available.")
         sys.exit(1)
     
     try:
-        print(f"\n🧪 Testing station info parsing with file: {actual_test_file}")
+        test_logger.info(f"🧪 Testing station info parsing with file: {actual_test_file}")
         
         # Test parsing
         station_df = parse_station_info_file(actual_test_file, test_logger)
         
         if station_df is not None and not station_df.empty:
-            print(f"✅ Successfully parsed {len(station_df)} stations")
+            test_logger.info(f"✅ Successfully parsed {len(station_df)} stations")
             
             # Show sample of parsed data
-            print(f"\n📊 Sample of parsed stations:")
+            test_logger.info("📊 Sample of parsed stations:")
             sample_df = station_df.head(5)[['station_id', 'station_name', 'latitude', 'longitude', 'state']]
             print(sample_df.to_string(index=False))
             
@@ -742,44 +783,44 @@ if __name__ == "__main__":
                 except ValueError:
                     first_station_id = int(first_station_id_str.lstrip('0')) if first_station_id_str.lstrip('0') else 0
                 
-                print(f"\n🔍 Testing station lookup for station {first_station_id} (ID: {first_station_id_str})...")
+                test_logger.info(f"🔍 Testing station lookup for station {first_station_id} (ID: {first_station_id_str})...")
                 station_info = get_station_info(station_df, first_station_id, test_logger)
                 
                 if station_info:
-                    print(f"✅ Station lookup test successful:")
-                    print(f"   🏢 Station: {station_info['station_name']}")
+                    test_logger.info("✅ Station lookup test successful:")
+                    test_logger.info(f"   🏢 Station: {station_info['station_name']}")
                     
                     if isinstance(station_info['latitude'], (int, float)) and isinstance(station_info['longitude'], (int, float)):
-                        print(f"   📍 Location: {station_info['latitude']:.4f}°N, {station_info['longitude']:.4f}°E")
+                        test_logger.info(f"   📍 Location: {station_info['latitude']:.4f}°N, {station_info['longitude']:.4f}°E")
                         
                         # Dynamic coordinate validation - check if within German bounds
                         if 47 <= station_info['latitude'] <= 55 and 5 <= station_info['longitude'] <= 15:
-                            print("   ✅ Coordinates are within expected German bounds")
+                            test_logger.info("   ✅ Coordinates are within expected German bounds")
                         else:
-                            print("   ⚠️  Coordinates are outside expected German bounds")
-                            print("      Expected: Lat 47-55°N, Lon 5-15°E")
+                            test_logger.warning("   ⚠️  Coordinates are outside expected German bounds")
+                            test_logger.warning("      Expected: Lat 47-55°N, Lon 5-15°E")
                     else:
-                        print(f"   📍 Location: {station_info['latitude']}, {station_info['longitude']}")
+                        test_logger.info(f"   📍 Location: {station_info['latitude']}, {station_info['longitude']}")
                     
                     if isinstance(station_info['station_altitude_m'], (int, float)):
-                        print(f"   🏔️  Altitude: {station_info['station_altitude_m']:.0f}m")
+                        test_logger.info(f"   🏔️  Altitude: {station_info['station_altitude_m']:.0f}m")
                         
                         # Dynamic altitude validation
                         if -10 <= station_info['station_altitude_m'] <= 3000:
-                            print("   ✅ Altitude is within expected German range")
+                            test_logger.info("   ✅ Altitude is within expected German range")
                         else:
-                            print("   ⚠️  Altitude is outside expected German range (-10m to 3000m)")
+                            test_logger.warning("   ⚠️  Altitude is outside expected German range (-10m to 3000m)")
                     else:
-                        print(f"   🏔️  Altitude: {station_info['station_altitude_m']}")
+                        test_logger.info(f"   🏔️  Altitude: {station_info['station_altitude_m']}")
                     
-                    print(f"   🏛️  State: {station_info['state']}")
-                    print(f"   🌍 Region: {station_info['region']}")
+                    test_logger.info(f"   🏛️  State: {station_info['state']}")
+                    test_logger.info(f"   🌍 Region: {station_info['region']}")
                     
                 else:
-                    print("❌ Station lookup test failed")
+                    test_logger.error("❌ Station lookup test failed")
             
             # Test a few more stations dynamically
-            print(f"\n🔍 Testing additional station lookups...")
+            test_logger.info("🔍 Testing additional station lookups...")
             test_station_ids = available_stations[:3]  # Test first 3 available stations
             
             for station_id_str in test_station_ids:
@@ -787,19 +828,19 @@ if __name__ == "__main__":
                     test_id = int(station_id_str.lstrip('0')) if station_id_str.lstrip('0') else 0
                     station_info = get_station_info(station_df, test_id, test_logger)
                     if station_info:
-                        print(f"   ✅ Station {station_id_str}: {station_info['station_name']} ({station_info['state']})")
+                        test_logger.info(f"   ✅ Station {station_id_str}: {station_info['station_name']} ({station_info['state']})")
                     else:
-                        print(f"   ❌ Station {station_id_str}: Not found")
+                        test_logger.warning(f"   ❌ Station {station_id_str}: Not found")
                 except ValueError:
-                    print(f"   ⚠️  Station {station_id_str}: Invalid ID format")
+                    test_logger.warning(f"   ⚠️  Station {station_id_str}: Invalid ID format")
             
-            print("\n✅ All tests completed successfully!")
+            test_logger.info("✅ All tests completed successfully!")
             
         else:
-            print("❌ Failed to parse station info file")
+            test_logger.error("❌ Failed to parse station info file")
             sys.exit(1)
             
     except Exception as e:
-        print(f"💥 Test failed with error: {e}")
-        print(f"🔍 Traceback: {traceback.format_exc()}")
+        test_logger.error(f"💥 Test failed with error: {e}")
+        test_logger.error(f"🔍 Traceback: {traceback.format_exc()}")
         sys.exit(1)

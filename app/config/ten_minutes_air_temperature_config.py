@@ -39,9 +39,9 @@ from pathlib import Path
 # DIRECTORY STRUCTURE AND FILE PATHS (UPDATED)
 # =============================================================================
 
-# FIXED: Added "germany" folder to match actual structure
-RAW_BASE = Path("data/germany/2_downloaded_files/10_minutes/air_temperature")
-PARSED_BASE = Path("data/germany/3_parsed_files/parsed_10_minutes/parsed_air_temperature")
+# FIXED: Added "dwd" folder to match actual structure
+RAW_BASE = Path("data/dwd/2_downloaded_files/10_minutes/air_temperature")
+PARSED_BASE = Path("data/dwd/3_parsed_files/parsed_10_minutes/parsed_air_temperature")
 
 STATION_INFO_FILE_NAME = "zehn_min_tu_Beschreibung_Stationen.txt"
 STATION_INFO_FILE_HISTORICAL = RAW_BASE / "historical" / STATION_INFO_FILE_NAME

@@ -97,7 +97,8 @@ CLIMASTATION-BACKEND
 ├── app/
 │   ├── config/
 │   │   ├── __init__.py
-│   │   └── ten_minutes_air_temperature_config.py
+│   │   ├── ten_minutes_air_temperature_config.py
+│   │   └── script_registry.yaml
 │   ├── features/
 │   │   ├── dwd/
 │   │   │   ├── record_schemas/
@@ -128,16 +129,17 @@ CLIMASTATION-BACKEND
 │   └── utils/
 │       └── logger.py
 ├── data/
-│   ├── 0_debug/
-│   │   ├── jsonl_to_pretty_json.debug.log
-│   │   └── parse_germany_10_minutes_air_temperature.debug.log
-│   ├── 1_crawl_dwd/
-│   │   ├── create_dwd_folder_structure.py
-│   │   ├── dwd_structure.json
-│   │   ├── dwd_tree.txt
-│   │   └── dwd_urls.jsonl
-│   ├── 2_downloaded_files/
-│   └── 3_parsed_files/
+│   ├── germany/
+│   │   ├── 0_debug/
+│   │   │   ├── jsonl_to_pretty_json.debug.log
+│   │   │   └── parse_germany_10_minutes_air_temperature.debug.log
+│   │   ├── 1_crawl_dwd/
+│   │   │   ├── create_dwd_folder_structure.py
+│   │   │   ├── dwd_structure.json
+│   │   │   ├── dwd_tree.txt
+│   │   │   └── dwd_urls.jsonl
+│   │   ├── 2_downloaded_files/
+│   │   └── 3_parsed_files/
 ├── .gitignore
 ├── dev_log.md
 ├── README.md
@@ -182,14 +184,14 @@ zehn_min_tu_Beschreibung_Stationen.txt
 * First ten rows of text file:
 Stations_id von_datum bis_datum Stationshoehe geoBreite geoLaenge Stationsname Bundesland Abgabe
 ----------- --------- --------- ------------- --------- --------- ----------------------------------------- ---------- ------
-00003 19930429 20110331            202     50.7827    6.0941 Aachen                                   Nordrhein-Westfalen                      Frei                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     
-00044 20070209 20250710             44     52.9336    8.2370 Großenkneten                             Niedersachsen                            Frei                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     
-00071 20091201 20191231            759     48.2156    8.9784 Albstadt-Badkap                          Baden-Württemberg                        Frei                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     
-00073 20070215 20250710            374     48.6183   13.0620 Aldersbach-Kramersepp                    Bayern                                   Frei                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     
-00078 20041012 20250709             64     52.4853    7.9125 Alfhausen                                Niedersachsen                            Frei                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     
-00091 20020821 20250710            304     50.7446    9.3450 Alsfeld-Eifa                             Hessen                                   Frei                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     
-00096 20190410 20250710             50     52.9437   12.8518 Neuruppin-Alt Ruppin                     Brandenburg                              Frei                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     
-00102 20250410 20250710              0     53.8633    8.1275 Leuchtturm Alte Weser                    Niedersachsen                            Frei
+00003   19930429    20110331    202   50.7827   6.0941    Aachen                  Nordrhein-Westfalen   Frei
+00044   20070209    20250710    44    52.9336   8.2370    Großenkneten            Niedersachsen         Frei
+00071   20091201    20191231    759   48.2156   8.9784    Albstadt-Badkap         Baden-Württemberg     Frei 
+00073   20070215    20250710    374   48.6183   13.0620   Aldersbach-Kramersepp   Bayern                Frei
+00078   20041012    20250709    64    52.4853   7.9125    Alfhausen               Niedersachsen         Frei
+00091   20020821    20250710    304   50.7446   9.3450    Alsfeld-Eifa            Hessen                Frei
+00096   20190410    20250710    50    52.9437   12.8518   Neuruppin-Alt Ruppin    Brandenburg           Frei
+00102   20250410    20250710    0   53.8633     8.1275    Leuchtturm Alte Weser   Niedersachsen         Frei
 
 
 

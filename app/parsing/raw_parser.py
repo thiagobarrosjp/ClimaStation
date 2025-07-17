@@ -1,40 +1,21 @@
 """
-Raw Weather Data Parser for German Weather Station Data - CLEAN VERSION
+Raw Weather Data Parser for German Weather Station Data
 
-This is the main parsing module that processes German weather station ZIP files
-and converts them into structured JSONL format with complete metadata integration.
+SCRIPT IDENTIFICATION: DWD10TAH3T
+- DWD: Deutscher Wetterdienst data source
+- 10T: 10-minute air temperature dataset
+- AH: Air temperature Historical data
+- 3: Station processing component
+- T: Raw data parsing pipeline component
+
+PURPOSE:
+Main parsing module that processes German weather station ZIP files and converts them 
+into structured JSONL format with complete metadata integration. Handles the core 
+transformation from raw DWD measurement files to ClimaStation's standardized format.
 
 AUTHOR: ClimaStation Backend Pipeline
-VERSION: Clean single-function version
-LAST UPDATED: 2025-01-15
-
-KEY FUNCTIONALITY:
-- Processes weather data ZIP files containing 10-minute air temperature measurements
-- Extracts and parses metadata from companion metadata ZIP files
-- Combines raw measurements with sensor specifications and station information
-- Handles fixed-width station description files using dedicated parser
-- Preserves all measurement values including -999 (missing/invalid data markers)
-- Outputs structured JSONL with bilingual metadata and complete sensor descriptions
-
-EXPECTED INPUT STRUCTURE:
-data/germany/2_downloaded_files/10_minutes/air_temperature/historical/
-├── stundenwerte_TU_00003_19930428_20201231_hist.zip    # Raw measurement data
-└── meta_data/
-    └── Meta_Daten_zehn_min_tu_00003.zip                # Metadata (sensors, parameters, geography)
-
-EXPECTED OUTPUT STRUCTURE:
-data/germany/3_parsed_files/parsed_10_minutes/parsed_air_temperature/parsed_historical/
-└── parsed_stundenwerte_TU_00003_19930428_20201231_hist.jsonl
-
-STATION INFO FILE:
-data/germany/2_downloaded_files/10_minutes/air_temperature/historical/
-└── zehn_min_tu_Beschreibung_Stationen.txt             # Fixed-width station descriptions
-
-USAGE:
-    from app.parsing.raw_parser import process_zip
-    
-    # Process a single ZIP file
-    process_zip(zip_path, station_info_file, logger)
+VERSION: Enhanced with centralized logging support
+LAST UPDATED: 2025-01-17
 """
 
 import json
@@ -59,6 +40,13 @@ from app.config.ten_minutes_air_temperature_config import (
 from app.io_helpers.zip_handler import extract_txt_files_from_zip
 from app.parsing.sensor_metadata import load_sensor_metadata, parse_sensor_metadata
 from app.parsing.station_info_parser import parse_station_info_file, get_station_info
+
+# Import logger utility
+try:
+    from app.utils.logger import setup_logger
+    HAS_LOGGER = True
+except ImportError:
+    HAS_LOGGER = False
 
 
 def safe_int_conversion(value: str, default: int = 0) -> int:
@@ -135,7 +123,7 @@ def extract_station_id_from_filename(filename: str, logger: logging.Logger) -> O
     
     Args:
         filename: ZIP filename to parse
-        logger: Logger instance
+        logger: Logger instance (will show [DWD10TAH3T] when called from raw parser)
         
     Returns:
         Station ID as integer or None if extraction fails
@@ -180,7 +168,7 @@ def load_raw_measurement_data(raw_txt_files: List[Path], logger: logging.Logger)
     
     Args:
         raw_txt_files: List of extracted text files from raw data ZIP
-        logger: Logger instance
+        logger: Logger instance (will show [DWD10TAH3T] when called from raw parser)
         
     Returns:
         DataFrame with raw measurement data or None if loading fails
@@ -265,7 +253,7 @@ def load_and_process_metadata(meta_zip: Path, station_id: int, temp_meta: Path, 
         meta_zip: Path to metadata ZIP file
         station_id: Station ID for filtering
         temp_meta: Temporary directory for extraction
-        logger: Logger instance
+        logger: Logger instance (will show [DWD10TAH3T] when called from raw parser)
         
     Returns:
         Tuple of (parameter_metadata, sensor_metadata, station_geography)
@@ -283,7 +271,8 @@ def load_and_process_metadata(meta_zip: Path, station_id: int, temp_meta: Path, 
     
     try:
         # Extract metadata files
-        meta_files = extract_txt_files_from_zip(meta_zip, temp_meta)
+        # Let zip_handler create its own logger that joins centralized logging
+        meta_files = extract_txt_files_from_zip(meta_zip, temp_meta, logger)
         if not meta_files:
             logger.error(f"❌ No text files found in {meta_zip}")
             return param_meta, sensor_meta_df, station_meta_row
@@ -346,6 +335,7 @@ def load_and_process_metadata(meta_zip: Path, station_id: int, temp_meta: Path, 
         
         # === LOAD SENSOR METADATA ===
         logger.info("🔧 Loading sensor metadata...")
+        # Let sensor_metadata create its own logger that joins centralized logging
         sensor_meta_df = load_sensor_metadata(meta_files, logger)
         
         # === LOAD GEOGRAPHIC METADATA (FALLBACK) ===
@@ -409,7 +399,7 @@ def build_date_ranges(param_meta: pd.DataFrame, raw_df: pd.DataFrame, logger: lo
     Args:
         param_meta: Parameter metadata DataFrame
         raw_df: Raw measurement data DataFrame
-        logger: Logger instance
+        logger: Logger instance (will show [DWD10TAH3T] when called from raw parser)
         
     Returns:
         List of (start_date, end_date) tuples for processing
@@ -476,7 +466,7 @@ def process_measurements_for_range(raw_df: pd.DataFrame, start_date: date, end_d
         raw_df: Raw measurement DataFrame
         start_date: Start date for processing
         end_date: End date for processing
-        logger: Logger instance
+        logger: Logger instance (will show [DWD10TAH3T] when called from raw parser)
         
     Returns:
         List of measurement dictionaries with timestamp and parameters
@@ -551,35 +541,49 @@ def process_measurements_for_range(raw_df: pd.DataFrame, start_date: date, end_d
     return measurements
 
 
-def process_zip(raw_zip_path: Path, station_info_file: Path, logger: logging.Logger) -> None:
+def process_zip(raw_zip_path: Path, station_info_file: Path, calling_logger: Optional[logging.Logger] = None) -> None:
     """
     Main function to process a weather data ZIP file.
     
-    This is the primary entry point that orchestrates the entire parsing process:
-    1. Extract station ID from filename
-    2. Set up temporary directories
-    3. Load raw measurement data
-    4. Load and process metadata
-    5. Load station information from description file
-    6. Process measurements in date ranges
-    7. Generate structured JSONL output
+    This function uses CENTRALIZED LOGGING approach:
+    - Automatically writes to the main script's log file
+    - Uses its own script code [DWD10TAH3T] for traceability
+    - Optionally reports high-level status to calling logger
     
     Args:
         raw_zip_path: Path to raw weather data ZIP file
         station_info_file: Path to station description file (fixed-width format)
-        logger: Logger instance for detailed logging
+        calling_logger: Optional logger from calling script (for high-level status only)
         
     Returns:
         None (writes output to JSONL file)
     """
+    # Create raw parser's logger - will automatically use centralized logging if available
+    if HAS_LOGGER:
+        logger = setup_logger("DWD10TAH3T", script_name="raw_parser")
+    else:
+        # Fallback logger
+        logger = logging.getLogger("raw_parser_DWD10TAH3T")
+        logger.setLevel(logging.DEBUG)
+        handler = logging.StreamHandler()
+        formatter = logging.Formatter('%(asctime)s — [DWD10TAH3T] — %(levelname)s %(message)s')
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+    
+    # Optional: Report high-level status to calling logger
+    if calling_logger:
+        calling_logger.info(f"🔄 Raw parser starting: {raw_zip_path.name}")
+    
     logger.info("=" * 80)
-    logger.info(f"🚀 PROCESSING: {raw_zip_path.name}")
+    logger.info(f"🚀 RAW PARSER [DWD10TAH3T] PROCESSING: {raw_zip_path.name}")
     logger.info("=" * 80)
     
     # === EXTRACT STATION ID ===
     station_id = extract_station_id_from_filename(raw_zip_path.stem, logger)
     if station_id is None:
         logger.error(f"❌ Cannot process file without valid station ID: {raw_zip_path.name}")
+        if calling_logger:
+            calling_logger.error(f"❌ Raw parser failed: Cannot extract station ID from {raw_zip_path.name}")
         return
     
     logger.info(f"🏢 Station ID: {station_id}")
@@ -600,14 +604,19 @@ def process_zip(raw_zip_path: Path, station_info_file: Path, logger: logging.Log
     logger.info(f"📁 Station info: {station_info_file.name}")
     
     try:
-        # === LOAD RAW MEASUREMENT DATA ===
+        # === EXTRACT RAW MEASUREMENT DATA ===
         logger.info("📊 STEP 1: Loading raw measurement data...")
-        raw_txt_files = extract_txt_files_from_zip(raw_zip_path, temp_raw)
+        # Let zip_handler create its own logger that joins centralized logging
+        raw_txt_files = extract_txt_files_from_zip(raw_zip_path, temp_raw, logger)
         raw_df = load_raw_measurement_data(raw_txt_files, logger)
         
         if raw_df is None:
             logger.error("❌ Failed to load raw measurement data")
+            if calling_logger:
+                calling_logger.error(f"❌ Raw parser failed: Could not load measurement data from {raw_zip_path.name}")
             return
+        
+        logger.info(f"   ✅ Loaded {len(raw_df):,} measurements")
         
         # === LOAD METADATA ===
         logger.info("📋 STEP 2: Loading metadata...")
@@ -622,6 +631,7 @@ def process_zip(raw_zip_path: Path, station_info_file: Path, logger: logging.Log
         # Try to load from station description file first (preferred)
         if station_info_file.exists():
             logger.info(f"   📋 Loading from station description file: {station_info_file.name}")
+            # Let station_info_parser create its own logger that joins centralized logging
             station_df = parse_station_info_file(station_info_file, logger)
             
             if station_df is not None:
@@ -649,12 +659,16 @@ def process_zip(raw_zip_path: Path, station_info_file: Path, logger: logging.Log
         
         if not date_ranges:
             logger.error("❌ No valid date ranges found for processing")
+            if calling_logger:
+                calling_logger.error(f"❌ Raw parser failed: No valid date ranges for {raw_zip_path.name}")
             return
+        
+        logger.info(f"   ✅ Created {len(date_ranges)} date ranges")
         
         # === PREPARE OUTPUT ===
         logger.info("📝 STEP 5: Preparing output...")
         
-        # Determine output path
+        # Determine output path (updated for new folder structure)
         rel_path = raw_zip_path.relative_to(RAW_BASE)
         output_folder_name = rel_path.parent.name.replace("historical", "parsed_historical")
         out_path = PARSED_BASE / output_folder_name / f"parsed_{raw_zip_path.stem}.jsonl"
@@ -694,11 +708,6 @@ def process_zip(raw_zip_path: Path, station_info_file: Path, logger: logging.Log
                     sensors = parse_sensor_metadata(sensor_meta_df, station_id, date_int, logger)
                     logger.info(f"   ✅ Found {len(sensors)} sensors for date range")
                     
-                    # Log sensor summary
-                    if sensors:
-                        sensor_types = [s['measured_variable']['en'] for s in sensors]
-                        logger.debug(f"      📋 Sensor types: {sensor_types}")
-                    
                 except Exception as e:
                     logger.warning(f"   ⚠️  Failed to process sensor metadata: {e}")
                 
@@ -724,16 +733,22 @@ def process_zip(raw_zip_path: Path, station_info_file: Path, logger: logging.Log
         
         # === FINAL SUMMARY ===
         logger.info("=" * 80)
-        logger.info("✅ PROCESSING COMPLETE")
+        logger.info("✅ RAW PARSER [DWD10TAH3T] PROCESSING COMPLETE")
         logger.info(f"📊 Total measurements written: {total_measurements_written:,}")
         logger.info(f"📅 Date ranges processed: {len(date_ranges)}")
         logger.info(f"📄 Output file: {out_path.name}")
         logger.info(f"💾 File size: {out_path.stat().st_size / 1024 / 1024:.2f} MB")
         logger.info("=" * 80)
         
+        # Optional: Report success to calling logger
+        if calling_logger:
+            calling_logger.info(f"✅ Raw parser completed: {raw_zip_path.name} -> {total_measurements_written:,} measurements")
+        
     except Exception as e:
         logger.error(f"💥 CRITICAL ERROR processing {raw_zip_path.name}: {e}")
         logger.error(f"🔍 Traceback: {traceback.format_exc()}")
+        if calling_logger:
+            calling_logger.error(f"💥 Raw parser failed with critical error: {e}")
         raise  # Re-raise to allow calling code to handle
         
     finally:
@@ -758,10 +773,21 @@ if __name__ == "__main__":
     """
     Test the raw parser functionality when run directly.
     """
-    print("Testing ClimaStation Raw Data Parser...")
+    print("Testing ClimaStation Raw Data Parser [DWD10TAH3T]...")
+    
+    # Create test logger
+    if HAS_LOGGER:
+        test_logger = setup_logger("DWD10TAH3T", script_name="raw_parser_test")
+    else:
+        test_logger = logging.getLogger("test_logger")
+        test_logger.setLevel(logging.DEBUG)
+        handler = logging.StreamHandler()
+        formatter = logging.Formatter('%(asctime)s — [DWD10TAH3T] — %(levelname)s %(message)s')
+        handler.setFormatter(formatter)
+        test_logger.addHandler(handler)
     
     # Test utility functions
-    print("✅ Testing utility functions...")
+    test_logger.info("✅ Testing utility functions...")
     
     # Test safe conversions
     assert safe_int_conversion("123", 0) == 123
@@ -769,27 +795,16 @@ if __name__ == "__main__":
     assert safe_float_conversion("23.5", 0.0) == 23.5
     assert safe_float_conversion("23,5", 0.0) == 23.5  # German format
     assert safe_float_conversion("-999", 0.0) == -999.0  # Preserve -999
-    print("   ✅ Safe conversion functions working")
+    test_logger.info("   ✅ Safe conversion functions working")
     
     # Test station ID extraction
     test_filename = "10minutenwerte_TU_00003_19930428_19991231_hist.zip"
-    
-    # Create a proper test logger
-    test_logger = logging.getLogger("test_logger")
-    test_logger.setLevel(logging.DEBUG)
-    
-    # Add a null handler to prevent logging output during testing
-    null_handler = logging.NullHandler()
-    test_logger.addHandler(null_handler)
-    
     station_id = extract_station_id_from_filename(test_filename, test_logger)
     assert station_id == 3
-    print("   ✅ Station ID extraction working")
+    test_logger.info("   ✅ Station ID extraction working")
     
     # Test parameter mappings
-    print(f"✅ Parameter mappings: {len(PARAM_MAP)} parameters")
-    for csv_col, english_name in PARAM_MAP.items():
-        print(f"   {csv_col} -> {english_name}")
+    test_logger.info(f"✅ Parameter mappings: {len(PARAM_MAP)} parameters")
     
-    print("✅ Raw parser testing complete")
-    print("ℹ️  For full testing, run with actual ZIP files from the main pipeline")
+    test_logger.info("✅ Raw parser testing complete")
+    test_logger.info("ℹ️  For full testing, run with actual ZIP files from the main pipeline")

@@ -1,16 +1,43 @@
 """
-10-Minute Air Temperature Data Parser - Complete Enhanced Main Script
+DWD 10-Minute Air Temperature Historical Data Parser
 
-COMPLETE ENHANCED VERSION with all fixes and improvements:
-- Fixed import paths matching actual folder structure
+SCRIPT IDENTIFICATION: DWD10TAH3P
+- DWD: Deutscher Wetterdienst data source
+- 10T: 10-minute air temperature dataset  
+- AH: Air temperature Historical data
+- 3: Station ID 00003 (Aachen) processing
+- P: Parsing pipeline component
+
+PURPOSE:
+Parses historical 10-minute air temperature ZIP archives from DWD into structured JSONL format.
+Processes raw measurement data with comprehensive error handling, validation, and statistics.
+Groups data by metadata validity intervals to ensure accuracy and efficiency.
+
+INPUT:
+- ZIP files in data/dwd/1_raw/historical/ directory
+- Station metadata from data/dwd/1_raw/station_info/historical_stations.txt
+- Configuration from app.config.ten_minutes_air_temperature_config
+
+OUTPUT:
+- Parsed JSONL files in data/dwd/3_parsed_files/
+- Debug logs in data/dwd/0_debug/parse_10_minutes_air_temperature_hist.debug.log
+- Processing statistics and validation results
+
+FEATURES:
 - Enhanced processing with improved date range handling
-- Comprehensive error handling and recovery
+- Comprehensive error handling and recovery mechanisms
 - Detailed statistics and quality reporting
 - Support for both regular and enhanced processing modes
 - Better file discovery and validation
 - Improved user feedback and progress tracking
-- Fallback logger implementation
 - Station info validation and handling
+
+USAGE:
+    python scripts/parse_10_minutes_air_temperature_hist.py
+
+AUTHOR: ClimaStation Backend Pipeline
+VERSION: Enhanced with script identification codes and new logging system
+LAST UPDATED: 2025-01-17
 """
 
 from pathlib import Path
@@ -31,8 +58,8 @@ except ImportError as e:
     print("Please ensure the config file exists and import paths are correct")
     CONFIG_LOADED = False
     # Set fallback values to prevent undefined variable errors
-    RAW_BASE = Path("data/1_raw")  # Fallback path
-    STATION_INFO_FILE_HISTORICAL = Path("data/1_raw/station_info/historical_stations.txt")  # Fallback path
+    RAW_BASE = Path("data/dwd/1_raw")  # Updated to new folder structure
+    STATION_INFO_FILE_HISTORICAL = Path("data/dwd/1_raw/station_info/historical_stations.txt")
 
 # Import processing functions with fallbacks
 try:
@@ -95,7 +122,7 @@ def setup_fallback_logger(log_path: Path):
     
     # Create new file handler (overwrite mode)
     file_handler = logging.FileHandler(log_path, mode='w', encoding='utf-8')
-    formatter = logging.Formatter('%(asctime)s — %(levelname)s — %(message)s')
+    formatter = logging.Formatter('%(asctime)s — %(levelname)s — [DWD10TAH3P] %(message)s')
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
     
@@ -345,8 +372,9 @@ def print_processing_summary(stats: Dict[str, Any], logger):
 def main():
     """
     Main processing function for historical air temperature data with comprehensive enhancements.
+    Uses script identification code DWD10TAH3P for logging and traceability.
     """
-    print("🚀 Starting COMPLETE ENHANCED 10-minute air temperature parser")
+    print("🚀 Starting DWD 10-minute air temperature parser [DWD10TAH3P]")
     print("=" * 80)
     
     # Validate environment first
@@ -366,24 +394,23 @@ def main():
         print("   Please verify these paths are correct for your setup.")
         print()
     
-    
-    # Clear existing log file and set up fresh logger
-    
+    # Set up logger with script identification code
     if HAS_LOGGER:
-        logger = setup_logger(script_name="parse_10_minutes_air_temperature_hist")
+        logger = setup_logger("DWD10TAH3P", script_name="parse_10_minutes_air_temperature_hist")
     else:
-        logger = setup_fallback_logger(Path("data/germany/0_debug/parse_10_minutes_air_temperature_hist.debug.log"))
+        logger = setup_fallback_logger(Path("data/dwd/0_debug/parse_10_minutes_air_temperature_hist.debug.log"))
         logger.warning("⚠️  Using fallback logger - utils.logger not found")
     
     # Log startup information
-    logger.info("🚀 Starting COMPLETE ENHANCED 10-minute air temperature parser")
+    logger.info("🚀 Starting DWD 10-minute air temperature parser [DWD10TAH3P]")
     logger.info(f"📁 Raw data directory: {RAW_BASE}")
     logger.info(f"📄 Station info file: {STATION_INFO_FILE_HISTORICAL}")
     logger.info("🔄 Fresh log file created: parse_10_minutes_air_temperature_hist.debug.log")
     logger.info("✨ Enhanced features: comprehensive error handling, detailed statistics")
     logger.info(f"⚙️  Configuration loaded: {CONFIG_LOADED}")
+    logger.info(f"📂 Updated folder structure: data/dwd/ (migrated from data/germany/)")
     
-    print("📄 Log file: data/germany/0_debug/parse_10_minutes_air_temperature_hist.debug.log")
+    print("📄 Log file: data/dwd/0_debug/parse_10_minutes_air_temperature_hist.debug.log")
     print()
 
     # Discover ZIP files
@@ -446,10 +473,10 @@ def main():
         logger.error("💥 No files were processed successfully")
         print("💥 No files were processed successfully")
     
-    logger.info("🏁 Complete enhanced processing finished")
-    logger.info(f"📄 Full log available at: data/germany/0_debug/parse_10_minutes_air_temperature_hist.debug.log")
-    print("🏁 Complete enhanced processing finished")
-    print(f"📄 Full log available at: data/germany/0_debug/parse_10_minutes_air_temperature_hist.debug.log")
+    logger.info("🏁 DWD 10-minute air temperature parser [DWD10TAH3P] finished")
+    logger.info(f"📄 Full log available at: data/dwd/0_debug/parse_10_minutes_air_temperature_hist.debug.log")
+    print("🏁 DWD 10-minute air temperature parser [DWD10TAH3P] finished")
+    print(f"📄 Full log available at: data/dwd/0_debug/parse_10_minutes_air_temperature_hist.debug.log")
 
 
 if __name__ == "__main__":

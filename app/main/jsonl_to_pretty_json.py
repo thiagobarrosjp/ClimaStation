@@ -1,46 +1,58 @@
 """
 JSONL to Pretty JSON Converter for ClimaStation Weather Data
 
-This utility converts the compact JSONL output from the weather data parser
-into human-readable, pretty-formatted JSON files for validation and inspection.
+SCRIPT IDENTIFICATION: DWD10TAH3J
+- DWD: Deutscher Wetterdienst data source
+- 10T: 10-minute air temperature dataset
+- AH: Air temperature Historical data
+- 3: Station processing component
+- J: JSON formatting utility component
 
-AUTHOR: ClimaStation Backend Pipeline
-VERSION: Pure formatting version - no content modification
-LAST UPDATED: 2025-01-15
+PURPOSE:
+Converts the compact JSONL output from the weather data parser into human-readable, 
+pretty-formatted JSON files for validation and inspection. This utility preserves 
+exact structure and data without any modifications - pure formatting only.
 
 KEY FUNCTIONALITY:
 - Converts JSONL files to pretty-formatted JSON WITHOUT modifying content
 - Preserves exact structure and data for validation purposes
-- Supports both single file and batch processing
-- Handles large files efficiently with streaming
+- Supports both single file and batch processing with comprehensive logging
+- Handles large files efficiently with streaming and progress tracking
 - Pure formatting - no analysis, metadata, or content changes
+- Comprehensive validation and error handling with detailed feedback
+- Auto-discovery of JSONL files in project structure
+- Support for both orjson (faster) and standard json libraries
 
 EXPECTED INPUT:
-JSONL files from the weather data parser:
-data/germany/3_parsed_files/parsed_10_minutes/parsed_air_temperature/parsed_historical/
+JSONL files from the weather data parser (updated paths):
+data/dwd/3_parsed_files/parsed_historical/
 └── parsed_stundenwerte_TU_00003_19930428_20201231_hist.jsonl
 
 EXPECTED OUTPUT:
-Pretty-formatted JSON files with EXACT same content:
-data/germany/4_pretty_json/parsed_10_minutes/parsed_air_temperature/parsed_historical/
+Pretty-formatted JSON files with EXACT same content (updated paths):
+data/dwd/4_pretty_json/parsed_historical/
 └── parsed_stundenwerte_TU_00003_19930428_20201231_hist.json
 
 USAGE FROM PROJECT ROOT:
     # Convert single file (run from project root)
-    python app/main/jsonl_to_pretty_json.py "data/germany/3_parsed_files/parsed_10_minutes/parsed_air_temperature/parsed_historical/parsed_stundenwerte_TU_00003_19930428_20201231_hist.jsonl"
+    python app/main/jsonl_to_pretty_json.py "data/dwd/3_parsed_files/parsed_historical/parsed_stundenwerte_TU_00003_19930428_20201231_hist.jsonl"
     
     # Convert single file with custom output
     python app/main/jsonl_to_pretty_json.py "path/to/input.jsonl" --output "path/to/output.json"
     
     # Batch convert all JSONL files in directory
-    python app/main/jsonl_to_pretty_json.py --batch "data/germany/3_parsed_files/"
+    python app/main/jsonl_to_pretty_json.py --batch "data/dwd/3_parsed_files/"
 
 USAGE FROM app/main/ DIRECTORY:
     # Convert single file (run from app/main/)
-    python jsonl_to_pretty_json.py "../../data/germany/3_parsed_files/parsed_10_minutes/parsed_air_temperature/parsed_historical/parsed_stundenwerte_TU_00003_19930428_20201231_hist.jsonl"
+    python jsonl_to_pretty_json.py "../../data/dwd/3_parsed_files/parsed_historical/parsed_stundenwerte_TU_00003_19930428_20201231_hist.jsonl"
     
     # Batch convert directory (run from app/main/)
-    python jsonl_to_pretty_json.py --batch "../../data/germany/3_parsed_files/"
+    python jsonl_to_pretty_json.py --batch "../../data/dwd/3_parsed_files/"
+
+AUTHOR: ClimaStation Backend Pipeline
+VERSION: Enhanced with script identification codes and new logging system
+LAST UPDATED: 2025-01-17
 """
 
 import json
@@ -65,15 +77,17 @@ current_dir = Path(__file__).parent
 project_root = current_dir.parent.parent
 sys.path.insert(0, str(project_root))
 
-# Import configuration with proper paths
+# Import configuration and logger with proper paths
 try:
     from app.config.ten_minutes_air_temperature_config import PARSED_BASE
     from app.utils.logger import setup_logger
     HAS_CONFIG = True
+    HAS_LOGGER = True
 except ImportError:
     HAS_CONFIG = False
-    # Fallback paths if config not available
-    PARSED_BASE = Path("data/germany/3_parsed_files/parsed_10_minutes/parsed_air_temperature")
+    HAS_LOGGER = False
+    # Fallback paths if config not available (updated for new structure)
+    PARSED_BASE = Path("data/dwd/3_parsed_files")
 
 
 def setup_fallback_logger(log_path: Optional[Path] = None) -> logging.Logger:
@@ -84,7 +98,7 @@ def setup_fallback_logger(log_path: Optional[Path] = None) -> logging.Logger:
         log_path: Optional path for log file
         
     Returns:
-        Configured logger instance
+        Configured logger instance with DWD10TAH3J identification
     """
     logger = logging.getLogger("jsonl_converter")
     logger.setLevel(logging.INFO)
@@ -94,9 +108,9 @@ def setup_fallback_logger(log_path: Optional[Path] = None) -> logging.Logger:
         logger.removeHandler(handler)
         handler.close()
     
-    # Console handler
+    # Console handler with script identification
     console_handler = logging.StreamHandler()
-    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    formatter = logging.Formatter('%(asctime)s — %(levelname)s — [DWD10TAH3J] %(message)s')
     console_handler.setFormatter(formatter)
     logger.addHandler(console_handler)
     
@@ -112,7 +126,7 @@ def setup_fallback_logger(log_path: Optional[Path] = None) -> logging.Logger:
 
 def find_jsonl_files_in_project() -> List[Path]:
     """
-    Find JSONL files in the expected project directories.
+    Find JSONL files in the expected project directories (updated for new structure).
     
     Returns:
         List of found JSONL files with absolute paths
@@ -120,16 +134,18 @@ def find_jsonl_files_in_project() -> List[Path]:
     # Get the current working directory
     cwd = Path.cwd()
     
-    # Possible search paths relative to current working directory
+    # Possible search paths relative to current working directory (updated paths)
     search_paths = [
-        cwd / "data" / "germany" / "3_parsed_files",
+        cwd / "data" / "dwd" / "3_parsed_files",  # New structure
+        cwd / "data" / "germany" / "3_parsed_files",  # Legacy structure
         cwd / "data" / "3_parsed_files", 
         cwd / "data" / "parsed_files",
         cwd / "data" / "parsed",
         cwd / "parsed_files",
         cwd,
         # Also search relative to project root if we're in a subdirectory
-        project_root / "data" / "germany" / "3_parsed_files",
+        project_root / "data" / "dwd" / "3_parsed_files",  # New structure
+        project_root / "data" / "germany" / "3_parsed_files",  # Legacy structure
         project_root / "data" / "3_parsed_files",
         project_root / "data" / "parsed_files",
         project_root / "data" / "parsed",
@@ -161,7 +177,7 @@ def load_jsonl_file_pure(file_path: Path, logger: logging.Logger) -> List[Dict[s
     
     Args:
         file_path: Path to JSONL file
-        logger: Logger instance
+        logger: Logger instance (with DWD10TAH3J code for traceability)
         
     Returns:
         List of parsed JSON objects (exact content from JSONL)
@@ -228,7 +244,7 @@ def convert_jsonl_to_pretty_json_pure(input_path: Path, output_path: Path, logge
     Args:
         input_path: Path to input JSONL file
         output_path: Path to output JSON file
-        logger: Logger instance
+        logger: Logger instance (with DWD10TAH3J code for traceability)
         
     Returns:
         True if conversion successful, False otherwise
@@ -274,7 +290,7 @@ def validate_jsonl_structure(input_path: Path, logger: logging.Logger) -> bool:
     
     Args:
         input_path: Path to input JSONL file
-        logger: Logger instance
+        logger: Logger instance (with DWD10TAH3J code for traceability)
         
     Returns:
         True if validation successful, False otherwise
@@ -340,7 +356,7 @@ def batch_convert_directory_pure(input_dir: Path, output_dir: Path, logger: logg
     Args:
         input_dir: Directory containing JSONL files
         output_dir: Directory for output files
-        logger: Logger instance
+        logger: Logger instance (with DWD10TAH3J code for traceability)
         
     Returns:
         Tuple of (successful_conversions, failed_conversions)
@@ -392,8 +408,8 @@ def batch_convert_directory_pure(input_dir: Path, output_dir: Path, logger: logg
 
 
 def show_usage_help():
-    """Show detailed usage help with examples."""
-    print("🔧 JSONL to Pretty JSON Converter (Pure Formatting)")
+    """Show detailed usage help with examples (updated for new folder structure)."""
+    print("🔧 JSONL to Pretty JSON Converter [DWD10TAH3J] (Pure Formatting)")
     print("=" * 60)
     print()
     print("This tool converts JSONL files to pretty JSON format WITHOUT modifying content.")
@@ -411,13 +427,13 @@ def show_usage_help():
         print("🔍 Detected: Running from app/main/ directory")
         print()
         print("1. Convert a single JSONL file:")
-        print('   python jsonl_to_pretty_json.py "../../data/germany/3_parsed_files/parsed_10_minutes/parsed_air_temperature/parsed_historical/file.jsonl"')
+        print('   python jsonl_to_pretty_json.py "../../data/dwd/3_parsed_files/parsed_historical/file.jsonl"')
         print()
         print("2. Convert with custom output:")
         print('   python jsonl_to_pretty_json.py "../../data/input.jsonl" --output "../../data/output.json"')
         print()
         print("3. Batch convert all JSONL files in a directory:")
-        print('   python jsonl_to_pretty_json.py --batch "../../data/germany/3_parsed_files/"')
+        print('   python jsonl_to_pretty_json.py --batch "../../data/dwd/3_parsed_files/"')
         print()
         print("4. Validate JSONL file structure:")
         print('   python jsonl_to_pretty_json.py "../../data/input.jsonl" --validate-only')
@@ -426,13 +442,13 @@ def show_usage_help():
         print("🔍 Detected: Running from project root directory")
         print()
         print("1. Convert a single JSONL file:")
-        print('   python app/main/jsonl_to_pretty_json.py "data/germany/3_parsed_files/parsed_10_minutes/parsed_air_temperature/parsed_historical/file.jsonl"')
+        print('   python app/main/jsonl_to_pretty_json.py "data/dwd/3_parsed_files/parsed_historical/file.jsonl"')
         print()
         print("2. Convert with custom output:")
         print('   python app/main/jsonl_to_pretty_json.py "data/input.jsonl" --output "data/output.json"')
         print()
         print("3. Batch convert all JSONL files in a directory:")
-        print('   python app/main/jsonl_to_pretty_json.py --batch "data/germany/3_parsed_files/"')
+        print('   python app/main/jsonl_to_pretty_json.py --batch "data/dwd/3_parsed_files/"')
         print()
         print("4. Validate JSONL file structure:")
         print('   python app/main/jsonl_to_pretty_json.py "data/input.jsonl" --validate-only')
@@ -475,12 +491,13 @@ def show_usage_help():
         print()
         print("🔍 Searched in these directories:")
         search_paths = [
-            Path.cwd() / "data" / "germany" / "3_parsed_files",
+            Path.cwd() / "data" / "dwd" / "3_parsed_files",  # New structure
+            Path.cwd() / "data" / "germany" / "3_parsed_files",  # Legacy structure
             Path.cwd() / "data" / "3_parsed_files", 
             Path.cwd() / "data" / "parsed_files",
             Path.cwd() / "data" / "parsed",
-            project_root / "data" / "germany" / "3_parsed_files",
-            project_root / "data" / "3_parsed_files"
+            project_root / "data" / "dwd" / "3_parsed_files",  # New structure
+            project_root / "data" / "germany" / "3_parsed_files"  # Legacy structure
         ]
         for search_path in search_paths[:5]:  # Show first 5 search paths
             exists = "✅" if search_path.exists() else "❌"
@@ -492,13 +509,14 @@ def show_usage_help():
     print("   - No analysis performed") 
     print("   - No content modification")
     print("   - Perfect for validation")
+    print("   - Script ID: DWD10TAH3J for traceability")
     print()
 
 
 def main():
-    """Main function for command-line usage."""
+    """Main function for command-line usage with enhanced logging."""
     parser = argparse.ArgumentParser(
-        description="Convert JSONL weather data files to pretty JSON format (pure formatting - no content changes)",
+        description="Convert JSONL weather data files to pretty JSON format (pure formatting - no content changes) [DWD10TAH3J]",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -515,6 +533,7 @@ Examples:
   python jsonl_to_pretty_json.py "data/file.jsonl" --validate-only
 
 Note: This version does NOT add metadata or analysis - it only formats the content.
+Script Identification: DWD10TAH3J for logging traceability.
         """
     )
     
@@ -564,25 +583,27 @@ Note: This version does NOT add metadata or analysis - it only formats the conte
         
         sys.exit(1)
     
-    # Setup logging
+    # Setup logging with script identification
     log_path = Path(args.log) if args.log else None
 
-    if HAS_CONFIG:
+    if HAS_LOGGER:
         try:
-            from app.utils.logger import setup_logger
-            if log_path:
-                logger = setup_logger(log_path)
-            else:
-                # Create a default log path or use console-only logging
-                default_log_path = Path("data/0_debug/jsonl_converter.log")
-                logger = setup_logger(default_log_path)
-        except ImportError:
+            # Use the main logger utility - it doesn't take log_path parameter
+            logger = setup_logger("DWD10TAH3J", script_name="jsonl_to_pretty_json")
+        except Exception:
             logger = setup_fallback_logger(log_path)
     else:
         logger = setup_fallback_logger(log_path)
     
     if args.quiet:
         logger.setLevel(logging.WARNING)
+    
+    # Log startup information
+    logger.info("🚀 Starting JSONL to Pretty JSON Converter [DWD10TAH3J]")
+    logger.info(f"📁 Working directory: {Path.cwd()}")
+    logger.info(f"📄 Input path: {input_path}")
+    logger.info(f"⚙️  Configuration loaded: {HAS_CONFIG}")
+    logger.info(f"📚 orjson available: {HAS_ORJSON}")
     
     # Process based on mode
     try:
@@ -593,10 +614,16 @@ Note: This version does NOT add metadata or analysis - it only formats the conte
                 sys.exit(1)
             
             output_dir = Path(args.output) if args.output else input_path.parent / "pretty_json"
+            logger.info(f"📁 Batch mode: processing directory {input_path}")
+            logger.info(f"📁 Output directory: {output_dir}")
+            
             successful, failed = batch_convert_directory_pure(input_path, output_dir, logger)
             
             if failed > 0:
+                logger.error(f"💥 Batch processing completed with {failed} failures")
                 sys.exit(1)
+            else:
+                logger.info(f"🎉 Batch processing completed successfully: {successful} files converted")
         
         elif args.validate_only:
             # Validation only mode
@@ -604,9 +631,13 @@ Note: This version does NOT add metadata or analysis - it only formats the conte
                 logger.error(f"❌ Validation mode requires a file, got: {input_path}")
                 sys.exit(1)
             
+            logger.info(f"🔍 Validation mode: checking {input_path.name}")
             success = validate_jsonl_structure(input_path, logger)
             if not success:
+                logger.error("❌ Validation failed")
                 sys.exit(1)
+            else:
+                logger.info("✅ Validation passed")
         
         else:
             # Single file processing mode
@@ -620,13 +651,20 @@ Note: This version does NOT add metadata or analysis - it only formats the conte
             else:
                 output_path = input_path.with_suffix('.json')
             
+            logger.info(f"🔄 Single file mode: converting {input_path.name}")
+            logger.info(f"📄 Output file: {output_path}")
+            
             # Process file
             success = convert_jsonl_to_pretty_json_pure(input_path, output_path, logger)
             
             if not success:
+                logger.error("❌ Conversion failed")
                 sys.exit(1)
+            else:
+                logger.info("✅ Conversion completed successfully")
         
         logger.info("🎉 All operations completed successfully!")
+        logger.info("🏁 JSONL to Pretty JSON Converter [DWD10TAH3J] finished")
         
     except KeyboardInterrupt:
         logger.info("⚠️  Operation cancelled by user")

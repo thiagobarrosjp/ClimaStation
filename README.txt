@@ -128,16 +128,17 @@ CLIMASTATION-BACKEND
 │   └── utils/
 │       └── logger.py
 ├── data/
-│   ├── 0_debug/
-│   │   ├── jsonl_to_pretty_json.debug.log
-│   │   └── parse_germany_10_minutes_air_temperature.debug.log
-│   ├── 1_crawl_dwd/
-│   │   ├── create_dwd_folder_structure.py
-│   │   ├── dwd_structure.json
-│   │   ├── dwd_tree.txt
-│   │   └── dwd_urls.jsonl
-│   ├── 2_downloaded_files/
-│   └── 3_parsed_files/
+│   ├── germany/
+│   │   ├── 0_debug/
+│   │   │   ├── jsonl_to_pretty_json.debug.log
+│   │   │   └── parse_germany_10_minutes_air_temperature.debug.log
+│   │   ├── 1_crawl_dwd/
+│   │   │   ├── create_dwd_folder_structure.py
+│   │   │   ├── dwd_structure.json
+│   │   │   ├── dwd_tree.txt
+│   │   │   └── dwd_urls.jsonl
+│   │   ├── 2_downloaded_files/
+│   │   └── 3_parsed_files/
 ├── .gitignore
 ├── dev_log.md
 ├── README.md

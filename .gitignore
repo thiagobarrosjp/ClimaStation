@@ -31,18 +31,18 @@ Thumbs.db
 # Ignore all generated data — keep only README.md or .gitkeep to preserve folder structure
 
 # Debug logs
-data/germany/0_debug/*
-!data/germany/0_debug/.gitkeep
+data/dwd/0_debug/*
+!data/dwd/0_debug/.gitkeep
 
 # Downloaded files (raw data - can be large)
-data/germany/2_downloaded_files/*
-!data/germany/2_downloaded_files/.gitkeep
-!data/germany/2_downloaded_files/README.md
+data/dwd/2_downloaded_files/*
+!data/dwd/2_downloaded_files/.gitkeep
+!data/dwd/2_downloaded_files/README.md
 
 # Parsed files (processed output - can be large)
-data/germany/3_parsed_files/*
-!data/germany/3_parsed_files/.gitkeep
-!data/germany/3_parsed_files/README.md
+data/dwd/3_parsed_files/*
+!data/dwd/3_parsed_files/.gitkeep
+!data/dwd/3_parsed_files/README.md
 
 # === Backup or development files ===
 *.old

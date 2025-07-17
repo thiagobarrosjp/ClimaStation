@@ -1,13 +1,17 @@
 """
 Sensor Metadata Parser for German Weather Station Data
 
-This module handles the parsing and processing of sensor metadata from German weather
-station metadata files. It combines parameter metadata with device specifications
-to create comprehensive sensor descriptions.
+SCRIPT IDENTIFICATION: DWD10TAH3S
+- DWD: Deutscher Wetterdienst data source
+- 10T: 10-minute air temperature dataset
+- AH: Air temperature Historical data
+- 3: Station processing component
+- S: Sensor metadata parsing pipeline component
 
-AUTHOR: ClimaStation Backend Pipeline
-VERSION: Fixed header detection version
-LAST UPDATED: 2025-07-16
+PURPOSE:
+Handles the parsing and processing of sensor metadata from German weather station 
+metadata files. Combines parameter metadata with device specifications to create 
+comprehensive sensor descriptions with bilingual translations and quality validation.
 
 KEY FUNCTIONALITY:
 - Loads parameter metadata (what was measured when) with proper header detection
@@ -15,9 +19,23 @@ KEY FUNCTIONALITY:
 - Combines metadata with flexible date matching
 - Provides comprehensive sensor descriptions with bilingual translations
 - Validates metadata quality and completeness
+- Uses centralized configuration from ten_minutes_air_temperature_config.py
+- Handles both 'eor' (end of record) and trailing semicolon CSV formats
+
+FIXES APPLIED:
+- Added proper header row detection similar to station_info_parser.py
+- Fixed CSV parsing to skip header and separator lines
+- Enhanced error handling for malformed metadata files
+- Added hybrid approach: uses 'eor' when available, falls back to semicolon handling
+- Centralized all column mappings using COLUMN_NAME_MAP from config
+- Fixed type checking issues with pandas iterrows()
+- Improved debugging and logging throughout
 
 USAGE:
     from app.parsing.sensor_metadata import load_sensor_metadata, parse_sensor_metadata
+    from app.utils.logger import setup_logger
+    
+    logger = setup_logger("DWD10TAH3S", script_name="sensor_metadata")
     
     # Load all sensor metadata from files
     sensor_df = load_sensor_metadata(meta_files, logger)
@@ -25,11 +43,22 @@ USAGE:
     # Parse sensors for specific station and date
     sensors = parse_sensor_metadata(sensor_df, station_id, date_int, logger)
 
-FIXES APPLIED:
-- Added proper header row detection similar to station_info_parser.py
-- Fixed CSV parsing to skip header and separator lines
-- Enhanced error handling for malformed metadata files
-- Added better debugging for metadata parsing issues
+DATA FLOW:
+1. load_parameter_metadata() - Parses parameter metadata files with eor/semicolon handling
+2. load_device_metadata() - Parses device metadata files with same hybrid approach
+3. combine_metadata() - Combines parameter and device data with flexible date matching
+4. parse_sensor_metadata() - Extracts sensors for specific station/date with translations
+5. validate_sensor_metadata() - Quality checks and validation metrics
+
+SUPPORTED FILE FORMATS:
+- Files with 'eor' (end of record) markers - uses eor as definitive boundary
+- Files with trailing semicolons - removes empty columns automatically
+- Mixed formats - detects and applies appropriate parsing strategy
+- Various DWD metadata file structures (Parameter, Geraete, etc.)
+
+AUTHOR: ClimaStation Backend Pipeline
+VERSION: Enhanced with script identification codes and new logging system
+LAST UPDATED: 2025-01-17
 """
 
 import pandas as pd
@@ -44,6 +73,13 @@ from app.config.ten_minutes_air_temperature_config import (
     PARAM_NAME_MAP, SENSOR_TYPE_TRANSLATIONS, 
     MEASUREMENT_METHOD_TRANSLATIONS, COLUMN_NAME_MAP
 )
+
+# Import logger utility
+try:
+    from app.utils.logger import setup_logger
+    HAS_LOGGER = True
+except ImportError:
+    HAS_LOGGER = False
 
 
 def safe_int_conversion(value: str, default: int = 0) -> int:
@@ -117,11 +153,15 @@ def detect_data_start_line(file_path: Path, encoding: str = 'latin-1') -> int:
 
 def load_parameter_metadata(meta_files: List[Path], logger: logging.Logger) -> pd.DataFrame:
     """
-    Load parameter metadata from metadata files with proper header detection.
+    Load parameter metadata using centralized configuration and hybrid eor/semicolon approach.
+    
+    This function handles both DWD file formats:
+    - Files with 'eor' (end of record) markers - uses eor as definitive boundary
+    - Files with trailing semicolons - removes empty columns automatically
     
     Args:
         meta_files: List of metadata file paths
-        logger: Logger instance
+        logger: Logger instance (with DWD10TAH3S code)
         
     Returns:
         DataFrame with parameter metadata or empty DataFrame if not found
@@ -135,65 +175,114 @@ def load_parameter_metadata(meta_files: List[Path], logger: logging.Logger) -> p
     try:
         logger.info(f"📋 Loading parameter metadata: {param_file.name}")
         
-        # Detect where data actually starts
+        # Detect where data starts (skip header and separator lines)
         skip_rows = detect_data_start_line(param_file)
         
         if skip_rows > 0:
             logger.debug(f"   📏 Skipping {skip_rows} header/separator lines")
         
-        # Read CSV with proper header handling
+        # Read CSV normally first
         param_df = pd.read_csv(
             param_file, 
             sep=';', 
             skipinitialspace=True, 
             encoding='latin-1', 
             dtype=str,
-            skiprows=skip_rows,  # Skip header and separator lines
-            header=None  # Don't treat first data row as header
+            skiprows=skip_rows,
+            header=None
         )
         
-        # Remove empty rows and rows that might be footers
-        param_df = param_df.dropna(how='all')  # Remove completely empty rows
-        
-        # Filter out any remaining header-like rows
-        if not param_df.empty:
-            # Remove rows where first column contains header-like text
-            header_indicators = ['Stations_ID', 'Parameter', 'generiert:', 'Legende:', 'eor']
-            mask = ~param_df.iloc[:, 0].astype(str).str.contains('|'.join(header_indicators), na=False, case=False)
-            param_df = param_df[mask]
+        # Remove completely empty rows
+        param_df = param_df.dropna(how='all')
         
         if param_df.empty:
-            logger.warning("   ⚠️  No data rows found after header filtering")
+            logger.warning("   ⚠️  No data found in parameter file")
             return pd.DataFrame()
         
-        # Assign proper column names based on expected structure
-        expected_columns = [
-            'station_id', 'from_date', 'to_date', 'station_name', 
-            'parameter', 'parameter_description', 'unit', 'data_source',
-            'additional_info', 'special_notes', 'literature_reference', 'eor'
+        logger.debug(f"   📊 Raw data shape: {param_df.shape}")
+        
+        # STEP 1: Check if 'eor' is present in the data
+        has_eor = False
+        eor_column = None
+        
+        for col_idx in range(len(param_df.columns)):
+            if param_df.iloc[:, col_idx].astype(str).str.strip().eq('eor').any():
+                has_eor = True
+                eor_column = col_idx
+                logger.debug(f"   📍 Found 'eor' column at index {eor_column}")
+                break
+        
+        # STEP 2: Apply appropriate parsing strategy
+        if has_eor and eor_column is not None:
+            logger.debug("   🎯 Using 'eor' boundary approach")
+            param_df = param_df.iloc[:, :eor_column + 1]
+            logger.debug(f"   ✂️  Trimmed to {param_df.shape[1]} columns using 'eor' boundary")
+        else:
+            logger.debug("   🔧 Using trailing semicolon approach (no 'eor' found)")
+            # Handle trailing semicolons by removing empty columns
+            param_df = param_df.dropna(axis=1, how='all')
+            
+            # Remove columns that only contain empty strings
+            for col in param_df.columns:
+                if param_df[col].astype(str).str.strip().eq('').all():
+                    param_df = param_df.drop(columns=[col])
+            
+            logger.debug(f"   ✂️  Cleaned to {param_df.shape[1]} columns after removing empty columns")
+        
+        # STEP 3: Remove footer rows (common to both approaches)
+        footer_indicators = ['generiert:', 'Legende:', 'Deutscher Wetterdienst', '--']
+        mask = ~param_df.iloc[:, 0].astype(str).str.contains('|'.join(footer_indicators), na=False, case=False)
+        param_df = param_df[mask]
+        
+        # Remove rows where the first column is 'eor' (pure footer markers)
+        param_df = param_df[param_df.iloc[:, 0].astype(str).str.strip() != 'eor']
+        
+        if param_df.empty:
+            logger.warning("   ⚠️  No data rows found after filtering")
+            return pd.DataFrame()
+        
+        # STEP 4: Assign raw column names based on expected DWD parameter metadata structure
+        actual_columns = len(param_df.columns)
+        logger.debug(f"   📊 Final data shape: {param_df.shape}")
+        
+        # Use the standard DWD parameter metadata column order
+        # Based on typical DWD format: Stations_ID;Von_Datum;Bis_Datum;Stationsname;Parameter;Parameterbeschreibung;Einheit;Datenquelle;Zusatz-Info;Besonderheiten;Literaturhinweis;eor;
+        raw_column_names = [
+            'Stations_ID',                              # Column 0
+            'Von_Datum',                               # Column 1
+            'Bis_Datum',                               # Column 2
+            'Stationsname',                            # Column 3
+            'Parameter',                               # Column 4
+            'Parameterbeschreibung',                   # Column 5
+            'Einheit',                                 # Column 6
+            'Datenquelle (Strukturversion=SV)',        # Column 7
+            'Zusatz-Info',                             # Column 8
+            'Besonderheiten',                          # Column 9
+            'Literaturhinweis',                        # Column 10
+            'eor'                                      # Column 11 (if present)
         ]
         
-        # Adjust column names to match actual data
-        actual_columns = min(len(param_df.columns), len(expected_columns))
-        param_df.columns = expected_columns[:actual_columns]
+        # Use only as many names as we have columns
+        column_names = raw_column_names[:actual_columns]
+        param_df.columns = column_names
         
-        # Clean and normalize
+        logger.debug(f"   📋 Assigned raw columns: {list(param_df.columns)}")
+        
+        # STEP 5: Clean the data
         param_df = param_df.apply(lambda col: col.str.strip() if col.dtype == "object" else col)
-        param_df = normalize_columns(param_df, COLUMN_NAME_MAP)
         
-        # Remove any rows with 'eor' or other footer indicators
+        # Remove rows where eor column actually contains 'eor' (these are footers)
         if 'eor' in param_df.columns:
-            param_df = param_df[param_df['eor'] != 'eor']
+            param_df = param_df[param_df['eor'].astype(str).str.strip() != 'eor']
         
-        # Final cleanup - remove any rows that still look like headers
-        if 'station_id' in param_df.columns:
-            param_df = param_df[param_df['station_id'].astype(str).str.strip() != 'station_id']
-        if 'parameter' in param_df.columns:
-            param_df = param_df[param_df['parameter'].astype(str).str.strip() != 'parameter']
+        # STEP 6: Apply the centralized column name mapping from config
+        param_df = normalize_columns(param_df, COLUMN_NAME_MAP)
+        logger.debug(f"   🔄 Normalized columns: {list(param_df.columns)}")
         
         logger.info(f"   ✅ Loaded {len(param_df)} parameter entries")
+        logger.debug(f"   📊 Parsing strategy: {'eor-based' if has_eor else 'semicolon-based'}")
         
-        # Debug: Show sample of loaded data
+        # Debug: Show sample data (fixed type checking issue)
         if not param_df.empty and logger.level <= logging.DEBUG:
             logger.debug("   📋 Sample parameter entries:")
             for idx, (i, row) in enumerate(param_df.head(3).iterrows(), 1):
@@ -211,11 +300,11 @@ def load_parameter_metadata(meta_files: List[Path], logger: logging.Logger) -> p
 
 def load_device_metadata(meta_files: List[Path], logger: logging.Logger) -> pd.DataFrame:
     """
-    Load device metadata from metadata files with proper header detection.
+    Load device metadata using centralized configuration and hybrid approach.
     
     Args:
         meta_files: List of metadata file paths
-        logger: Logger instance
+        logger: Logger instance (with DWD10TAH3S code)
         
     Returns:
         DataFrame with device metadata or empty DataFrame if not found
@@ -229,56 +318,99 @@ def load_device_metadata(meta_files: List[Path], logger: logging.Logger) -> pd.D
     try:
         logger.info(f"🔧 Loading device metadata: {device_file.name}")
         
-        # Detect where data actually starts
         skip_rows = detect_data_start_line(device_file)
         
         if skip_rows > 0:
             logger.debug(f"   📏 Skipping {skip_rows} header/separator lines")
         
-        # Read CSV with proper header handling
+        # Read CSV normally
         device_df = pd.read_csv(
             device_file, 
             sep=';', 
             skipinitialspace=True, 
             encoding='latin-1', 
             dtype=str,
-            skiprows=skip_rows,  # Skip header and separator lines
-            header=None  # Don't treat first data row as header
+            skiprows=skip_rows,
+            header=None
         )
         
         # Remove empty rows
         device_df = device_df.dropna(how='all')
         
-        # Filter out any remaining header-like rows
-        if not device_df.empty:
-            header_indicators = ['Stations_ID', 'Stationsname', 'generiert:', 'eor']
-            mask = ~device_df.iloc[:, 0].astype(str).str.contains('|'.join(header_indicators), na=False, case=False)
-            device_df = device_df[mask]
-        
         if device_df.empty:
-            logger.warning("   ⚠️  No data rows found after header filtering")
+            logger.warning("   ⚠️  No data found in device file")
             return pd.DataFrame()
         
-        # Assign proper column names based on expected structure
-        expected_columns = [
-            'station_id', 'station_name', 'longitude', 'latitude', 'station_height',
-            'sensor_height_m', 'from_date', 'to_date', 'sensor_type', 
-            'measurement_method', 'eor'
+        # Check for 'eor' presence
+        has_eor = False
+        eor_column = None
+        
+        for col_idx in range(len(device_df.columns)):
+            if device_df.iloc[:, col_idx].astype(str).str.strip().eq('eor').any():
+                has_eor = True
+                eor_column = col_idx
+                logger.debug(f"   📍 Found 'eor' column at index {eor_column}")
+                break
+        
+        # Apply appropriate strategy
+        if has_eor and eor_column is not None:
+            logger.debug("   🎯 Using 'eor' boundary approach")
+            device_df = device_df.iloc[:, :eor_column + 1]
+        else:
+            logger.debug("   🔧 Using trailing semicolon approach")
+            device_df = device_df.dropna(axis=1, how='all')
+            for col in device_df.columns:
+                if device_df[col].astype(str).str.strip().eq('').all():
+                    device_df = device_df.drop(columns=[col])
+        
+        # Remove footer rows
+        footer_indicators = ['generiert:', 'Deutscher Wetterdienst', '--']
+        mask = ~device_df.iloc[:, 0].astype(str).str.contains('|'.join(footer_indicators), na=False, case=False)
+        device_df = device_df[mask]
+        
+        device_df = device_df[device_df.iloc[:, 0].astype(str).str.strip() != 'eor']
+        
+        if device_df.empty:
+            logger.warning("   ⚠️  No data rows found after filtering")
+            return pd.DataFrame()
+        
+        # Assign raw column names based on typical DWD device metadata structure
+        actual_columns = len(device_df.columns)
+        logger.debug(f"   📊 Final device data shape: {device_df.shape}")
+        
+        # Standard DWD device metadata columns (based on typical structure)
+        raw_column_names = [
+            'Stations_ID',                    # Column 0
+            'Stationsname',                   # Column 1
+            'Geo. Laenge [Grad]',            # Column 2
+            'Geo. Breite [Grad]',            # Column 3
+            'Stationshoehe [m]',             # Column 4
+            'Geberhoehe ueber Grund [m]',    # Column 5
+            'Von_Datum',                     # Column 6
+            'Bis_Datum',                     # Column 7
+            'Geraetetyp Name',               # Column 8
+            'Messverfahren',                 # Column 9
+            'eor'                            # Column 10 (if present)
         ]
         
-        # Adjust column names to match actual data
-        actual_columns = min(len(device_df.columns), len(expected_columns))
-        device_df.columns = expected_columns[:actual_columns]
+        column_names = raw_column_names[:actual_columns]
+        device_df.columns = column_names
         
-        # Clean and normalize
+        logger.debug(f"   📋 Assigned raw columns: {list(device_df.columns)}")
+        
+        # Clean data
         device_df = device_df.apply(lambda col: col.str.strip() if col.dtype == "object" else col)
-        device_df = normalize_columns(device_df, COLUMN_NAME_MAP)
         
-        # Remove any rows with 'eor' or other footer indicators
         if 'eor' in device_df.columns:
-            device_df = device_df[device_df['eor'] != 'eor']
+            device_df = device_df[device_df['eor'].astype(str).str.strip() != 'eor']
+        
+        # Apply centralized column name mapping
+        device_df = normalize_columns(device_df, COLUMN_NAME_MAP)
+        logger.debug(f"   🔄 Normalized columns: {list(device_df.columns)}")
         
         logger.info(f"   ✅ Loaded {len(device_df)} device entries")
+        logger.debug(f"   📊 Parsing strategy: {'eor-based' if has_eor else 'semicolon-based'}")
+        
         return device_df
         
     except Exception as e:
@@ -294,7 +426,7 @@ def combine_metadata(param_df: pd.DataFrame, device_df: pd.DataFrame, logger: lo
     Args:
         param_df: Parameter metadata DataFrame
         device_df: Device metadata DataFrame
-        logger: Logger instance
+        logger: Logger instance (with DWD10TAH3S code)
         
     Returns:
         Combined DataFrame with sensor metadata
@@ -404,7 +536,7 @@ def combine_metadata(param_df: pd.DataFrame, device_df: pd.DataFrame, logger: lo
         return pd.DataFrame()
 
 
-def load_sensor_metadata(meta_files: List[Path], logger: logging.Logger) -> pd.DataFrame:
+def load_sensor_metadata(meta_files: List[Path], logger: logging.Logger, parent_log_file: Optional[Path] = None) -> pd.DataFrame:
     """
     Load and combine all sensor metadata from metadata files.
     
@@ -413,16 +545,16 @@ def load_sensor_metadata(meta_files: List[Path], logger: logging.Logger) -> pd.D
     
     Args:
         meta_files: List of extracted metadata file paths
-        logger: Logger instance
+        logger: Logger instance (with DWD10TAH3S code for traceability)
+        parent_log_file: Optional path to parent script's log file for centralized logging
         
     Returns:
         DataFrame with combined sensor metadata
-        
-    Example:
-        sensor_df = load_sensor_metadata(meta_files, logger)
-        # Returns DataFrame with columns: station_id, parameter, from_date, to_date,
-        # sensor_type, measurement_method, sensor_height_m
     """
+    # If we have a parent log file, create a new logger that writes to it
+    if parent_log_file and HAS_LOGGER:
+        logger = setup_logger("DWD10TAH3S", script_name="sensor_metadata", parent_log_file=parent_log_file)
+    
     logger.info("🔧 Loading sensor metadata...")
     
     if not meta_files:
@@ -460,7 +592,7 @@ def parse_sensor_metadata(sensor_df: pd.DataFrame, station_id: int, date_int: in
         sensor_df: Sensor metadata DataFrame from load_sensor_metadata()
         station_id: Station ID to filter for
         date_int: Date as integer (YYYYMMDD format)
-        logger: Logger instance
+        logger: Logger instance (with DWD10TAH3S code)
         
     Returns:
         List of sensor dictionaries with bilingual descriptions
@@ -557,7 +689,7 @@ def validate_sensor_metadata(sensor_df: pd.DataFrame, logger: logging.Logger) ->
     
     Args:
         sensor_df: Sensor metadata DataFrame
-        logger: Logger instance
+        logger: Logger instance (with DWD10TAH3S code)
         
     Returns:
         Dictionary with validation results and quality metrics
@@ -659,19 +791,31 @@ if __name__ == "__main__":
     """
     Test the sensor metadata functionality when run directly.
     """
-    print("Testing ClimaStation Sensor Metadata Parser...")
+    print("Testing ClimaStation Sensor Metadata Parser [DWD10TAH3S]...")
+    
+    # Set up test logger with script identification
+    if HAS_LOGGER:
+        test_logger = setup_logger("DWD10TAH3S", script_name="sensor_metadata_test")
+    else:
+        # Fallback logger for testing
+        test_logger = logging.getLogger("test_logger")
+        test_logger.setLevel(logging.DEBUG)
+        handler = logging.StreamHandler()
+        formatter = logging.Formatter('%(asctime)s — %(levelname)s — [DWD10TAH3S] %(message)s')
+        handler.setFormatter(formatter)
+        test_logger.addHandler(handler)
     
     # Test utility functions
-    print("✅ Testing utility functions...")
+    test_logger.info("✅ Testing utility functions...")
     
     assert safe_int_conversion("123", 0) == 123
     assert safe_int_conversion("invalid", 999) == 999
     assert safe_float_conversion("23.5", 0.0) == 23.5
     assert safe_float_conversion("23,5", 0.0) == 23.5  # German format
-    print("   ✅ Utility functions working")
+    test_logger.info("   ✅ Utility functions working")
     
     # Test parameter mappings
-    print(f"✅ Parameter mappings available: {len(PARAM_NAME_MAP)} parameters")
+    test_logger.info(f"✅ Parameter mappings available: {len(PARAM_NAME_MAP)} parameters")
     
-    print("✅ Sensor metadata testing complete")
-    print("ℹ️  For full testing, run with actual metadata files from the pipeline")
+    test_logger.info("✅ Sensor metadata testing complete")
+    test_logger.info("ℹ️  For full testing, run with actual metadata files from the pipeline")

@@ -4,16 +4,16 @@ ClimaStation Utility Script: Create Folder Structure from DWD JSON Description
 This script reads a DWD structure definition from a JSON file (`dwd_structure.json`)
 and creates a matching folder hierarchy under:
 
-    - data/germany/2_downloaded_files/
-    - data/germany/3_parsed_files/   (mirrored structure with 'parsed_' prefix at each level, excluding meta_data)
+    - data/dwd/2_downloaded_files/
+    - data/dwd/3_parsed_files/   (mirrored structure with 'parsed_' prefix at each level, excluding meta_data)
 
 Only folders marked with `"has_data": true` are created.
 Also logs all created folders to a debug log file.
 
 Usage:
-    1. Place this script and `dwd_structure.json` in data/germany/1_crawl_dwd/
+    1. Place this script and `dwd_structure.json` in data/dwd/1_crawl_dwd/
     2. Run from terminal:
-        cd data/germany/1_crawl_dwd
+        cd data/dwd/1_crawl_dwd
         python create_dwd_folder_structure.py
 """
 

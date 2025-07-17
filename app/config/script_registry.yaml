@@ -1,0 +1,103 @@
+# app/config/script_registry.yaml
+metadata:
+  last_updated: "2025-01-17"
+  description: "Central registry for ClimaStation script identification codes"
+
+coding_convention:
+  format: "[SOURCE][DATASET][VARIANT][PIPELINE][FUNCTION]"
+  source_codes:
+    DWD: "German Weather Service (Deutscher Wetterdienst)"
+    NOAA: "National Oceanic and Atmospheric Administration"
+    METEO: "MeteoSwiss"
+  
+  dataset_codes:
+    10TA: "10-minute Air Temperature"
+    1HTA: "1-hour Air Temperature" 
+    DAILY: "Daily Weather Data"
+  
+  variant_codes:
+    H: "Historical"
+    R: "Recent" 
+    N: "Now/Current"
+  
+  pipeline_codes:
+    1: "Daily Processing"
+    2: "Monthly Processing"
+    3: "Bulk Processing"
+  
+  function_codes:
+    P: "Parser"
+    C: "Config"
+    L: "Logger"
+    M: "Metadata"
+    Z: "ZIP Handler"
+    T: "Raw Transformer"
+    U: "Utility/General"
+    V: "Validator"
+    D: "Downloader"
+    G: "Merger"
+
+scripts:
+  DWD10TAH3P:
+    source: DWD
+    dataset: 10-minute Air Temperature
+    variant: Historical
+    pipeline: 3 (Bulk)
+    function: Parser
+    script_path: "app/main/parse_10_minutes_air_temperature_hist.py"
+    
+  DWD10TAH3T:
+    source: DWD
+    dataset: 10-minute Air Temperature
+    variant: Historical
+    pipeline: 3 (Bulk)
+    function: Raw Transformer
+    script_path: "app/parsing/raw_parser.py"
+    
+  DWD10TAH3M:
+    source: DWD
+    dataset: 10-minute Air Temperature
+    variant: Historical
+    pipeline: 3 (Bulk)
+    function: Metadata
+    script_path: "app/parsing/sensor_metadata.py"
+    
+  DWD10TAH3U:
+    source: DWD
+    dataset: 10-minute Air Temperature
+    variant: Historical
+    pipeline: 3 (Bulk)
+    function: Utility/General
+    script_path: "app/parsing/station_info_parser.py"
+    
+  DWD10TAH3C:
+    source: DWD
+    dataset: 10-minute Air Temperature
+    variant: Historical
+    pipeline: 3 (Bulk)
+    function: Config
+    script_path: "app/config/ten_minutes_air_temperature_config.py"
+    
+  DWD10TAH3Z:
+    source: DWD
+    dataset: 10-minute Air Temperature
+    variant: Historical
+    pipeline: 3 (Bulk)
+    function: ZIP Handler
+    script_path: "app/io_helpers/zip_handler.py"
+    
+  DWD10TAH3L:
+    source: DWD
+    dataset: 10-minute Air Temperature
+    variant: Historical
+    pipeline: 3 (Bulk)
+    function: Logger
+    script_path: "app/utils/logger.py"
+    
+  DWD10TAH3T2:
+    source: DWD
+    dataset: 10-minute Air Temperature
+    variant: Historical
+    pipeline: 3 (Bulk)
+    function: Raw Transformer
+    script_path: "app/main/jsonl_to_pretty_json.py"
