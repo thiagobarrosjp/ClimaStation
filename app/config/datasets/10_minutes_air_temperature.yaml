@@ -1,0 +1,38 @@
+# ClimaStation Dataset Configuration: 10-Minute Air Temperature
+# 
+# This file contains dataset-specific settings for processing DWD 10-minute
+# air temperature measurements from historical, recent, and now folders.
+# 
+# Dataset URL: https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/air_temperature/
+# 
+# Used by: AirTemperatureProcessor, DatasetOrchestrator
+# Modified: When dataset structure changes or validation rules need updates
+# 
+# Key sections:
+# - dataset: Basic identification and script codes
+# - paths: Relative paths within the DWD repository structure
+# - processing: Dataset-specific processing options
+# - validation: Data quality and completeness checks
+
+dataset:
+  name: "10_minutes_air_temperature"
+  script_code: "DWD10TAH3"          # Base code for logging identification
+  description: "DWD 10-minute air temperature measurements"
+
+paths:
+  historical: "10_minutes/air_temperature/historical"
+  recent: "10_minutes/air_temperature/recent"
+  now: "10_minutes/air_temperature/now"
+  metadata: "10_minutes/air_temperature/meta_data"
+
+processing:
+  parallel_folders: true            # Process historical/recent/now in parallel
+  expected_files:                   # Expected file counts for validation
+    historical: 1623
+    recent: 478
+    now: 469
+
+validation:
+  required_columns: ["STATIONS_ID", "MESS_DATUM", "TT_10", "RF_10"]
+  station_info_required: true       # Require station metadata for processing
+  min_measurements_per_file: 1      # Minimum valid measurements per ZIP

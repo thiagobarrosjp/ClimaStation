@@ -1,0 +1,132 @@
+# DWD (Deutscher Wetterdienst) Specific Translations
+# Provider-specific terms and acronyms
+
+# Organization Names
+DWD:
+  en: "German Weather Service"
+  de: "Deutscher Wetterdienst"
+  full_name_en: "German National Meteorological Service"
+  full_name_de: "Deutscher Wetterdienst"
+  description_en: "Germany's national meteorological service"
+  description_de: "Deutschlands nationaler Wetterdienst"
+
+# Station Names (mostly proper nouns, but some may need context)
+Aachen:
+  en: "Aachen"
+  de: "Aachen"
+  description_en: "Weather station in Aachen, North Rhine-Westphalia, Germany"
+  description_de: "Wetterstation in Aachen, Nordrhein-Westfalen, Deutschland"
+
+# Technical Terms
+Stationsname:
+  en: "station name"
+  de: "Stationsname"
+
+Betreibername:
+  en: "operator name"
+  de: "Betreibername"
+
+Stationshoehe:
+  en: "station altitude"
+  de: "Stationshöhe"
+  unit: "m"
+
+"Geogr.Breite":
+  en: "latitude"
+  de: "geographische Breite"
+  unit: "degrees"
+
+"Geogr.Laenge":
+  en: "longitude"
+  de: "geographische Länge"
+  unit: "degrees"
+
+"Geo. Laenge [Grad]":
+  en: "longitude [degrees]"
+  de: "Geo. Länge [Grad]"
+
+"Geo. Breite [Grad]":
+  en: "latitude [degrees]"
+  de: "Geo. Breite [Grad]"
+
+"Stationshoehe [m]":
+  en: "station altitude [m]"
+  de: "Stationshöhe [m]"
+
+"Geberhoehe ueber Grund [m]":
+  en: "sensor height above ground [m]"
+  de: "Geberhöhe über Grund [m]"
+
+"Geraetetyp Name":
+  en: "equipment type name"
+  de: "Gerätetyp Name"
+
+Messverfahren:
+  en: "measurement method"
+  de: "Messverfahren"
+
+Von_Datum:
+  en: "from date"
+  de: "Von_Datum"
+
+Bis_Datum:
+  en: "to date"
+  de: "Bis_Datum"
+
+Parameter:
+  en: "parameter"
+  de: "Parameter"
+
+Parameterbeschreibung:
+  en: "parameter description"
+  de: "Parameterbeschreibung"
+
+Einheit:
+  en: "unit"
+  de: "Einheit"
+
+"Datenquelle (Strukturversion=SV)":
+  en: "data source (structure version=SV)"
+  de: "Datenquelle (Strukturversion=SV)"
+
+"Zusatz-Info":
+  en: "additional info"
+  de: "Zusatz-Info"
+
+Besonderheiten:
+  en: "special notes"
+  de: "Besonderheiten"
+
+Literaturhinweis:
+  en: "literature reference"
+  de: "Literaturhinweis"
+
+# File and Directory Terms
+historical:
+  en: "historical"
+  de: "historisch"
+
+recent:
+  en: "recent"
+  de: "aktuell"
+
+now:
+  en: "current"
+  de: "jetzt"
+
+meta_data:
+  en: "metadata"
+  de: "Metadaten"
+
+# Time References
+"HHMM MEZ":
+  en: "HHMM CET"
+  de: "HHMM MEZ"
+  description_en: "Hours and minutes in Central European Time"
+  description_de: "Stunden und Minuten in Mitteleuropäischer Zeit"
+
+"HHMM UTC":
+  en: "HHMM UTC"
+  de: "HHMM UTC"
+  description_en: "Hours and minutes in Coordinated Universal Time"
+  description_de: "Stunden und Minuten in koordinierter Weltzeit"

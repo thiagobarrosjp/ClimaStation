@@ -1,0 +1,104 @@
+# Quality Code Translations
+# Official DWD quality indicators (QUALITAETS_NIVEAU - QN)
+# Based on official DWD documentation
+
+# Standard DWD Quality Levels
+"1":
+  en: "only formal control"
+  de: "nur formale Prüfung"
+  description_en: "Basic format and range checks only"
+  description_de: "Nur grundlegende Format- und Bereichsprüfungen"
+  reliability: "basic"
+
+"2":
+  en: "controlled with individually defined criteria"
+  de: "nach individuellen Kriterien geprüft"
+  description_en: "Data checked against station-specific quality criteria"
+  description_de: "Daten gegen stationsspezifische Qualitätskriterien geprüft"
+  reliability: "enhanced"
+
+"3":
+  en: "automatic control and correction"
+  de: "automatische Prüfung und Korrektur"
+  description_en: "Automatic quality control with corrections applied"
+  description_de: "Automatische Qualitätskontrolle mit angewandten Korrekturen"
+  reliability: "high"
+
+"5":
+  en: "historic, subjective procedures"
+  de: "historische, subjektive Verfahren"
+  description_en: "Historical data processed with subjective quality control methods"
+  description_de: "Historische Daten mit subjektiven Qualitätskontrollverfahren bearbeitet"
+  reliability: "historical"
+
+"7":
+  en: "second control done, before correction"
+  de: "geprüft, gepflegt, nicht korrigiert"
+  description_en: "Secondary quality control completed, but no corrections applied"
+  description_de: "Sekundäre Qualitätskontrolle abgeschlossen, aber keine Korrekturen angewandt"
+  reliability: "verified_uncorrected"
+
+"8":
+  en: "quality control outside ROUTINE"
+  de: "Qualitätssicherung ausserhalb ROUTINE"
+  description_en: "Quality control performed outside standard routine procedures"
+  description_de: "Qualitätskontrolle außerhalb der Standardroutineverfahren durchgeführt"
+  reliability: "non_routine"
+
+"9":
+  en: "not all parameters corrected"
+  de: "nicht alle Parameter korrigiert"
+  description_en: "Quality control completed but not all parameters were corrected"
+  description_de: "Qualitätskontrolle abgeschlossen, aber nicht alle Parameter wurden korrigiert"
+  reliability: "partially_corrected"
+
+"10":
+  en: "quality control finished, all corrections finished"
+  de: "Qualitätsprüfung und Korrektur beendet"
+  description_en: "Complete quality control with all necessary corrections applied"
+  description_de: "Vollständige Qualitätskontrolle mit allen notwendigen Korrekturen angewandt"
+  reliability: "fully_processed"
+
+# Quality Level Categories
+quality_categories:
+  basic:
+    en: "Basic Quality Control"
+    de: "Grundlegende Qualitätskontrolle"
+    
+  enhanced:
+    en: "Enhanced Quality Control"
+    de: "Erweiterte Qualitätskontrolle"
+    
+  high:
+    en: "High Quality Control"
+    de: "Hohe Qualitätskontrolle"
+    
+  historical:
+    en: "Historical Quality Control"
+    de: "Historische Qualitätskontrolle"
+    
+  verified_uncorrected:
+    en: "Verified but Uncorrected"
+    de: "Verifiziert aber unkorrigiert"
+    
+  non_routine:
+    en: "Non-Routine Quality Control"
+    de: "Nicht-Routine Qualitätskontrolle"
+    
+  partially_corrected:
+    en: "Partially Corrected"
+    de: "Teilweise korrigiert"
+    
+  fully_processed:
+    en: "Fully Processed"
+    de: "Vollständig bearbeitet"
+
+# Additional Information
+quality_notes:
+  historical_limit:
+    en: "Data before and including 1980 can reach best quality check level QN=5. Data after 1980 can reach QN=10 as best quality check level."
+    de: "Daten vor und bis einschließlich 1980 können als höchstes Qualitätsniveau QN=5 erreichen. Für Daten nach 1980 ist das höchstmögliche Qualitätsniveau QN=10."
+  
+  description:
+    en: "The QUALITAETS_NIVEAU (QN) shows the quality control procedure applied to a data report (of several parameters) for a certain reporting time."
+    de: "Das QUALITAETS_NIVEAU (QN) beschreibt das Verfahren der angewandten Qualitätsprüfung, welches die Daten erfolgreich durchlaufen haben."

@@ -1,0 +1,55 @@
+# Data Source Translations
+# Bilingual descriptions for meteorological data sources and measurement networks
+
+# Historical Data Sources (MEZ/CET time reference)
+"10-Minutenwerte von automatischen Stationen der 1. Generation (MIRIAM/AFMS2, ESAU-Daten bis 31.12.1999 (Zeitbezug ist MEZ)":
+  en: "10-minute values from automatic stations (1st gen, MIRIAM/AFMS2, ESAU data until 31 Dec 1999, time reference is CET)"
+  de: "10-Minutenwerte von automatischen Stationen der 1. Generation (MIRIAM/AFMS2, ESAU-Daten bis 31.12.1999 (Zeitbezug ist MEZ)"
+  time_reference: "MEZ/CET"
+  period_end: "1999-12-31"
+  system: "MIRIAM/AFMS2"
+  generation: "1st"
+
+# Modern Data Sources (UTC time reference)
+"10-Minutenwerte von automatischen Stationen der 1. Generation (MIRIAM/AFMS2, ESAU-Daten ab 01.01.2000 (Zeitbezug ist UTC)":
+  en: "10-minute values from automatic stations (1st gen, MIRIAM/AFMS2, ESAU data from 1 Jan 2000, time reference is UTC)"
+  de: "10-Minutenwerte von automatischen Stationen der 1. Generation (MIRIAM/AFMS2, ESAU-Daten ab 01.01.2000 (Zeitbezug ist UTC)"
+  time_reference: "UTC"
+  period_start: "2000-01-01"
+  system: "MIRIAM/AFMS2"
+  generation: "1st"
+
+# Current Measurement Network
+"aus Messnetz2000":
+  en: "from Messnetz2000"
+  de: "aus Messnetz2000"
+  time_reference: "UTC"
+  system: "Messnetz2000"
+  description_en: "Data from the modernized German weather observation network (Messnetz2000)"
+  description_de: "Daten aus dem modernisierten deutschen Wetterbeobachtungsnetz (Messnetz2000)"
+
+# Time Reference Explanations
+time_references:
+  MEZ:
+    en: "Central European Time (CET)"
+    de: "Mitteleuropäische Zeit (MEZ)"
+    utc_offset: "+1"
+    
+  UTC:
+    en: "Coordinated Universal Time"
+    de: "Koordinierte Weltzeit"
+    utc_offset: "0"
+
+# Measurement Systems
+systems:
+  "MIRIAM/AFMS2":
+    en: "Meteorological Information and Radar Integration for Automated Measurements / Automatic Field Measurement System 2"
+    de: "Meteorologische Informations- und Radar-Integration für Automatisierte Messungen / Automatisches Feldmesssystem 2"
+    
+  "ESAU":
+    en: "Electronic Station Automation Unit"
+    de: "Elektronische Stationsautomatisierungseinheit"
+    
+  "Messnetz2000":
+    en: "Measurement Network 2000 (modernized German weather observation network)"
+    de: "Messnetz2000 (modernisiertes deutsches Wetterbeobachtungsnetz)"

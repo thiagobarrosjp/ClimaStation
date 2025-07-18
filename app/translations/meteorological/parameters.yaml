@@ -1,0 +1,64 @@
+# Meteorological Parameter Translations
+# Bilingual descriptions for weather measurement parameters
+
+# Air Temperature Parameters
+TT_10:
+  en: "air temperature 2 m above ground"
+  de: "momentane Lufttemperatur in 2m Hoehe"
+  unit: "°C"
+  description_en: "Instantaneous air temperature measured at 2 meters above ground level"
+  description_de: "Momentane Lufttemperatur gemessen in 2 Metern über dem Erdboden"
+
+TM5_10:
+  en: "air temperature 5 cm above ground"
+  de: "Momentane Temperatur in 5 cm Hoehe"
+  unit: "°C"
+  description_en: "Instantaneous air temperature measured at 5 centimeters above ground level"
+  description_de: "Momentane Lufttemperatur gemessen in 5 Zentimetern über dem Erdboden"
+
+# Pressure Parameters
+PP_10:
+  en: "air pressure at station altitude"
+  de: "Luftdruck in Stationshoehe der voran. 10 min"
+  unit: "hPa"
+  description_en: "Air pressure at station altitude (preceding 10 minutes)"
+  description_de: "Luftdruck in Stationshöhe der vorangegangenen 10 Minuten"
+
+# Humidity Parameters
+RF_10:
+  en: "relative humidity"
+  de: "relative Feucht in 2m Hoehe"
+  unit: "%"
+  description_en: "Relative humidity measured at 2 meters above ground level"
+  description_de: "Relative Feuchtigkeit gemessen in 2 Metern über dem Erdboden"
+
+TD_10:
+  en: "dew point temperature"
+  de: "Taupunkttemperatur in 2m Hoehe"
+  unit: "°C"
+  description_en: "Dew point temperature calculated from air temperature and humidity at 2m height"
+  description_de: "Taupunkttemperatur berechnet aus Lufttemperatur und Feuchtigkeit in 2m Höhe"
+
+# Quality Flag Parameter
+QN:
+  en: "quality flag"
+  de: "Qualitätsniveau"
+  unit: ""
+  description_en: "Data quality indicator for meteorological measurements"
+  description_de: "Datenqualitätsindikator für meteorologische Messungen"
+
+# Station Identification
+STATIONS_ID:
+  en: "station identifier"
+  de: "Stations-Kennung"
+  unit: ""
+  description_en: "Unique identifier for the meteorological station"
+  description_de: "Eindeutige Kennung für die meteorologische Station"
+
+# Timestamp
+MESS_DATUM:
+  en: "measurement timestamp"
+  de: "Messdatum"
+  unit: ""
+  description_en: "Date and time of the measurement (YYYYMMDDHHMM format)"
+  description_de: "Datum und Uhrzeit der Messung (JJJJMMTTHHMM Format)"

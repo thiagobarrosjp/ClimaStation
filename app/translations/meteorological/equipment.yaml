@@ -1,0 +1,40 @@
+# Meteorological Equipment and Sensor Translations
+# Bilingual descriptions for measurement equipment and sensors
+
+# Temperature Sensors
+"PT 100 (Luft)":
+  en: "PT 100 (air)"
+  de: "PT 100 (Luft)"
+  description_en: "Platinum resistance temperature sensor for air temperature measurement"
+  description_de: "Platin-Widerstandstemperatursensor für Lufttemperaturmessung"
+  type: "temperature_sensor"
+
+# Humidity Sensors
+"HYGROMER MP100":
+  en: "HYGROMER MP100"
+  de: "HYGROMER MP100"
+  description_en: "Capacitive humidity sensor for relative humidity measurement"
+  description_de: "Kapazitiver Feuchtesensor für relative Feuchtigkeitsmessung"
+  type: "humidity_sensor"
+
+"Feuchtesonde HMP45D":
+  en: "Humidity probe HMP45D"
+  de: "Feuchtesonde HMP45D"
+  description_en: "Combined temperature and humidity probe"
+  description_de: "Kombinierte Temperatur- und Feuchtigkeitssonde"
+  type: "combined_sensor"
+
+# Measurement Methods
+"Temperaturmessung, elektr.":
+  en: "temperature measurement, electric"
+  de: "Temperaturmessung, elektr."
+  description_en: "Electronic temperature measurement using electrical resistance"
+  description_de: "Elektronische Temperaturmessung mittels elektrischem Widerstand"
+  category: "measurement_method"
+
+"Feuchtemessung, elektr.":
+  en: "humidity measurement, electric"
+  de: "Feuchtemessung, elektr."
+  description_en: "Electronic humidity measurement using capacitive or resistive sensors"
+  description_de: "Elektronische Feuchtigkeitsmessung mittels kapazitiver oder resistiver Sensoren"
+  category: "measurement_method"

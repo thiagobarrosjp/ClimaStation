@@ -1,0 +1,34 @@
+# ClimaStation Base Configuration
+# 
+# This file contains global settings that apply to all dataset processing operations.
+# It defines resource limits, paths, failure handling, and logging configuration.
+# 
+# Used by: ConfigManager, all orchestrators and processors
+# Modified: When changing system-wide processing parameters
+# 
+# Key sections:
+# - processing: Resource limits and parallel processing settings
+# - paths: Standard directory structure for data and logs
+# - failure_handling: How to handle errors and retries
+# - logging: Centralized logging configuration
+
+processing:
+  max_workers: 4                    # Maximum parallel workers per dataset
+  memory_limit_mb: 512             # Memory limit per worker process
+  worker_timeout_minutes: 30       # Kill workers that exceed this time
+  checkpoint_interval: 100         # Save progress every N files
+
+paths:
+  raw_data: "data/dwd/2_downloaded_files"
+  output: "data/dwd/3_parsed_data"
+  logs: "data/dwd/0_debug"
+  progress_db: "data/dwd/0_debug/progress.db"
+
+failure_handling:
+  stop_on_dataset_failure: true    # Stop entire dataset if any file fails
+  max_retries: 3                   # Retry failed files this many times
+  retry_delay_seconds: 300         # Wait between retries
+
+logging:
+  centralized_log: "data/dwd/0_debug/centralized_pipeline.log"
+  log_level: "INFO"
