@@ -188,6 +188,120 @@ Next step: finalize logging, validate performance, expand to recent/now folders.
 
 ---
 
-## End of README
+## Next Steps: Architecture Implementation
 
-If this feels verbose: good. This is meant to be bulletproof context for future me and AI.
+### Immediate Priority (Phase 1)
+Based on architectural discussions, we're implementing a **Sequential Datasets + Parallel Workers** approach:
+
+**1. Restructure Current Script into Pipeline Orchestrator**
+- Transform `parse_10_minutes_air_temperature_hist.py` into proper orchestrator
+- Implement clear pipeline stages with fail-fast behavior
+- Add file-level progress tracking with SQLite database
+
+**2. Build Core Architecture Components**
+
+
+Target Architecture:
+├── BulkIngestController (master orchestrator)
+├── DatasetProcessor (10_minutes_air_temperature)
+│   ├── Parallel Worker Pool (4 workers max)
+│   │   ├── Worker 1: /historical/ files 1-400
+│   │   ├── Worker 2: /historical/ files 401-800
+│   │   ├── Worker 3: /recent/ files
+│   │   └── Worker 4: /now/ files
+│   └── Success Gate (ALL must succeed)
+└── Shared Components (raw_parser, station_info, etc.)
+
+
+**3. Configuration System**
+- `base_config.yaml`: Resource limits, paths, failure handling
+- `dataset_configs/10_minutes_air_temperature.yaml`: Dataset-specific settings
+- Environment overrides for dev/testing
+
+**4. Progress Tracking Database**
+
+file_processing_log:
+id | dataset | file_path | status | start_time | end_time | error_msg
+
+
+**5. Resource Management**
+
+- Max 4 parallel workers (configurable)
+- Memory limit: 512MB per worker
+- Worker timeout: 30 minutes
+- Checkpoint every 100 files
+
+
+### Key Design Principles
+
+- **Fail-Fast**: Any worker failure stops entire dataset processing
+- **File-Level Tracking**: Every ZIP file tracked with status and timing
+- **Single-Machine Optimized**: No distributed processing complexity
+- **AI-Maintainable**: Clear configuration hierarchy and component interfaces
+
+
+### Success Metrics for Phase 1
+
+- Process all 1,623 historical files without manual intervention
+- Memory usage stays under 2GB total
+- Complete processing in under 8 hours
+- Zero data loss or corruption
+- Full traceability of every file processed
+
+2025-07-21:
+Current folder structure:
+├── _legacy/
+├── .venv/
+├── vscode/
+│   ├── launch.json
+│   └── settings.json
+├── app/
+│   ├── config/
+│   │   ├── datasets/
+│   │   │  └── 10_minutes_air_temperature.yaml
+│   │   └── base_config.yaml
+│   ├── main/
+│   │   └── run_bulk_ingestion.py     (placeholder with no code)
+│   ├── orchestrators/
+│   │   ├── __init__.py
+│   │   ├── bulk_ingest_controller.py     (placeholder with no code)
+│   │   └── dataset_orchestrator.py     (placeholder with no code)
+│   ├── processors/
+│   │   ├── __init__.py
+│   │   ├── base_processor.py
+│   │   └── ten_minutes_air_temperature_processor.py
+│   ├── shared/
+│   │   ├── raw_parser.py     (from legacy, not updated)
+│   │   ├── sensor_metadata.py     (from legacy, not updated)
+│   │   └── station_info_parser.py     (from legacy, not updated)
+│   ├── translations/
+│   │   ├── meteorological/
+│   │   │  ├── data_sources.yaml
+│   │   │  ├── equipment.yaml
+│   │   │  ├── parameters.yaml
+│   │   │  └── quality_codes.yaml
+│   │   ├── providers/
+│   │   │  ├── dwd.yaml
+│   │   │  └── noaa.yaml     (placeholder for future development, no need for now)
+│   │   ├── __init__.py
+│   │   └── translation_manager.py
+│   ├── utils/
+│   │   ├── config_manager.py
+│   │   ├── enhanced_logger.py     (placeholder with no code)
+│   │   └── progress_tracker.py
+│   ├── workers/
+│   │   ├── __init__.py
+│   │   └── file_process_worker.py     (placeholder with no code)
+│   └── __init__.py
+├── data/
+│   └── dwd/
+│       ├── 0_debug/
+│       ├── 1_crawl_dwd/
+│       ├── 2_downloaded_files/
+│       └── 3_parsed_files/
+├── venv/
+├── .env/
+├── .gitignore
+├── dev_log.md
+├── requirements.txt
+└── README.md

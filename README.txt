@@ -248,4 +248,60 @@ id | dataset | file_path | status | start_time | end_time | error_msg
 - Zero data loss or corruption
 - Full traceability of every file processed
 
-
+2025-07-21:
+Current folder structure:
+├── _legacy/
+├── .venv/
+├── vscode/
+│   ├── launch.json
+│   └── settings.json
+├── app/
+│   ├── config/
+│   │   ├── datasets/
+│   │   │  └── 10_minutes_air_temperature.yaml
+│   │   └── base_config.yaml
+│   ├── main/
+│   │   └── run_bulk_ingestion.py     (placeholder with no code)
+│   ├── orchestrators/
+│   │   ├── __init__.py
+│   │   ├── bulk_ingest_controller.py     (placeholder with no code)
+│   │   └── dataset_orchestrator.py     (placeholder with no code)
+│   ├── processors/
+│   │   ├── __init__.py
+│   │   ├── base_processor.py
+│   │   └── ten_minutes_air_temperature_processor.py
+│   ├── shared/
+│   │   ├── raw_parser.py     (from legacy, not updated)
+│   │   ├── sensor_metadata.py     (from legacy, not updated)
+│   │   └── station_info_parser.py     (from legacy, not updated)
+│   ├── translations/
+│   │   ├── meteorological/
+│   │   │  ├── data_sources.yaml
+│   │   │  ├── equipment.yaml
+│   │   │  ├── parameters.yaml
+│   │   │  └── quality_codes.yaml
+│   │   ├── providers/
+│   │   │  ├── dwd.yaml
+│   │   │  └── noaa.yaml     (placeholder for future development, no need for now)
+│   │   ├── __init__.py
+│   │   └── translation_manager.py
+│   ├── utils/
+│   │   ├── config_manager.py
+│   │   ├── enhanced_logger.py     (placeholder with no code)
+│   │   └── progress_tracker.py
+│   ├── workers/
+│   │   ├── __init__.py
+│   │   └── file_process_worker.py     (placeholder with no code)
+│   └── __init__.py
+├── data/
+│   └── dwd/
+│       ├── 0_debug/
+│       ├── 1_crawl_dwd/
+│       ├── 2_downloaded_files/
+│       └── 3_parsed_files/
+├── venv/
+├── .env/
+├── .gitignore
+├── dev_log.md
+├── requirements.txt
+└── README.md
