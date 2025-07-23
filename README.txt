@@ -248,57 +248,146 @@ id | dataset | file_path | status | start_time | end_time | error_msg
 - Zero data loss or corruption
 - Full traceability of every file processed
 
-2025-07-21:
+---
+
+## AI Development Workflow (2025-07-22)
+
+### Two-Chat Strategy
+
+This project uses a **dual-chat AI development approach** to optimize context usage and maintain architectural consistency:
+
+**Chat 1: Project Manager Role**
+- **Purpose**: Strategic planning, architecture decisions, prompt crafting
+- **Context**: This full README.txt file + project overview
+- **Responsibilities**:
+  - Help define next development steps
+  - Create specific, actionable prompts for implementation
+  - Ensure architectural consistency across implementations
+  - Review and refine implementation approaches
+  - Maintain project vision and standards
+
+**Chat 2: Implementation Assistant Role**  
+- **Purpose**: Pure code implementation with minimal context
+- **Context**: Only interface files + specific task prompt
+- **Responsibilities**:
+  - Write focused code based on crafted prompts
+  - Follow established patterns and interfaces
+  - Implement specific features without architectural decisions
+
+### Project Manager Instructions
+
+When acting as Project Manager, you should:
+
+1. **Understand the full project context** from this README
+2. **Help prioritize next steps** based on current status and roadmap
+3. **Create implementation prompts** that include:
+   - Specific task description
+   - Required context files to attach
+   - Expected output format
+   - Architectural constraints to follow
+4. **Ensure consistency** with established patterns and interfaces
+5. **Break down complex tasks** into manageable implementation chunks
+
+### Context Files for Implementation Chat
+
+The following minimal context files should be created and used for implementation tasks:
+
+context/
+├── processor_interface.py      # Standard processor contract (25 lines)
+├── available_functions.py      # Utility functions reference (30 lines)
+├── coding_patterns.py          # Standard patterns and imports (40 lines)
+└── dataset_configs/            # Dataset-specific configurations
+    └── 10_minutes_air_temperature.yaml
+
+
+### Implementation Prompt Template
+
+When creating prompts for the implementation chat, use this format:
+Task: [Specific implementation task]
+
+Context Files to Attach:
+
+- context/processor_interface.py
+- context/available_functions.py
+- [specific file being modified]
+
+
+Requirements:
+
+- [Specific functional requirements]
+- [Performance constraints]
+- [Error handling expectations]
+
+
+Expected Output:
+
+- [File modifications needed]
+- [New files to create]
+- [Testing approach]
+
+
+Architectural Constraints:
+
+- Must implement IDataProcessor interface
+- Must return ProcessingResult objects
+- Must use dependency injection pattern
+- Must follow established logging patterns
+
+
+### Success Metrics for AI Development
+
+- **Context Efficiency**: Implementation prompts use <150 lines of context
+- **Consistency**: All implementations follow established interfaces
+- **Focus**: Each chat stays within its defined role
+- **Quality**: Generated code integrates seamlessly with existing architecture
+
+---
+
+2025-07-22:
 Current folder structure:
 ├── _legacy/
 ├── .venv/
-├── vscode/
-│   ├── launch.json
-│   └── settings.json
+├── .vscode/
 ├── app/
 │   ├── config/
 │   │   ├── datasets/
 │   │   │  └── 10_minutes_air_temperature.yaml
 │   │   └── base_config.yaml
 │   ├── main/
-│   │   └── run_bulk_ingestion.py     (placeholder with no code)
+│   │   └── run_bulk_ingestion.py
 │   ├── orchestrators/
-│   │   ├── __init__.py
-│   │   ├── bulk_ingest_controller.py     (placeholder with no code)
-│   │   └── dataset_orchestrator.py     (placeholder with no code)
+│   │   ├── bulk_ingestion_controller.py
+│   │   └── dataset_orchestrator.py
 │   ├── processors/
-│   │   ├── __init__.py
 │   │   ├── base_processor.py
 │   │   └── ten_minutes_air_temperature_processor.py
 │   ├── shared/
-│   │   ├── raw_parser.py     (from legacy, not updated)
-│   │   ├── sensor_metadata.py     (from legacy, not updated)
-│   │   └── station_info_parser.py     (from legacy, not updated)
 │   ├── translations/
 │   │   ├── meteorological/
+│   │   │  ├── __init__.py
 │   │   │  ├── data_sources.yaml
 │   │   │  ├── equipment.yaml
 │   │   │  ├── parameters.yaml
 │   │   │  └── quality_codes.yaml
 │   │   ├── providers/
-│   │   │  ├── dwd.yaml
-│   │   │  └── noaa.yaml     (placeholder for future development, no need for now)
-│   │   ├── __init__.py
+│   │   │  └── dwd.yaml
 │   │   └── translation_manager.py
 │   ├── utils/
 │   │   ├── config_manager.py
-│   │   ├── enhanced_logger.py     (placeholder with no code)
+│   │   ├── enhanced_logger.py
 │   │   └── progress_tracker.py
 │   ├── workers/
-│   │   ├── __init__.py
-│   │   └── file_process_worker.py     (placeholder with no code)
-│   └── __init__.py
 ├── data/
 │   └── dwd/
 │       ├── 0_debug/
 │       ├── 1_crawl_dwd/
 │       ├── 2_downloaded_files/
 │       └── 3_parsed_files/
+├── context/
+│   ├── processor_interface.py    # give to implementation chat to follow standard contracts (25 lines max)
+│   ├── available_functions.py    # give to implementation chat to know what utilities exist (30 lines max)
+│   ├── coding_patterns.py        # give to implementation chat to maintain consistency (40 lines max)
+│   └── current_task.md           # give to implementation chat for project phase context (supplements prompt)
 ├── venv/
 ├── .env/
 ├── .gitignore

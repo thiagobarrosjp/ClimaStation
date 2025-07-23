@@ -1,34 +1,108 @@
 # ClimaStation Base Configuration
-# 
-# This file contains global settings that apply to all dataset processing operations.
-# It defines resource limits, paths, failure handling, and logging configuration.
-# 
-# Used by: ConfigManager, all orchestrators and processors
-# Modified: When changing system-wide processing parameters
-# 
-# Key sections:
-# - processing: Resource limits and parallel processing settings
-# - paths: Standard directory structure for data and logs
-# - failure_handling: How to handle errors and retries
-# - logging: Centralized logging configuration
+# System-wide settings for the ClimaStation data processing platform
 
-processing:
-  max_workers: 4                    # Maximum parallel workers per dataset
-  memory_limit_mb: 512             # Memory limit per worker process
-  worker_timeout_minutes: 30       # Kill workers that exceed this time
-  checkpoint_interval: 100         # Save progress every N files
-
+# File paths configuration
 paths:
-  raw_data: "data/dwd/2_downloaded_files"
-  output: "data/dwd/3_parsed_data"
-  logs: "data/dwd/0_debug"
-  progress_db: "data/dwd/0_debug/progress.db"
+  # SQLite database for tracking processing progress
+  progress_db: "data/progress/climastation_progress.db"
+  
+  # Temporary directory for file processing
+  temp_dir: "data/temp"
+  
+  # Log files directory
+  log_dir: "logs"
+  
+  # Base data directory (can be overridden by dataset configs)
+  base_data_dir: "data"
 
-failure_handling:
-  stop_on_dataset_failure: true    # Stop entire dataset if any file fails
-  max_retries: 3                   # Retry failed files this many times
-  retry_delay_seconds: 300         # Wait between retries
+# DWD data pipeline paths
+dwd_paths:
+  downloaded_files: "data/dwd/2_downloaded_files"
+  parsed_files: "data/dwd/3_parsed_files"
+  debug: "data/dwd/0_debug"
+  crawl_data: "data/dwd/1_crawl_dwd"
 
+# Logging configuration
 logging:
-  centralized_log: "data/dwd/0_debug/centralized_pipeline.log"
-  log_level: "INFO"
+  # Log level: DEBUG, INFO, WARNING, ERROR, CRITICAL
+  level: "INFO"
+  
+  # Log format
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  
+  # Log to file as well as console
+  log_to_file: true
+  
+  # Maximum log file size in MB
+  max_file_size_mb: 100
+  
+  # Number of backup log files to keep
+  backup_count: 5
+
+# Processing configuration
+processing:
+  # Default number of worker processes for parallel processing
+  default_workers: 4
+  
+  # Maximum number of files to process in a single batch
+  batch_size: 1000
+  
+  # Timeout for individual file processing (seconds)
+  file_timeout: 300
+  
+  # Retry failed files this many times
+  max_retries: 3
+  
+  # Memory limit per worker process (MB)
+  memory_limit_mb: 2048
+  
+  # Worker timeout in minutes
+  worker_timeout_minutes: 30
+  
+  # Checkpoint interval for progress saving
+  checkpoint_interval: 100
+
+# Database configuration
+database:
+  # Connection pool settings
+  pool_size: 10
+  max_overflow: 20
+  
+  # Connection timeout (seconds)
+  timeout: 30
+
+# Monitoring and alerts
+monitoring:
+  # Enable performance monitoring
+  enable_metrics: true
+  
+  # Metrics collection interval (seconds)
+  metrics_interval: 60
+  
+  # Alert thresholds
+  alerts:
+    error_rate_threshold: 0.05  # 5% error rate
+    processing_time_threshold: 600  # 10 minutes per file
+    memory_usage_threshold: 0.8  # 80% memory usage
+
+# System limits
+limits:
+  # Maximum file size to process (MB)
+  max_file_size_mb: 1024
+  
+  # Maximum number of records per file
+  max_records_per_file: 1000000
+  
+  # Disk space threshold (GB) - stop processing if less than this
+  min_disk_space_gb: 10
+
+# Failure handling configuration
+failure_handling:
+  # Stop processing all datasets if one dataset fails
+  stop_on_dataset_failure: true
+  
+  # Maximum number of retries for failed files
+  max_retries: 3
+  
+  # Delay between retries (seconds)
+  retry_delay_seconds: 60
