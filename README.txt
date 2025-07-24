@@ -2,20 +2,38 @@
 
 ---
 
-## TL;DR (For Future Me or Any AI Reading This)
+## Purpose
 
-ClimaStation is my personal platform for downloading, parsing, enriching, and organizing Germany's historical and current weather station data from the DWD open repository. It needs to handle **huge datasets** (500k+ ZIPs, terabytes long-term) in a way that's scalable, traceable, and fully automated. This README exists to make sure both I and any AI assistants always have the full picture.
+ClimaStation is a processing platform designed to make climate and weather station data — starting with the DWD (Deutscher Wetterdienst) repository — clean, usable, and accessible. It extracts raw measurement files, enriches them with metadata, and transforms them into structured formats suitable for downstream use.
+
+This project does not aim to serve as a personal analysis tool, but rather to support external users who need high-quality, structured access to climate data.
 
 ---
 
-## Why This Exists
+## Intended Audience
 
-DWD offers one of the world's most detailed public climate datasets. Problem: it's raw, fragmented, poorly documented, and vast. My goal is to turn it into a clean, queryable, well-structured data repository.
+ClimaStation is built to support a range of data users, including:
 
-This platform has two goals:
+- Researchers and environmental analysts working with time-series climate data
+- Policy makers, planners, and NGOs interested in long-term trends and local observations
+- Software engineers and climate tech teams integrating climate data into applications
+- Educators and journalists looking to explore and explain key environmental patterns
 
-1. Build a robust, scalable pipeline for historical ingestion and ongoing updates.
-2. Provide future-friendly outputs (JSONL, PostgreSQL) for analysis, visualizations, or API-based access.
+The platform’s design is shaped by the expectations and workflows of these user groups.
+
+
+---
+
+## Motivation
+
+The DWD provides one of the most extensive public climate datasets in the world. However, the raw data is highly fragmented, sparsely documented, and difficult to work with at scale. ClimaStation aims to reduce this friction by building an end-to-end ingestion and standardization pipeline.
+
+The ultimate goal is to create a robust and extensible system that can:
+
+- Ingest and validate large volumes of raw measurement data
+- Enrich records with consistent metadata (stations, sensors, etc.)
+- Output structured data in a way that is useful for both humans and machines
+
 
 ---
 
@@ -43,13 +61,10 @@ Rough estimate:
 
 ## Architecture at a Glance
 
-### Two Pipelines
+### Pipelines
 
-**1. Bulk Historical Ingestion**
-One-time, massive. Establishes the baseline.
-
-**2. Incremental Updates**
-Keeps everything fresh with daily/weekly syncs.
+- **Bulk Historical Ingestion**: One-time, massive. Establishes the baseline.  
+- **Incremental Updates**: Keeps everything fresh with daily/weekly syncs.
 
 ### Component Overview
 
@@ -86,56 +101,73 @@ ClimaStation
 
 ---
 
-## Current Focus (2025-07-18)
+## Data Architecture Decisions
 
-Perfecting the 10-minute air temperature historical dataset (1,623 files) as a reliable template.
+### Record Format: Timestamp-Centric Design
 
----
+ClimaStation uses a **timestamp-centric record format** where each record represents one timestamp at one station, containing all measured parameters for that time.
 
-## Key Standards
+**Why Timestamp-Centric:**
 
-* JSONL Output: timestamp-centric, enriched with metadata.
-* Centralized Logging: component-based codes.
-* Full Automation: no manual steps allowed.
+- Serves 80% of user needs (researchers, developers, planners) optimally  
+- Follows industry standards (Meteostat, Open-Meteo, NOAA patterns)  
+- Enables easy multi-variable analysis and visualization  
+- Optimized for TimescaleDB's columnar compression  
+- Excel-friendly for non-technical users
 
----
+**Example Record:**
+{
+  "station_id": "00003",
+  "timestamp": "2023-01-15T12:00:00Z",
+  "temperature": 15.2,
+  "humidity": 78.5,
+  "pressure": 1013.2,
+  "precipitation": 0.0,
+  "quality_codes": {
+    "temperature": 1,
+    "humidity": 1,
+    "pressure": 1
+  }
+}
 
-## Raw Data Sample (Reference for AI)
-
-**File:** 10minutenwerte\_TU\_00003\_19930428\_19991231\_hist.zip
-**Contents:** produkt\_zehn\_min\_tu\_19930428\_19991231\_00003.txt
-
-```
-STATIONS_ID;MESS_DATUM;QN;PP_10;TT_10;TM5_10;RF_10;TD_10
-      3;199304281230;    1;  987.3;  24.9;  28.4;  23.0;   2.4
-      3;199304281240;    1;  987.2;  24.9;  28.6;  21.0;   1.2
-      3;199304281250;    1;  987.2;  25.5;  28.7;  20.0;   0.7
-      3;199304281300;    1;  987.0;  25.8;  28.8;  20.0;   1.0
-      3;199304281310;    1;  986.9;  25.8;  29.6;  20.0;   0.9
-      3;199304281320;    1;  986.7;  25.7;  29.7;  19.0;   0.2
-      3;199304281330;    1;  986.8;  26.0;  29.8;  20.0;   1.5
-      3;199304281340;    1;  986.8;  26.1;  29.7;  18.0;   0.2
-      3;199304281350;    1;  986.7;  27.0;  29.7;  19.0;   1.4
-```
 
 ---
 
-## Station List Sample (Reference for AI)
+## Parsing Strategy
 
-**File:** zehn\_min\_tu\_Beschreibung\_Stationen.txt
+* **Input**: Raw DWD station files (various formats, encodings, quality issues)
+* **Processing**: Universal parser handling metadata alignment, quality codes, unit conversions
+* **Output**: Clean JSONL files with timestamp-centric records
+* **Storage**: TimescaleDB for optimal time-series performance
 
-```
-Stations_id von_datum bis_datum Stationshoehe geoBreite geoLaenge Stationsname Bundesland Abgabe
------------ --------- --------- ------------- --------- --------- ----------------------------------------- ---------- ------
-00003   19930429    20110331    202   50.7827   6.0941    Aachen                  Nordrhein-Westfalen   Frei
-00044   20070209    20250710    44    52.9336   8.2370    Großenkneten            Niedersachsen         Frei
-00071   20091201    20191231    759   48.2156   8.9784    Albstadt-Badkap         Baden-Württemberg     Frei
-00073   20070215    20250710    374   48.6183   13.0620   Aldersbach-Kramersepp   Bayern                Frei
-00078   20041012    20250709    64    52.4853   7.9125    Alfhausen               Niedersachsen         Frei
-00091   20020821    20250710    304   50.7446   9.3450    Alsfeld-Eifa            Hessen                Frei
-00096   20190410    20250710    50    52.9437   12.8518   Neuruppin-Alt Ruppin    Brandenburg           Frei
-00102   20250410    20250710    0   53.8633     8.1275    Leuchtturm Alte Weser   Niedersachsen         Frei
-```
+---
+
+## Data Quality Handling
+
+* Preserve original quality codes from DWD
+* Handle missing values explicitly (null vs 0 distinction)
+* Maintain data integrity without assumptions
+* Support error correction workflows
+
+---
+
+## Architecture Flexibility
+
+* Station-specific exports (CSV downloads)
+* Parameter-specific queries (single variable access)
+* Future NetCDF/Parquet exports for power users
+* Schema evolution for new DWD parameters
+
+---
+
+## Implementation Status
+
+* ✅ Configuration system (`config_manager.py`)
+* ✅ Enhanced logging (`enhanced_logger.py`)
+* ✅ File operations utilities (`file_operations.py`)
+* ✅ DWD crawler (`crawl_dwd.py`)
+* 🔄 Current focus: Progress tracker and parsing system
+* ⏳ Next: Database integration and API development
 
 ---
 
@@ -161,13 +193,52 @@ Stations_id von_datum bis_datum Stationshoehe geoBreite geoLaenge Stationsname B
 
 ---
 
-## Quickstart Checklist (For Me)
+## Current Focus (2025-07-18)
 
-* If resuming after months: read this file top to bottom.
-* For pipeline details: `app/main/parse_10_minutes_air_temperature_hist.py`
-* For logging: `app/utils/enhanced_logger.py`
-* For config: `app/config/ten_minutes_air_temperature_config.py`
-* For output: `data/dwd/3_parsed_data/`
+Perfecting the 10-minute air temperature historical dataset (1,623 files) as a reliable template.
+
+---
+
+## Key Standards
+
+* JSONL Output: timestamp-centric, enriched with metadata.
+* Centralized Logging: component-based codes.
+* Full Automation: no manual steps allowed.
+
+---
+
+## Raw Data Sample (Reference for AI)
+
+**File:** 10minutenwerte_TU_00003_19930428_19991231_hist.zip
+**Contents:** produkt_zehn_min_tu_19930428_19991231_00003.txt
+
+STATIONS_ID;MESS_DATUM;QN;PP_10;TT_10;TM5_10;RF_10;TD_10
+      3;199304281230;    1;  987.3;  24.9;  28.4;  23.0;   2.4
+      3;199304281240;    1;  987.2;  24.9;  28.6;  21.0;   1.2
+      3;199304281250;    1;  987.2;  25.5;  28.7;  20.0;   0.7
+      3;199304281300;    1;  987.0;  25.8;  28.8;  20.0;   1.0
+      3;199304281310;    1;  986.9;  25.8;  29.6;  20.0;   0.9
+      3;199304281320;    1;  986.7;  25.7;  29.7;  19.0;   0.2
+      3;199304281330;    1;  986.8;  26.0;  29.8;  20.0;   1.5
+      3;199304281340;    1;  986.8;  26.1;  29.7;  18.0;   0.2
+      3;199304281350;    1;  986.7;  27.0;  29.7;  19.0;   1.4
+
+---
+
+## Station List Sample (Reference for AI)
+
+**File:** zehn_min_tu_Beschreibung_Stationen.txt
+
+Stations_id von_datum bis_datum Stationshoehe geoBreite geoLaenge Stationsname Bundesland Abgabe
+----------- --------- --------- ------------- --------- --------- ----------------------------------------- ---------- ------
+00003   19930429    20110331    202   50.7827   6.0941    Aachen                  Nordrhein-Westfalen   Frei
+00044   20070209    20250710    44    52.9336   8.2370    Großenkneten            Niedersachsen         Frei
+00071   20091201    20191231    759   48.2156   8.9784    Albstadt-Badkap         Baden-Württemberg     Frei
+00073   20070215    20250710    374   48.6183   13.0620   Aldersbach-Kramersepp   Bayern                Frei
+00078   20041012    20250709    64    52.4853   7.9125    Alfhausen               Niedersachsen         Frei
+00091   20020821    20250710    304   50.7446   9.3450    Alsfeld-Eifa            Hessen                Frei
+00096   20190410    20250710    50    52.9437   12.8518   Neuruppin-Alt Ruppin    Brandenburg           Frei
+00102   20250410    20250710    0   53.8633     8.1275    Leuchtturm Alte Weser   Niedersachsen         Frei
 
 ---
 
@@ -291,13 +362,11 @@ When acting as Project Manager, you should:
 ### Context Files for Implementation Chat
 
 The following minimal context files should be created and used for implementation tasks:
-
 context/
 ├── processor_interface.py      # Standard processor contract (25 lines)
-├── available_functions.py      # Utility functions reference (30 lines)
-├── coding_patterns.py          # Standard patterns and imports (40 lines)
+├── available_functions.py      # Utility functions reference (30 lines)├── coding_patterns.py          # Standard patterns and imports (40 lines)
 └── dataset_configs/            # Dataset-specific configurations
-    └── 10_minutes_air_temperature.yaml
+└── 10_minutes_air_temperature.yaml
 
 
 ### Implementation Prompt Template
@@ -343,24 +412,26 @@ Architectural Constraints:
 
 ---
 
-2025-07-22:
+2025-07-24:
 Current folder structure:
 ├── _legacy/
 ├── .venv/
-├── .vscode/
+├── vscode/
+│   ├── launch.json
+│   └── settings.json
 ├── app/
 │   ├── config/
 │   │   ├── datasets/
 │   │   │  └── 10_minutes_air_temperature.yaml
 │   │   └── base_config.yaml
 │   ├── main/
-│   │   └── run_bulk_ingestion.py
+│   │   └── run_bulk_ingestion.py  (placeholder with legacy code, not working)
 │   ├── orchestrators/
-│   │   ├── bulk_ingestion_controller.py
-│   │   └── dataset_orchestrator.py
+│   │   ├── bulk_ingestion_controller.py  (placeholder with legacy code, not working)
+│   │   └── dataset_orchestrator.py  (placeholder with legacy code, not working)
 │   ├── processors/
-│   │   ├── base_processor.py
-│   │   └── ten_minutes_air_temperature_processor.py
+│   │   ├── base_processor.py  (placeholder with legacy code, not working)
+│   │   └── ten_minutes_air_temperature_processor.py  (placeholder with legacy code, not working)
 │   ├── shared/
 │   ├── translations/
 │   │   ├── meteorological/
@@ -371,26 +442,27 @@ Current folder structure:
 │   │   │  └── quality_codes.yaml
 │   │   ├── providers/
 │   │   │  └── dwd.yaml
-│   │   └── translation_manager.py
+│   │   └── translation_manager.py  (placeholder with legacy code, not working)
 │   ├── utils/
 │   │   ├── config_manager.py
+│   │   ├── dwd_crawler.py
 │   │   ├── enhanced_logger.py
-│   │   └── progress_tracker.py
+│   │   ├── file_operations.py
+│   │   └── progress_tracker.py  (placeholder with legacy code, not working)
 │   ├── workers/
+├── context/
+│   ├── available_functions.py/
+│   ├── coding_patterns.py/
+│   ├── current_task.py/
+│   └── processor_interface.py/
 ├── data/
 │   └── dwd/
 │       ├── 0_debug/
 │       ├── 1_crawl_dwd/
 │       ├── 2_downloaded_files/
 │       └── 3_parsed_files/
-├── context/
-│   ├── processor_interface.py    # give to implementation chat to follow standard contracts (25 lines max)
-│   ├── available_functions.py    # give to implementation chat to know what utilities exist (30 lines max)
-│   ├── coding_patterns.py        # give to implementation chat to maintain consistency (40 lines max)
-│   └── current_task.md           # give to implementation chat for project phase context (supplements prompt)
-├── venv/
-├── .env/
 ├── .gitignore
 ├── dev_log.md
-├── requirements.txt
-└── README.md
+├── PromptV0.txt
+├── README.txt
+└── requirements.txt

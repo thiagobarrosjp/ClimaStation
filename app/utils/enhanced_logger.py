@@ -356,7 +356,7 @@ def get_logger(component_name: str, config: Optional[Dict[str, Any]] = None) -> 
     # Validate component name
     valid_components = {
         'CONFIG', 'PROCESSOR', 'ORCHESTRATOR', 'WORKER', 
-        'DOWNLOAD', 'EXTRACT', 'VALIDATE', 'UNKNOWN'
+        'DOWNLOAD', 'EXTRACT', 'VALIDATE', 'CRAWLER', 'UNKNOWN'
     }
     
     if component_name not in valid_components:
