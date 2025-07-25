@@ -1,10 +1,10 @@
 DWD Climate Data Directory Structure
 ==================================================
-Generated: 2025-07-24 09:53:21
+Generated: 2025-07-25 11:35:37
 Base URL: https://opendata.dwd.de/climate_environment/CDC/observations_germany/
 Total directories: 493
 Directories with data: 418
-Crawl time: 110.34 seconds
+Crawl time: 112.64 seconds
 
 ├── climate
 │   ├── climate/10_minutes
@@ -79,7 +79,7 @@ Crawl time: 110.34 seconds
 │   │       │   ├── climate/1_minute/precipitation/historical/2023 📊 (15335 files: .txt, .zip)
 │   │       │   └── climate/1_minute/precipitation/historical/2024 📊 (16018 files: .txt, .zip)
 │   │       ├── climate/1_minute/precipitation/meta_data 📊 (1489 files: .zip)
-│   │       ├── climate/1_minute/precipitation/now 📊 (1340 files: .txt, .zip)
+│   │       ├── climate/1_minute/precipitation/now 📊 (1341 files: .txt, .zip)
 │   │       └── climate/1_minute/precipitation/recent 📊 (1357 files: .txt, .zip)
 │   ├── climate/5_minutes
 │   │   └── climate/5_minutes/precipitation 📊 (2 files: .pdf)
@@ -117,7 +117,7 @@ Crawl time: 110.34 seconds
 │   │       │   ├── climate/5_minutes/precipitation/historical/2023 📊 (12089 files: .zip)
 │   │       │   └── climate/5_minutes/precipitation/historical/2024 📊 (16035 files: .txt, .zip)
 │   │       ├── climate/5_minutes/precipitation/meta_data 📊 (1488 files: .zip)
-│   │       ├── climate/5_minutes/precipitation/now 📊 (1340 files: .txt, .zip)
+│   │       ├── climate/5_minutes/precipitation/now 📊 (1341 files: .txt, .zip)
 │   │       └── climate/5_minutes/precipitation/recent 📊 (1357 files: .txt, .zip)
 │   ├── climate/annual
 │   │   ├── climate/annual/climate_indices
@@ -158,7 +158,7 @@ Crawl time: 110.34 seconds
 │   │   │   ├── climate/daily/soil_temperature/historical 📊 (490 files: .txt, .zip)
 │   │   │   ├── climate/daily/soil_temperature/recent 📊 (321 files: .txt, .zip)
 │   │   │   └── climate/daily/soil_temperature/timeseries_overview 📊 (15 files: .txt)
-│   │   ├── climate/daily/solar 📊 (56 files: .txt, .pdf, .zip)
+│   │   ├── climate/daily/solar 📊 (56 files: .txt, .zip, .pdf)
 │   │   ├── climate/daily/water_equiv 📊 (2 files: .pdf)
 │   │   │   ├── climate/daily/water_equiv/historical 📊 (1116 files: .txt, .zip)
 │   │   │   ├── climate/daily/water_equiv/recent 📊 (530 files: .txt, .zip)
@@ -193,7 +193,7 @@ Crawl time: 110.34 seconds
 │   │   │   └── climate/hourly/moisture/recent 📊 (586 files: .txt, .zip)
 │   │   ├── climate/hourly/precipitation 📊 (2 files: .pdf)
 │   │   │   ├── climate/hourly/precipitation/historical 📊 (1454 files: .txt, .zip)
-│   │   │   └── climate/hourly/precipitation/recent 📊 (1360 files: .txt, .zip)
+│   │   │   └── climate/hourly/precipitation/recent 📊 (1389 files: .txt, .zip)
 │   │   ├── climate/hourly/pressure 📊 (2 files: .pdf)
 │   │   │   ├── climate/hourly/pressure/historical 📊 (313 files: .txt, .zip)
 │   │   │   ├── climate/hourly/pressure/recent 📊 (213 files: .txt, .zip)
@@ -202,7 +202,7 @@ Crawl time: 110.34 seconds
 │   │   │   ├── climate/hourly/soil_temperature/historical 📊 (491 files: .txt, .zip)
 │   │   │   ├── climate/hourly/soil_temperature/recent 📊 (321 files: .txt, .zip)
 │   │   │   └── climate/hourly/soil_temperature/timeseries_overview 📊 (12 files: .txt)
-│   │   ├── climate/hourly/solar 📊 (56 files: .txt, .pdf, .zip)
+│   │   ├── climate/hourly/solar 📊 (56 files: .txt, .zip, .pdf)
 │   │   ├── climate/hourly/sun 📊 (2 files: .pdf)
 │   │   │   ├── climate/hourly/sun/historical 📊 (637 files: .txt, .zip)
 │   │   │   ├── climate/hourly/sun/recent 📊 (243 files: .txt, .zip)
@@ -323,42 +323,42 @@ Crawl time: 110.34 seconds
 │   │       └── climate_urban/10_minutes/wind/recent 📊 (7 files: .txt, .zip)
 │   └── climate_urban/hourly
 │       ├── climate_urban/hourly/air_temperature
-│       │   └── climate_urban/hourly/air_temperature/recent 📊 (9 files: .txt, .pdf, .zip)
+│       │   └── climate_urban/hourly/air_temperature/recent 📊 (9 files: .txt, .zip, .pdf)
 │       ├── climate_urban/hourly/precipitation
-│       │   └── climate_urban/hourly/precipitation/recent 📊 (9 files: .txt, .pdf, .zip)
+│       │   └── climate_urban/hourly/precipitation/recent 📊 (9 files: .txt, .zip, .pdf)
 │       ├── climate_urban/hourly/pressure
-│       │   └── climate_urban/hourly/pressure/recent 📊 (4 files: .txt, .pdf, .zip)
+│       │   └── climate_urban/hourly/pressure/recent 📊 (4 files: .txt, .zip, .pdf)
 │       ├── climate_urban/hourly/soil_temperature
-│       │   └── climate_urban/hourly/soil_temperature/recent 📊 (4 files: .txt, .pdf, .zip)
+│       │   └── climate_urban/hourly/soil_temperature/recent 📊 (4 files: .txt, .zip, .pdf)
 │       ├── climate_urban/hourly/sun
-│       │   └── climate_urban/hourly/sun/recent 📊 (9 files: .txt, .pdf, .zip)
+│       │   └── climate_urban/hourly/sun/recent 📊 (9 files: .txt, .zip, .pdf)
 │       └── climate_urban/hourly/wind
-│           └── climate_urban/hourly/wind/recent 📊 (9 files: .txt, .pdf, .zip)
+│           └── climate_urban/hourly/wind/recent 📊 (9 files: .txt, .zip, .pdf)
 ├── climate_urban_prov
 │   └── climate_urban_prov/hourly
 │       ├── climate_urban_prov/hourly/air_temperature
-│       │   └── climate_urban_prov/hourly/air_temperature/recent 📊 (6 files: .txt, .pdf, .zip)
+│       │   └── climate_urban_prov/hourly/air_temperature/recent 📊 (6 files: .txt, .zip, .pdf)
 │       ├── climate_urban_prov/hourly/precipitation
 │       │   └── climate_urban_prov/hourly/precipitation/recent 📊 (2 files: .pdf)
 │       ├── climate_urban_prov/hourly/sun
-│       │   └── climate_urban_prov/hourly/sun/recent 📊 (5 files: .txt, .pdf, .zip)
+│       │   └── climate_urban_prov/hourly/sun/recent 📊 (5 files: .txt, .zip, .pdf)
 │       └── climate_urban_prov/hourly/wind
-│           └── climate_urban_prov/hourly/wind/recent 📊 (6 files: .txt, .pdf, .zip)
+│           └── climate_urban_prov/hourly/wind/recent 📊 (6 files: .txt, .zip, .pdf)
 ├── phenology
 │   ├── phenology/annual_reporters
 │   │   ├── phenology/annual_reporters/crops
-│   │   │   ├── phenology/annual_reporters/crops/historical 📊 (32 files: .txt, .pdf, .zip)
+│   │   │   ├── phenology/annual_reporters/crops/historical 📊 (32 files: .txt, .zip, .pdf)
 │   │   │   └── phenology/annual_reporters/crops/recent 📊 (17 files: .txt, .pdf)
 │   │   ├── phenology/annual_reporters/farming
 │   │   │   └── phenology/annual_reporters/farming/historical 📊 (12 files: .txt, .pdf)
 │   │   ├── phenology/annual_reporters/fruit
-│   │   │   ├── phenology/annual_reporters/fruit/historical 📊 (33 files: .txt, .pdf, .zip)
+│   │   │   ├── phenology/annual_reporters/fruit/historical 📊 (33 files: .txt, .zip, .pdf)
 │   │   │   └── phenology/annual_reporters/fruit/recent 📊 (17 files: .txt, .pdf)
 │   │   ├── phenology/annual_reporters/vine
-│   │   │   ├── phenology/annual_reporters/vine/historical 📊 (15 files: .txt, .pdf, .zip)
+│   │   │   ├── phenology/annual_reporters/vine/historical 📊 (15 files: .txt, .zip, .pdf)
 │   │   │   └── phenology/annual_reporters/vine/recent 📊 (6 files: .txt, .pdf)
 │   │   └── phenology/annual_reporters/wild
-│   │       ├── phenology/annual_reporters/wild/historical 📊 (46 files: .txt, .pdf, .zip)
+│   │       ├── phenology/annual_reporters/wild/historical 📊 (46 files: .txt, .zip, .pdf)
 │   │       └── phenology/annual_reporters/wild/recent 📊 (36 files: .txt, .pdf)
 │   └── phenology/immediate_reporters
 │       ├── phenology/immediate_reporters/crops

@@ -23,7 +23,7 @@ USAGE:
     from app.utils.enhanced_logger import get_logger
     from app.utils.config_manager import load_config
     
-    logger = get_logger("PROG")
+    logger = get_logger("WORKER")
     config = load_config("10_minutes_air_temperature", logger)
     
     # Initialize tracking for a dataset
@@ -68,8 +68,8 @@ from contextlib import contextmanager
 import json
 
 # Import ClimaStation utilities
-from .enhanced_logger import StructuredLoggerAdapter
-from .config_manager import ConfigurationError
+from app.utils.enhanced_logger import StructuredLoggerAdapter
+from app.utils.config_manager import ConfigurationError
 
 @dataclass
 class ProcessingStats:
@@ -157,7 +157,7 @@ class ProgressTracker:
         self._initialize_database()
         
         self.logger.info("Progress tracker initialized", extra={
-            "component": "PROG",
+            "component": "WORKER",
             "structured_data": {
                 "db_path": str(self.db_path),
                 "max_retry_attempts": self.max_retry_attempts,
@@ -198,7 +198,7 @@ class ProgressTracker:
                 
             except Exception as e:
                 self.logger.error(f"Failed to create database connection: {e}", extra={
-                    "component": "PROG",
+                    "component": "WORKER",
                     "structured_data": {"error": str(e), "db_path": str(self.db_path)}
                 })
                 raise ProgressTrackingError(f"Database connection failed: {e}")
@@ -289,13 +289,13 @@ class ProgressTracker:
                 conn.commit()
                 
             self.logger.info("Database schema initialized successfully", extra={
-                "component": "PROG",
+                "component": "WORKER",
                 "structured_data": {"schema_version": self.SCHEMA_VERSION}
             })
             
         except Exception as e:
             self.logger.error(f"Failed to initialize database schema: {e}", extra={
-                "component": "PROG",
+                "component": "WORKER",
                 "structured_data": {"error": str(e)}
             })
             raise ProgressTrackingError(f"Database initialization failed: {e}")
@@ -345,7 +345,7 @@ class ProgressTracker:
                 conn.commit()
                 
                 self.logger.info(f"Dataset initialized: {dataset}", extra={
-                    "component": "PROG",
+                    "component": "WORKER",
                     "structured_data": {
                         "dataset": dataset,
                         "total_files": len(files),
@@ -356,7 +356,7 @@ class ProgressTracker:
                 
         except Exception as e:
             self.logger.error(f"Failed to initialize dataset {dataset}: {e}", extra={
-                "component": "PROG",
+                "component": "WORKER",
                 "structured_data": {"dataset": dataset, "error": str(e)}
             })
             raise ProgressTrackingError(f"Dataset initialization failed: {e}")
@@ -427,7 +427,7 @@ class ProgressTracker:
                 conn.commit()
                 
                 self.logger.debug(f"File claimed by worker {worker_id}: {file_path}", extra={
-                    "component": "PROG",
+                    "component": "WORKER",
                     "structured_data": {
                         "dataset": dataset,
                         "worker_id": worker_id,
@@ -439,7 +439,7 @@ class ProgressTracker:
                 
         except Exception as e:
             self.logger.error(f"Failed to claim file for dataset {dataset}: {e}", extra={
-                "component": "PROG",
+                "component": "WORKER",
                 "structured_data": {"dataset": dataset, "worker_id": worker_id, "error": str(e)}
             })
             raise ProgressTrackingError(f"File claim failed: {e}")
@@ -488,7 +488,7 @@ class ProgressTracker:
                 conn.commit()
                 
                 self.logger.info(f"File completed: {Path(file_path).name}", extra={
-                    "component": "PROG",
+                    "component": "WORKER",
                     "structured_data": {
                         "file_path": file_path,
                         "records_processed": records_processed,
@@ -498,7 +498,7 @@ class ProgressTracker:
                 
         except Exception as e:
             self.logger.error(f"Failed to mark file completed: {file_path}: {e}", extra={
-                "component": "PROG",
+                "component": "WORKER",
                 "structured_data": {"file_path": file_path, "error": str(e)}
             })
             raise ProgressTrackingError(f"File completion update failed: {e}")
@@ -537,7 +537,7 @@ class ProgressTracker:
                 if retry_count <= self.max_retry_attempts:
                     new_status = self.STATUS_PENDING
                     self.logger.warning(f"File failed, will retry ({retry_count}/{self.max_retry_attempts}): {Path(file_path).name}", extra={
-                        "component": "PROG",
+                        "component": "WORKER",
                         "structured_data": {
                             "file_path": file_path,
                             "retry_count": retry_count,
@@ -547,7 +547,7 @@ class ProgressTracker:
                 else:
                     new_status = self.STATUS_FAILED
                     self.logger.error(f"File failed permanently after {retry_count} attempts: {Path(file_path).name}", extra={
-                        "component": "PROG",
+                        "component": "WORKER",
                         "structured_data": {
                             "file_path": file_path,
                             "retry_count": retry_count,
@@ -572,7 +572,7 @@ class ProgressTracker:
                 
         except Exception as e:
             self.logger.error(f"Failed to mark file failed: {file_path}: {e}", extra={
-                "component": "PROG",
+                "component": "WORKER",
                 "structured_data": {"file_path": file_path, "error": str(e)}
             })
             raise ProgressTrackingError(f"File failure update failed: {e}")
@@ -664,7 +664,7 @@ class ProgressTracker:
                 )
                 
                 self.logger.debug(f"Retrieved stats for dataset: {dataset}", extra={
-                    "component": "PROG",
+                    "component": "WORKER",
                     "structured_data": {
                         "dataset": dataset,
                         "total_files": total_files,
@@ -677,7 +677,7 @@ class ProgressTracker:
                 
         except Exception as e:
             self.logger.error(f"Failed to get processing stats for dataset {dataset}: {e}", extra={
-                "component": "PROG",
+                "component": "WORKER",
                 "structured_data": {"dataset": dataset, "error": str(e)}
             })
             raise ProgressTrackingError(f"Stats retrieval failed: {e}")
@@ -726,7 +726,7 @@ class ProgressTracker:
                 
         except Exception as e:
             self.logger.error(f"Failed to get file status: {file_path}: {e}", extra={
-                "component": "PROG",
+                "component": "WORKER",
                 "structured_data": {"file_path": file_path, "error": str(e)}
             })
             return None
@@ -761,7 +761,7 @@ class ProgressTracker:
                 
                 if reset_count > 0:
                     self.logger.info(f"Cleaned up {reset_count} stale processing claims", extra={
-                        "component": "PROG",
+                        "component": "WORKER",
                         "structured_data": {"reset_files": reset_count}
                     })
                 
@@ -769,7 +769,7 @@ class ProgressTracker:
                 
         except Exception as e:
             self.logger.error(f"Failed to cleanup stale sessions: {e}", extra={
-                "component": "PROG",
+                "component": "WORKER",
                 "structured_data": {"error": str(e)}
             })
             return 0
@@ -799,7 +799,7 @@ class ProgressTracker:
                 reset_count = result.rowcount
                 
                 self.logger.info(f"Reset dataset {dataset}: {reset_count} files", extra={
-                    "component": "PROG",
+                    "component": "WORKER",
                     "structured_data": {"dataset": dataset, "reset_count": reset_count}
                 })
                 
@@ -807,7 +807,7 @@ class ProgressTracker:
                 
         except Exception as e:
             self.logger.error(f"Failed to reset dataset {dataset}: {e}", extra={
-                "component": "PROG",
+                "component": "WORKER",
                 "structured_data": {"dataset": dataset, "error": str(e)}
             })
             return False
@@ -820,7 +820,7 @@ class ProgressTracker:
                 self._local.connection = None
             except Exception as e:
                 self.logger.warning(f"Error closing database connection: {e}", extra={
-                    "component": "PROG"
+                    "component": "WORKER"
                 })
 
 # Convenience functions for the available_functions.py interface
@@ -837,7 +837,7 @@ def initialize_progress_tracking(dataset: str, files: List[str], config: Dict[st
         dataset: Dataset name
         files: List of file paths to track
         config: Configuration dictionary from config manager
-        logger: StructuredLoggerAdapter instance with PROG component
+        logger: StructuredLoggerAdapter instance with WORKER component
         
     Raises:
         ProgressTrackingError: If initialization fails
@@ -859,7 +859,7 @@ def claim_next_file(dataset: str, worker_id: str, config: Dict[str, Any],
         dataset: Dataset name
         worker_id: Unique worker identifier
         config: Configuration dictionary from config manager
-        logger: StructuredLoggerAdapter instance with PROG component
+        logger: StructuredLoggerAdapter instance with WORKER component
         
     Returns:
         File path to process or None if no files available
@@ -881,7 +881,7 @@ def mark_file_completed(file_path: str, records: int, config: Dict[str, Any],
         file_path: Path to the processed file
         records: Number of records processed from the file
         config: Configuration dictionary from config manager
-        logger: StructuredLoggerAdapter instance with PROG component
+        logger: StructuredLoggerAdapter instance with WORKER component
     """
     tracker = ProgressTracker(config, logger)
     try:
@@ -900,7 +900,7 @@ def mark_file_failed(file_path: str, error: str, config: Dict[str, Any],
         file_path: Path to the failed file
         error: Error message describing the failure
         config: Configuration dictionary from config manager
-        logger: StructuredLoggerAdapter instance with PROG component
+        logger: StructuredLoggerAdapter instance with WORKER component
     """
     tracker = ProgressTracker(config, logger)
     try:
@@ -918,7 +918,7 @@ def get_processing_stats(dataset: str, config: Dict[str, Any],
     Args:
         dataset: Dataset name
         config: Configuration dictionary from config manager
-        logger: StructuredLoggerAdapter instance with PROG component
+        logger: StructuredLoggerAdapter instance with WORKER component
         
     Returns:
         Dictionary with processing statistics
@@ -943,18 +943,18 @@ if __name__ == "__main__":
     from pathlib import Path
     from datetime import timedelta
     
-    # Add parent directory to path for imports
-    sys.path.append(str(Path(__file__).parent.parent))
+    # Add project root to Python path for imports
+    project_root = Path(__file__).parent.parent.parent
+    sys.path.insert(0, str(project_root))
     
     try:
-        from utils.enhanced_logger import get_logger
-        from utils.config_manager import load_config
+        from app.utils.enhanced_logger import get_logger
         
         print("Testing ClimaStation Progress Tracking System")
         print("=" * 60)
         
         # Set up logging and config
-        logger = get_logger("PROG")
+        logger = get_logger("WORKER")
         
         # Create test configuration
         test_config = {

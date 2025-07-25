@@ -1146,7 +1146,7 @@
         ".txt",
         ".zip"
       ],
-      "file_count": 1340,
+      "file_count": 1341,
       "pdf_count": null
     },
     "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/1_minute/precipitation/now/",
@@ -1716,7 +1716,7 @@
         ".txt",
         ".zip"
       ],
-      "file_count": 1340,
+      "file_count": 1341,
       "pdf_count": null
     },
     "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/5_minutes/precipitation/now/",
@@ -2306,8 +2306,8 @@
     "data_info": {
       "file_types": [
         ".txt",
-        ".pdf",
-        ".zip"
+        ".zip",
+        ".pdf"
       ],
       "file_count": 56,
       "pdf_count": 2
@@ -2855,7 +2855,7 @@
         ".txt",
         ".zip"
       ],
-      "file_count": 1360,
+      "file_count": 1389,
       "pdf_count": null
     },
     "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/precipitation/recent/",
@@ -2992,8 +2992,8 @@
     "data_info": {
       "file_types": [
         ".txt",
-        ".pdf",
-        ".zip"
+        ".zip",
+        ".pdf"
       ],
       "file_count": 56,
       "pdf_count": 2
@@ -4742,8 +4742,8 @@
     "data_info": {
       "file_types": [
         ".txt",
-        ".pdf",
-        ".zip"
+        ".zip",
+        ".pdf"
       ],
       "file_count": 9,
       "pdf_count": 2
@@ -4768,8 +4768,8 @@
     "data_info": {
       "file_types": [
         ".txt",
-        ".pdf",
-        ".zip"
+        ".zip",
+        ".pdf"
       ],
       "file_count": 9,
       "pdf_count": 2
@@ -4794,8 +4794,8 @@
     "data_info": {
       "file_types": [
         ".txt",
-        ".pdf",
-        ".zip"
+        ".zip",
+        ".pdf"
       ],
       "file_count": 4,
       "pdf_count": 2
@@ -4820,8 +4820,8 @@
     "data_info": {
       "file_types": [
         ".txt",
-        ".pdf",
-        ".zip"
+        ".zip",
+        ".pdf"
       ],
       "file_count": 4,
       "pdf_count": 2
@@ -4846,8 +4846,8 @@
     "data_info": {
       "file_types": [
         ".txt",
-        ".pdf",
-        ".zip"
+        ".zip",
+        ".pdf"
       ],
       "file_count": 9,
       "pdf_count": 2
@@ -4872,8 +4872,8 @@
     "data_info": {
       "file_types": [
         ".txt",
-        ".pdf",
-        ".zip"
+        ".zip",
+        ".pdf"
       ],
       "file_count": 9,
       "pdf_count": 2
@@ -4921,8 +4921,8 @@
     "data_info": {
       "file_types": [
         ".txt",
-        ".pdf",
-        ".zip"
+        ".zip",
+        ".pdf"
       ],
       "file_count": 6,
       "pdf_count": 2
@@ -4971,8 +4971,8 @@
     "data_info": {
       "file_types": [
         ".txt",
-        ".pdf",
-        ".zip"
+        ".zip",
+        ".pdf"
       ],
       "file_count": 5,
       "pdf_count": 2
@@ -4997,8 +4997,8 @@
     "data_info": {
       "file_types": [
         ".txt",
-        ".pdf",
-        ".zip"
+        ".zip",
+        ".pdf"
       ],
       "file_count": 6,
       "pdf_count": 2
@@ -5049,8 +5049,8 @@
     "data_info": {
       "file_types": [
         ".txt",
-        ".pdf",
-        ".zip"
+        ".zip",
+        ".pdf"
       ],
       "file_count": 32,
       "pdf_count": 2
@@ -5116,8 +5116,8 @@
     "data_info": {
       "file_types": [
         ".txt",
-        ".pdf",
-        ".zip"
+        ".zip",
+        ".pdf"
       ],
       "file_count": 33,
       "pdf_count": 2
@@ -5158,8 +5158,8 @@
     "data_info": {
       "file_types": [
         ".txt",
-        ".pdf",
-        ".zip"
+        ".zip",
+        ".pdf"
       ],
       "file_count": 15,
       "pdf_count": 2
@@ -5200,8 +5200,8 @@
     "data_info": {
       "file_types": [
         ".txt",
-        ".pdf",
-        ".zip"
+        ".zip",
+        ".pdf"
       ],
       "file_count": 46,
       "pdf_count": 2

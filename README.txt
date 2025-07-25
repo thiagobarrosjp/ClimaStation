@@ -432,6 +432,20 @@ Current folder structure:
 │   ├── processors/
 │   │   ├── base_processor.py  (placeholder with legacy code, not working)
 │   │   └── ten_minutes_air_temperature_processor.py  (placeholder with legacy code, not working)
+│   ├── scripts/
+│   │   ├── deployment/
+│   │   │  ├── health_check.py (placeholder for future script, phase 3 - Bulk Processing Pipeline)
+│   │   │  └── README_deployment.md
+│   │   ├── development/
+│   │   │  ├── analyze_performance.py  (placeholder for future script, phase 3 - Bulk Processing Pipeline)
+│   │   │  ├── generate_processor.py  (placeholder for future script, phase 2 - Translation Manager + Universal Parser)
+│   │   │  ├── README_development.md
+│   │   │  └── seed_test_data.py  (placeholder for future script, develop with high priority, phase 1 - Progress Tracker)
+│   │   ├── testing/
+│   │   │  ├── __init__.py
+│   │   │  ├── test_integration.py (placeholder for future script, phase 2 - Translation Manager + Universal Parser)
+│   │   │  └── test_progress_tracker.py
+│   │   └── __init__.py
 │   ├── shared/
 │   ├── translations/
 │   │   ├── meteorological/
@@ -444,12 +458,14 @@ Current folder structure:
 │   │   │  └── dwd.yaml
 │   │   └── translation_manager.py  (placeholder with legacy code, not working)
 │   ├── utils/
+│   │   ├── __init__.py
 │   │   ├── config_manager.py
 │   │   ├── dwd_crawler.py
 │   │   ├── enhanced_logger.py
 │   │   ├── file_operations.py
 │   │   └── progress_tracker.py  (placeholder with legacy code, not working)
 │   ├── workers/
+│   └── __init__.py
 ├── context/
 │   ├── available_functions.py/
 │   ├── coding_patterns.py/
