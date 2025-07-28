@@ -538,7 +538,6 @@ if __name__ == "__main__":
         print("\n1. Testing DWD repository crawling:")
         print(f"   Base URL: {test_config['crawler']['base_url']}")
         print(f"   Max depth: {test_config['crawler']['max_depth']}")
-        
         # Run crawler
         result = crawl_dwd_repository(test_config, logger)
         
