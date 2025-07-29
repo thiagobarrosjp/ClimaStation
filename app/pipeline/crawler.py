@@ -52,8 +52,8 @@ from typing import List, Dict, Optional, Any, Tuple, cast
 from dataclasses import dataclass
 
 # Import ClimaStation utilities
-from .enhanced_logger import StructuredLoggerAdapter
-from .config_manager import ConfigurationError
+from app.utils.enhanced_logger import StructuredLoggerAdapter
+from app.utils.config_manager import ConfigurationError
 
 @dataclass
 class CrawlResult:
@@ -511,8 +511,8 @@ if __name__ == "__main__":
     sys.path.append(str(Path(__file__).parent.parent))
     
     try:
-        from utils.enhanced_logger import get_logger
-        from utils.config_manager import load_config
+        from app.utils.enhanced_logger import get_logger
+        from app.utils.config_manager import load_config
         
         print("Testing ClimaStation DWD Crawler")
         print("=" * 50)

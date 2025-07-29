@@ -53,6 +53,11 @@ _logger_registry: Dict[str, "StructuredLoggerAdapter"] = {}
 _logging_configured = False
 _config_lock = threading.Lock()
 
+# Centralized log directory path (change here if needed)
+DEFAULT_LOG_DIR = Path("data/dwd/0_debug")
+DEFAULT_LOG_FILE = DEFAULT_LOG_DIR / "climastation.log"
+
+
 class ComponentFormatter(logging.Formatter):
     """
     Custom formatter for component-based logging with structured data support.
@@ -203,54 +208,25 @@ class StructuredLoggerAdapter(logging.LoggerAdapter):
 
 def _setup_logging_configuration(config: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """
-    Set up logging configuration from config manager or defaults.
-    
-    Args:
-        config: Configuration dictionary from config manager
-        
-    Returns:
-        Logging configuration dictionary
+    Set up logging configuration.
     """
-    if config is None:
-        # Default configuration if no config provided
-        logging_config = {
-            'level': 'INFO',
-            'log_to_file': True,
-            'max_file_size_mb': 100,
-            'backup_count': 5,
-            'format': '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-        }
-        # Use default paths
-        log_dir = Path("logs")
-        log_file = log_dir / "climastation.log"
-    else:
-        # Get logging configuration from the new structure
-        logging_config = config.get('logging', {
-            'level': 'INFO',
-            'log_to_file': True,
-            'max_file_size_mb': 100,
-            'backup_count': 5,
-            'format': '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-        })
-        
-        # Get log directory from paths or dwd_paths
-        log_dir = None
-        if 'paths' in config and 'log_dir' in config['paths']:
-            log_dir = Path(config['paths']['log_dir'])
-        elif 'dwd_paths' in config and 'debug' in config['dwd_paths']:
-            log_dir = Path(config['dwd_paths']['debug'])
-        else:
-            log_dir = Path("logs")
-        
-        log_file = log_dir / "climastation.log"
-    
-    # Ensure log directory exists
+    logging_config = {
+        'level': 'INFO',
+        'log_to_file': True,
+        'max_file_size_mb': 100,
+        'backup_count': 5,
+        'format': '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    }
+    # Use fixed debug folder
+    log_dir = DEFAULT_LOG_DIR
+    log_file = DEFAULT_LOG_FILE
+
     log_dir.mkdir(parents=True, exist_ok=True)
-    
-    # Add the computed log file path to the config
     logging_config['log_file'] = log_file
-    
+
     return logging_config
+
+
 
 def _create_file_handler(log_file_path: Path, logging_config: Dict[str, Any]) -> logging.Handler:
     """
@@ -355,8 +331,8 @@ def get_logger(component_name: str, config: Optional[Dict[str, Any]] = None) -> 
     """
     # Validate component name
     valid_components = {
-        'CONFIG', 'PROCESSOR', 'ORCHESTRATOR', 'WORKER', 
-        'DOWNLOAD', 'EXTRACT', 'VALIDATE', 'CRAWLER', 'UNKNOWN'
+        'CONFIG', 'PROCESSOR', 'PIPELINE', 'ORCHESTRATOR', 'WORKER', 
+        'DOWNLOAD', 'EXTRACT', 'VALIDATE', 'CRAWLER',  'UNKNOWN'
     }
     
     if component_name not in valid_components:
@@ -417,108 +393,3 @@ def clear_logger_cache():
     _logger_registry.clear()
     _logging_configured = False
 
-# Example usage and testing
-if __name__ == "__main__":
-    import time
-    from pathlib import Path
-    
-    print("Testing ClimaStation Enhanced Logging System")
-    print("=" * 60)
-    
-    try:
-        # Test basic logger creation
-        print("\n1. Testing basic logger creation:")
-        config_logger = get_logger("CONFIG")
-        processor_logger = get_logger("PROCESSOR")
-        orchestrator_logger = get_logger("ORCHESTRATOR")
-        
-        print("   ✅ Created loggers for CONFIG, PROCESSOR, ORCHESTRATOR")
-        
-        # Test basic logging
-        print("\n2. Testing basic logging:")
-        config_logger.info("Configuration system initialized")
-        processor_logger.info("Starting dataset processing")
-        orchestrator_logger.info("Pipeline orchestration started")
-        
-        # Test structured logging
-        print("\n3. Testing structured logging:")
-        processor_logger.log_processing_stats(
-            logging.INFO,
-            dataset="10_minutes_air_temperature",
-            files_processed=1500,
-            files_failed=23,
-            duration_seconds=145.7,
-            memory_usage_mb=256
-        )
-        
-        # Test file operation logging
-        print("\n4. Testing file operation logging:")
-        worker_logger = get_logger("WORKER")
-        worker_logger.log_file_operation(
-            logging.INFO,
-            operation="process",
-            file_path="data/dwd/historical/temp_data_001.zip",
-            success=True,
-            processing_time_ms=1250
-        )
-        
-        worker_logger.log_file_operation(
-            logging.ERROR,
-            operation="extract",
-            file_path="data/dwd/recent/corrupt_file.zip",
-            success=False,
-            error_msg="ZIP file is corrupted"
-        )
-        
-        # Test integration with config manager
-        print("\n5. Testing config manager integration:")
-        try:
-            from app.utils.config_manager import ConfigManager
-            config_manager = ConfigManager()
-            integrated_logger = get_logger_with_config_manager("VALIDATE", config_manager)
-            integrated_logger.info("Logger created with config manager integration")
-            print("   ✅ Config manager integration successful")
-        except ImportError:
-            print("   ⚠️  Config manager not available for integration test")
-        
-        # Test high-volume logging simulation
-        print("\n6. Testing high-volume logging simulation:")
-        download_logger = get_logger("DOWNLOAD")
-        
-        start_time = time.time()
-        for i in range(100):  # Simulate processing 100 files
-            if i % 10 == 0:  # Log every 10th file to avoid spam
-                download_logger.log_file_operation(
-                    logging.INFO,
-                    operation="download",
-                    file_path=f"data/dwd/file_{i:03d}.zip",
-                    success=True,
-                    file_size_mb=2.5
-                )
-        
-        duration = time.time() - start_time
-        print(f"   ✅ Processed 100 log entries in {duration:.3f} seconds")
-        
-        # Test error handling
-        print("\n7. Testing error handling:")
-        try:
-            invalid_logger = get_logger("INVALID_COMPONENT")
-        except ValueError as e:
-            print(f"   ✅ Properly caught invalid component: {e}")
-        
-        print("\n✅ All enhanced logging tests completed successfully!")
-        
-        # Show where logs are being written
-        try:
-            import sys
-            sys.path.append(str(Path(__file__).parent))
-            from config_manager import get_dwd_paths
-            dwd_paths = get_dwd_paths(logging.getLogger("temp"))
-            print(f"\nLog files location: {dwd_paths.get('debug', Path('logs'))}")
-        except Exception as e:
-            print(f"\nLog files location: logs/climastation.log (import error: {e})")
-        
-    except Exception as e:
-        print(f"\n❌ Enhanced logging test failed: {e}")
-        import traceback
-        traceback.print_exc()

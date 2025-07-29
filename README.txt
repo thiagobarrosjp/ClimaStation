@@ -1,8 +1,8 @@
 # ClimaStation: DWD Climate Data Processing Platform
 
-----------------------------------------------------------------------
--------------------- PART 1: STABLE DOCUMENTATION --------------------
-----------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------
+---------------------------------------- PART 1: STABLE DOCUMENTATION ----------------------------------------
+--------------------------------------------------------------------------------------------------------------
 
 ## Purpose
 
@@ -63,43 +63,77 @@ Rough estimate:
 
 ## Architecture at a Glance
 
-### Pipelines
+ClimaStation is built as a modular, configuration-driven platform for transforming raw measurement data from the DWD (Deutscher Wetterdienst) into structured, timestamp-centric JSONL records.
 
-- **Bulk Historical Ingestion**: One-time, massive. Establishes the baseline.  
-- **Incremental Updates**: Keeps everything fresh with daily/weekly syncs.
-
-### Component Overview
-
-```
-ClimaStation
-├── Orchestrators
-│   ├── BulkIngestController
-│   └── IncrementalSyncController
-├── Dataset Processors (One per dataset)
-│   ├── parse_10_minutes_air_temperature_hist.py
-│   ├── parse_10_minutes_precipitation.py (future)
-├── Shared Components
-│   ├── raw_parser.py
-│   ├── station_info_parser.py
-│   ├── sensor_metadata.py
-│   └── zip_handler.py
-├── Utilities
-│   ├── enhanced_logger.py
-│   ├── configuration_manager.py
-│   ├── data_validator.py
-│   └── performance_monitor.py
-```
+The current focus is on building the **bulk historical ingestion pipeline**. This pipeline is optimized to process large volumes of ZIP files from the DWD archive and convert them into clean, enriched output. Other pipelines, such as incremental daily updates, will be implemented later using similar architectural principles.
 
 ---
 
-## Data Flow (Simplified)
+### Bulk Ingestion Pipeline Structure
 
-1. **Download** ZIP from DWD
-2. **Extract** contents
-3. **Parse** measurements
-4. **Enrich** with metadata (stations, sensors)
-5. **Validate** completeness & quality
-6. **Output** standardized JSONL
+The bulk pipeline is organized into two layers:
+
+1. **Preprocessing Stages** (batch-oriented)
+2. **File Processing Flow** (orchestrated per ZIP file)
+
+---
+
+### 1. Preprocessing Stages
+
+These stages operate in batch mode and prepare the list of files to download and process.
+
+- **Crawler (`crawler.py`)**
+  - **Input**: Dataset root path (e.g., `10_minutes/air_temperature`)
+  - **Output**: A `urls.jsonl` file containing one entry per downloadable ZIP file
+
+- **Downloader (`downloader.py`)**
+  - **Input**: `urls.jsonl` or a filtered subset
+  - **Output**: Saves ZIP files to `data/dwd/2_downloaded_files/`
+
+---
+
+### 2. File Processing Flow
+
+This stage is run file-by-file and is orchestrated by `run_pipeline.py`. It avoids unnecessary disk usage by extracting and deleting raw text files on the fly.
+
+Each ZIP file is processed in the following sequence:
+
+1. **Extractor (`extractor.py`)**
+   - **Input**: A single ZIP file
+   - **Output**: A temporary `.txt` file extracted from the archive
+
+2. **Parser (`parser.py`)**
+   - **Input**: The raw `.txt` file, dataset config, and metadata
+   - **Output**: Generator of timestamp-centric records (as Python dictionaries)
+
+3. **Enricher (`enricher.py`)**
+   - **Input**: Each parsed record
+   - **Output**: An enriched record with human-readable names, quality codes, station/sensor info, etc.
+
+4. **Writer (`writer.py`)**
+   - **Input**: Enriched records (streamed/generator)
+   - **Output**: One or more `.jsonl` output files (e.g., 50,000 records per file)
+
+5. **Cleanup**
+   - The temporary `.txt` file is deleted to conserve disk space
+
+---
+
+### Supporting Modules
+
+All pipeline components can import helper logic from:
+
+- **`app/utils/`** — for logging, config loading, file operations, and progress tracking
+- **`app/translations/`** — for quality code explanations, parameter mappings, and metadata enrichment
+
+Each module is implemented as a standalone Python script that exposes one or more reusable functions. These are not intended to be executed directly — they are used by the main controller script.
+
+---
+
+### Central Orchestration
+
+The main script `run_pipeline.py` ties everything together:
+python app/main/run_pipeline.py --dataset 10_minutes_air_temperature --file-id 00003_19930428_19991231
 
 ---
 
@@ -153,23 +187,6 @@ ClimaStation uses a **timestamp-centric record format** where each record repres
 
 ---
 
-## Architecture Flexibility
-
-* Station-specific exports (CSV downloads)
-* Parameter-specific queries (single variable access)
-* Future NetCDF/Parquet exports for power users
-* Schema evolution for new DWD parameters
-
----
-
-## Key Standards
-
-* JSONL Output: timestamp-centric, enriched with metadata.
-* Centralized Logging: component-based codes.
-* Full Automation: no manual steps allowed.
-
----
-
 ## Raw Data Sample (Reference for AI)
 
 **File:** 10minutenwerte_TU_00003_19930428_19991231_hist.zip
@@ -205,60 +222,20 @@ Stations_id von_datum bis_datum Stationshoehe geoBreite geoLaenge Stationsname B
 
 ---
 
-## Success Criteria (Reminder)
-
-* **All 1,623 files parsed successfully**
-* **Memory stable < 2GB**
-* **Outputs clean, consistent, validated**
-* **No manual steps after kickoff**
-* **Ready to scale to 500k+ files**
-
----
-
-
-
-
-### Key Design Principles
-
-- **Fail-Fast**: Any worker failure stops entire dataset processing
-- **File-Level Tracking**: Every ZIP file tracked with status and timing
-- **Single-Machine Optimized**: No distributed processing complexity
-- **AI-Maintainable**: Clear configuration hierarchy and component interfaces
-
-
-### Success Metrics for Phase 1
-
-- Process all 1,623 historical files without manual intervention
-- Memory usage stays under 2GB total
-- Complete processing in under 8 hours
-- Zero data loss or corruption
-- Full traceability of every file processed
-
----
-
 ## AI Development Workflow
 
-### Two-Chat Strategy
+This project uses a two-chat development strategy to split architectural planning and implementation:
 
-This project uses a **dual-chat AI development approach** to optimize context usage and maintain architectural consistency:
+- **ChatGPT (Project Manager)**:
+  - Plans architecture and file structure
+  - Creates clear implementation prompts
+  - Ensures modularity and consistency
 
-**Chat 1: Project Manager Role**
-- **Purpose**: Strategic planning, architecture decisions, prompt crafting
-- **Context**: This full README.txt file + project overview
-- **Responsibilities**:
-  - Help define next development steps
-  - Create specific, actionable prompts for implementation
-  - Ensure architectural consistency across implementations
-  - Review and refine implementation approaches
-  - Maintain project vision and standards
+- **v0 (Implementation Assistant)**:
+  - Writes code based on context files and task prompts
+  - Follows strict constraints with no architectural decisions
 
-**Chat 2: Implementation Assistant Role**  
-- **Purpose**: Pure code implementation with minimal context
-- **Context**: Only interface files + specific task prompt
-- **Responsibilities**:
-  - Write focused code based on crafted prompts
-  - Follow established patterns and interfaces
-  - Implement specific features without architectural decisions
+This workflow allows clean separation of concerns and reproducibility between sessions. Context files used by v0 are version-controlled and updated by the developer as needed.
 
 ### Project Manager Instructions
 
@@ -279,9 +256,10 @@ When acting as Project Manager, you should:
 The following minimal context files should be created and used for implementation tasks:
 context/
 ├── processor_interface.py      # Standard processor contract (25 lines)
-├── available_functions.py      # Utility functions reference (30 lines)├── coding_patterns.py          # Standard patterns and imports (40 lines)
+├── available_functions.py      # Utility functions reference (30 lines)
+├── coding_patterns.py          # Standard patterns and imports (40 lines)
 └── dataset_configs/            # Dataset-specific configurations
-└── 10_minutes_air_temperature.yaml
+    └── 10_minutes_air_temperature.yaml
 
 
 ### Implementation Prompt Template
@@ -293,6 +271,7 @@ Context Files to Attach:
 
 - context/processor_interface.py
 - context/available_functions.py
+- context/coding_patterns.py
 - [specific file being modified]
 
 
@@ -317,52 +296,87 @@ Architectural Constraints:
 - Must use dependency injection pattern
 - Must follow established logging patterns
 
+--------------------------------------------------------------------------------------------------------------
+---------------------------------------- PART 2: STRATEGIC GOALS ---------------------------------------------
+--------------------------------------------------------------------------------------------------------------
 
-### Success Metrics for AI Development
+## 🎯 Success Criteria for Bulk Ingestion
 
-- **Context Efficiency**: Implementation prompts use <150 lines of context
-- **Consistency**: All implementations follow established interfaces
-- **Focus**: Each chat stays within its defined role
-- **Quality**: Generated code integrates seamlessly with existing architecture
+- [ ] All 1,623 ZIP files parsed successfully  
+- [ ] Output uses timestamp-centric JSONL format  
+- [ ] Metadata enrichment complete (station + sensor + codes)  
+- [ ] Pipeline resumes cleanly after interruption  
+- [ ] Memory usage stays < 2GB total  
+- [ ] No manual steps required during execution  
+- [ ] Dataset can be changed via YAML config only  
 
-----------------------------------------------------------------------
--------------------- PART 2: DYNAMIC STATUS --------------------------
-----------------------------------------------------------------------
-Date: 2025-07-28
+---
+
+## 🧱 Design Principles (In Practice)
+
+- ✅ **Fail-fast**: One broken file = stop the run  
+- ✅ **File-level tracking** via `progress_tracker.py`  
+- ✅ **Streaming design**: record generators, not full-loads  
+- ✅ **Modular logic**: clearly separated stages  
+- ✅ **Config-driven behavior** using `*.yaml` only  
+- ⏳ **Parallel processing**: designed, not yet implemented  
 
 ---
 
-### Implementation Status
+## 📊 Performance Metrics (To Track)
 
-- ✅ Configuration system (`config_manager.py`)
-- ✅ Enhanced logging (`enhanced_logger.py`)
-- ✅ File operations utilities (`file_operations.py`)
-- ✅ DWD crawler (`crawl_dwd.py`)
-- ✅ Progress tracking system (`progress_tracker.py`) + comprehensive testing
-- 🔄 **Current focus: Translation Manager implementation**
-- ⏳ Next: Universal Parser and Dataset Processor integration
+(Will be filled once testing begins)
 
----
+- [ ] Total runtime for all files < 8 hours  
+- [ ] Avg memory usage < 2GB  
+- [ ] Chunking correct (≤50k records per .jsonl file)  
+- [ ] Output validated against schema  
+- [ ] All files log success/failure clearly  
+
+
+--------------------------------------------------------------------------------------------------------------
+---------------------------------------- PART 3: DAILY STATUS ------------------------------------------------
+---------------------------------------- Last updated: 2025-07-29 --------------------------------------------
+
 
 ### Development Roadmap
 
-**Phase 1: Foundation Components (COMPLETED)**
+**Phase 1: Foundation Components (PARTIALLY COMPLETED)**
+- Core utilities (config manager, enhanced logger, file operations)
+- Progress tracking system (finished, but needs validation in practice)
 
-- ✅ Core utilities and progress tracking system
+**Phase 2: Modular Processing Pipeline (DEVELOPMENT IN PROGRESS)**  
+- Translation Manager (finished, but needs validation in practice)
+- Crawler (must be updated to list individual file URLs, not just folder paths)  
+- Downloader (initial implementation complete, needs fix: must download only, no crawling)
+- Extractor → Parser → Enricher → Writer  
+- Pipeline orchestration via `run_pipeline.py` (updated for downloader mode)
 
+**Phase 3: Full Bulk Ingestion (PLANNED)**  
+- Bulk controller, retry logic  
+- Performance tuning  
+- Multi-dataset config testing
 
-**Phase 2: Processing Pipeline (IN PROGRESS)**
+---
 
-- 🔄 Translation Manager (metadata enrichment)
-- ⏳ Universal Parser (raw DWD file processing)
-- ⏳ Dataset Processor (complete workflow integration)
+## Immediate Task (Current Focus)
 
+### 🔧 Crawler and Downloader Refactor
 
-**Phase 3: Bulk Processing (PLANNED)**
+- `downloader.py` was implemented but is not yet working correctly
+- `run_pipeline.py` was updated to support `--mode download`, but it depends on a working downloader
+- `crawler.py` must be updated to recursively discover and list **all ZIP file URLs**, not just folder paths
+  - Each `.jsonl` line must represent one downloadable ZIP file
+- `downloader.py` must be refactored to **only download** the listed files from `dwd_urls.jsonl`
+  - No directory crawling should happen in this step
 
-- ⏳ Bulk Ingestion Controller
-- ⏳ Multi-dataset support (precipitation, wind, etc.)
-- ⏳ Performance optimization and monitoring
+**Success Criteria:**
+- `crawler.py` outputs one `.jsonl` line per ZIP file (not per folder)
+- `downloader.py` downloads all listed files and respects retry logic
+- Downloaded files are saved into the correct dataset subfolders
+- Works when invoked via:
+  python app/main/run_pipeline.py --mode download --dataset 10_minutes_air_temperature
+
 
 ---
 
@@ -382,8 +396,8 @@ CLIMASTATION
 │   ├── main/
 │   │   └── run_pipeline.py
 │   ├── pipeline/
-│   │   ├── crawler.py    (copied from legacy code dwd_crawler.py)
-│   │   ├── downloader.py
+│   │   ├── crawler.py    (finished and validated)
+│   │   ├── downloader.py (next)
 │   │   ├── enricher.py
 │   │   ├── extractor.py
 │   │   ├── parser.py
@@ -398,19 +412,19 @@ CLIMASTATION
 │   │   │  └── quality_codes.yaml
 │   │   ├── providers/
 │   │   │  └── dwd.yaml
-│   │   └── translation_manager.py
+│   │   └── translation_manager.py (finished, but needs validation in practice)
 │   ├── utils/
 │   │   ├── __init__.py
-│   │   ├── config_manager.py
-│   │   ├── enhanced_logger.py
-│   │   ├── file_operations.py
-│   │   └── progress_tracker.py
+│   │   ├── config_manager.py (finished, can't tell if it is working as intended or not)
+│   │   ├── enhanced_logger.py (finished and is working fine for crawling, needs validation for other tasks)
+│   │   ├── file_operations.py (finished, can't tell if it is working as intended or not)
+│   │   └── progress_tracker.py (finished, but needs validation in practice)
 │   └── __init__.py
 ├── context/             (For AI implementation)
-│   ├── available_functions.py/
-│   ├── coding_patterns.py/
-│   ├── current_task.py/
-│   └── processor_interface.py/
+│   ├── available_functions.py (updated)
+│   ├── coding_patterns.py
+│   ├── current_task.md
+│   └── processor_interface.py
 ├── data/
 │   └── dwd/
 │       ├── 0_debug/
@@ -419,26 +433,9 @@ CLIMASTATION
 │       └── 3_parsed_files/
 ├── .gitignore
 ├── dev_log.md
-├── PromptV0.txt
+├── prompt_project_manager.txt
 ├── README.txt
 └── requirements.txt
 
----
-
-## Next Steps: Architecture Implementation
-
-### Next Steps (Current Priority)
-
-**Immediate Task: Translation Manager Implementation**
-
-- Implement `app/translations/translation_manager.py`
-- Create test suite for translation system
-- Integrate with existing progress tracker and logging systems
 
 
-**Success Criteria for Translation Manager:**
-
-- Handle station metadata enrichment from DWD station files
-- Convert DWD parameter codes to standardized names
-- Support quality code translations and explanations
-- Process 1,623 air temperature files with full metadata enrichment

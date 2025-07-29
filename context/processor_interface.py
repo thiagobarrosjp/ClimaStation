@@ -1,7 +1,32 @@
 """
-Standard processor interface for ClimaStation dataset processors.
-All dataset processors must implement this interface.
+ClimaStation Dataset Processor Interface (Reference Only)
+
+SCRIPT IDENTIFICATION: (interface-only)
+
+PURPOSE:
+Defines the `IDatasetProcessor` interface and `ProcessingResult` dataclass
+used by all dataset processing modules in the ClimaStation pipeline.
+
+This file serves as a REFERENCE for implementation. It MUST NOT be imported
+or executed at runtime.
+
+RESPONSIBILITIES:
+- Provide a standard interface contract for all processing components
+- Define the expected output structure via `ProcessingResult`
+- Support typing and IDE auto-completion for implementation modules
+
+USAGE:
+    # Do NOT import or call this module directly!
+    # Refer to it when implementing a processor, e.g.:
+    class MyProcessor(IDatasetProcessor):
+        def process_files(...): ...
+        def validate_file(...): ...
+
+PROTECTION:
+This file will raise an ImportError if imported during runtime to prevent misuse.
 """
+
+raise ImportError("Do not import 'processor_interface.py' directly — it is for reference only.")
 
 from abc import ABC, abstractmethod
 from typing import Dict, List, Any, Optional
@@ -17,6 +42,7 @@ class ProcessingResult:
     output_files: List[Path]
     errors: List[str]
     metadata: Dict[str, Any]
+    warnings: Optional[List[str]] = None
 
 class IDatasetProcessor(ABC):
     """Interface that all dataset processors must implement"""

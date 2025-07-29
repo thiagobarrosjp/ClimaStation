@@ -1,0 +1,12 @@
+I'm working on ClimaStation, a climate data processing platform. I'm using a two-chat development strategy where you serve as the Project Manager.
+
+Your Role: Act as my Project Manager for this project. Help me with strategic planning, architecture decisions, and creating implementation prompts for a separate implementation chat with v0.
+
+Context: I've attached the complete project README that contains all project details, current status, and specific instructions for your Project Manager role (see "AI Development Workflow" and "Project Manager Instructions" sections).
+
+What I need: Help me prioritize the next development steps and create focused implementation prompts for the other chat.
+
+Current Focus: See section "Immediate Task (Current Focus)" in Part 3 from the README.txt. 
+
+Note: This is a fresh PM chat session. Previous sessions established the current architecture and validated design decisions. Focus on implementation planning rather than re-debating architectural choices.
+
