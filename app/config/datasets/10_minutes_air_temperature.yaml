@@ -35,4 +35,198 @@ processing:
 validation:
   required_columns: ["STATIONS_ID", "MESS_DATUM", "TT_10", "RF_10"]
   station_info_required: true       # Require station metadata for processing
-  min_measurements_per_file: 1      # Minimum valid measurements per ZIP
+  min_measurements_per_file: 1      # Minimum valid measurements per file
+
+# File Processing Configuration
+file_processing:
+  batch_size: 50                    # Files to process in each batch
+  timeout_per_file: 300            # Maximum seconds per file
+  retry_failed_files: true         # Retry files that failed processing
+  cleanup_temp_files: true         # Remove temporary extraction files
+
+# Data Quality Configuration
+quality_control:
+  temperature_range:                # Valid temperature ranges (°C)
+    min: -50.0
+    max: 60.0
+  humidity_range:                   # Valid humidity ranges (%)
+    min: 0.0
+    max: 100.0
+  pressure_range:                   # Valid pressure ranges (hPa)
+    min: 800.0
+    max: 1100.0
+  missing_data_threshold: 0.95      # Max fraction of missing data allowed
+
+# Output Configuration
+output:
+  format: "jsonl"                   # Output format (jsonl, json, csv)
+  compression: false                # Compress output files
+  include_metadata: true            # Include station and sensor metadata
+  include_quality_flags: true       # Include data quality indicators
+  bilingual_descriptions: true      # Include German and English descriptions
+
+# Logging Configuration (dataset-specific)
+logging:
+  component_prefix: "DWD10TAH3"     # Prefix for all log messages
+  detailed_progress: true           # Log detailed processing progress
+  performance_metrics: true        # Log timing and performance data
+  error_details: true              # Include full error traces
+
+# Station Information
+station_info:
+  description_file: "zehn_min_tu_Beschreibung_Stationen.txt"
+  encoding: "latin-1"              # File encoding for German characters
+  coordinate_validation: true       # Validate station coordinates
+  altitude_validation: true        # Validate station altitudes
+
+# Parameter Mapping (CSV columns to standardized names)
+parameters:
+  STATIONS_ID:
+    standard_name: "station_id"
+    description: "Station identifier"
+    required: true
+  MESS_DATUM:
+    standard_name: "measurement_datetime"
+    description: "Measurement date and time (YYYYMMDDHHMM)"
+    required: true
+    format: "YYYYMMDDHHMM"
+  QN:
+    standard_name: "quality_flag"
+    description: "Quality level of following columns"
+    required: true
+  TT_10:
+    standard_name: "air_temperature_2m"
+    description: "Air temperature 2m above ground"
+    unit: "°C"
+    missing_value: -999
+    quality_range: [-50.0, 60.0]
+  TM5_10:
+    standard_name: "air_temperature_5cm"
+    description: "Air temperature 5cm above ground"
+    unit: "°C"
+    missing_value: -999
+    quality_range: [-50.0, 60.0]
+  RF_10:
+    standard_name: "relative_humidity"
+    description: "Relative humidity 2m above ground"
+    unit: "%"
+    missing_value: -999
+    quality_range: [0.0, 100.0]
+  PP_10:
+    standard_name: "air_pressure"
+    description: "Air pressure at station altitude"
+    unit: "hPa"
+    missing_value: -999
+    quality_range: [800.0, 1100.0]
+  TD_10:
+    standard_name: "dew_point_temperature"
+    description: "Dew point temperature 2m above ground"
+    unit: "°C"
+    missing_value: -999
+    quality_range: [-50.0, 40.0]
+
+# Quality Levels (DWD standard)
+quality_levels:
+  1:
+    description: "Only formal control"
+    reliability: "basic"
+  2:
+    description: "Controlled with individually defined criteria"
+    reliability: "enhanced"
+  3:
+    description: "Automatic control and correction"
+    reliability: "high"
+  5:
+    description: "Historic, subjective procedures"
+    reliability: "historical"
+  7:
+    description: "Second control done, before correction"
+    reliability: "verified_uncorrected"
+  8:
+    description: "Quality control outside ROUTINE"
+    reliability: "non_routine"
+  9:
+    description: "Not all parameters corrected"
+    reliability: "partially_corrected"
+  10:
+    description: "Quality control finished, all corrections finished"
+    reliability: "fully_processed"
+
+# Sensor Information
+sensors:
+  temperature:
+    type: "PT 100"
+    measurement_method: "electrical resistance"
+    height_above_ground: 2.0
+    accuracy: "±0.1°C"
+  humidity:
+    type: "capacitive sensor"
+    measurement_method: "electrical capacitance"
+    height_above_ground: 2.0
+    accuracy: "±2%"
+  pressure:
+    type: "digital barometer"
+    measurement_method: "piezoelectric"
+    accuracy: "±0.1 hPa"
+
+# Data Source Information
+data_sources:
+  historical:
+    description: "Historical measurements from automatic weather stations"
+    time_reference: "MEZ/CET until 1999-12-31, UTC from 2000-01-01"
+    update_frequency: "annual"
+    data_availability: "complete archive"
+  recent:
+    description: "Recent measurements from current observation network"
+    time_reference: "UTC"
+    update_frequency: "daily"
+    data_availability: "last 500 days"
+  now:
+    description: "Current measurements from active stations"
+    time_reference: "UTC"
+    update_frequency: "hourly"
+    data_availability: "last 7 days"
+
+# File Naming Patterns
+file_patterns:
+  data_files: "10minutenwerte_TU_{station_id}_{start_date}_{end_date}_hist.zip"
+  metadata_files: "Meta_Daten_zehn_min_tu_{station_id}.zip"
+  station_info: "zehn_min_tu_Beschreibung_Stationen.txt"
+
+# Processing Statistics (for validation)
+expected_statistics:
+  total_stations: 1623              # Expected number of stations
+  date_range:
+    start: "1993-04-28"            # Earliest expected data
+    end: "2024-12-31"              # Latest expected data
+  measurements_per_hour: 6          # 10-minute intervals = 6 per hour
+  parameters_per_measurement: 6     # Number of measured parameters
+
+# Error Handling
+error_handling:
+  skip_corrupted_files: true        # Skip files that cannot be extracted
+  skip_empty_files: true           # Skip files with no measurement data
+  skip_invalid_stations: false     # Fail if station info is missing
+  max_parsing_errors: 10           # Maximum parsing errors before giving up
+
+# Performance Optimization
+performance:
+  use_parallel_extraction: true     # Extract ZIP files in parallel
+  cache_station_info: true         # Cache station information in memory
+  cache_metadata: true             # Cache sensor metadata
+  batch_database_writes: true      # Batch database operations
+  memory_limit_mb: 256             # Memory limit per worker
+
+# Monitoring and Alerts
+monitoring:
+  track_processing_time: true      # Monitor file processing times
+  track_memory_usage: true         # Monitor memory consumption
+  alert_on_failures: true         # Alert when files fail processing
+  alert_threshold: 0.05            # Alert if >5% of files fail
+
+# Archive Configuration
+archive:
+  compress_output: false           # Compress final output files
+  retention_days: 365             # Keep processed files for 1 year
+  backup_raw_data: false          # Don't backup raw ZIP files
+  cleanup_failed_files: false     # Keep failed files for debugging

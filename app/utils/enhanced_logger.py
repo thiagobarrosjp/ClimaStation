@@ -239,12 +239,21 @@ def _create_file_handler(log_file_path: Path, logging_config: Dict[str, Any]) ->
     Returns:
         Configured file handler
     """
+    # First remove any existing log file so we can start fresh
+    try:
+        if log_file_path.exists():
+            log_file_path.unlink()
+    except Exception:
+        # If we can't delete, proceed anyway (handler's mode ='w' will truncate it)
+        pass
+
     # Use rotating file handler for high-volume logging
     max_bytes = logging_config.get('max_file_size_mb', 100) * 1024 * 1024
     backup_count = logging_config.get('backup_count', 5)
     
     file_handler = logging.handlers.RotatingFileHandler(
-        log_file_path,
+        filename=log_file_path,
+        mode='w',
         maxBytes=max_bytes,
         backupCount=backup_count,
         encoding='utf-8'

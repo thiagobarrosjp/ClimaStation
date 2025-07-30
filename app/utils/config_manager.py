@@ -35,7 +35,7 @@ ERROR HANDLING:
 
 import yaml
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Union
 import logging
 from functools import lru_cache
 
@@ -83,11 +83,16 @@ def _load_base_config(logger: logging.Logger, config_root: Optional[Path] = None
             logger.error(error_msg, extra={"component": "CONFIG"})
             raise ConfigurationError(error_msg)
             
-        # Convert string paths to Path objects
+        # Convert string paths to Path objects in both paths and dwd_paths sections
         if 'paths' in config:
             for key, value in config['paths'].items():
                 if isinstance(value, str):
                     config['paths'][key] = Path(value)
+        
+        if 'dwd_paths' in config:
+            for key, value in config['dwd_paths'].items():
+                if isinstance(value, str):
+                    config['dwd_paths'][key] = Path(value)
         
         _base_config_cache = config
         logger.info(f"Base configuration loaded successfully from {config_path}", 
@@ -217,13 +222,14 @@ def get_data_paths(logger: logging.Logger, config_root: Optional[Path] = None) -
     
     This is one of the required functions from available_functions.py.
     Returns all configured paths as Path objects for consistent file handling.
+    Now includes both general paths and DWD-specific paths.
     
     Args:
         logger: Logger instance for error reporting
         config_root: Root directory for configuration files (defaults to app/config)
         
     Returns:
-        Dictionary mapping path names to Path objects
+        Dictionary mapping path names to Path objects, including both 'paths' and 'dwd_paths'
         
     Raises:
         ConfigurationError: If base config is missing or paths section is invalid
@@ -231,22 +237,35 @@ def get_data_paths(logger: logging.Logger, config_root: Optional[Path] = None) -
     try:
         base_config = _load_base_config(logger, config_root)
         
-        if 'paths' not in base_config:
-            error_msg = "Missing 'paths' section in base configuration"
+        path_objects = {}
+        
+        # Process general paths section
+        if 'paths' in base_config:
+            paths = base_config['paths']
+            for key, value in paths.items():
+                if isinstance(value, (str, Path)):
+                    path_objects[key] = Path(value)
+                else:
+                    error_msg = f"Invalid path configuration for '{key}': {value}"
+                    logger.error(error_msg, extra={"component": "CONFIG"})
+                    raise ConfigurationError(error_msg)
+        
+        # Process DWD-specific paths section
+        if 'dwd_paths' in base_config:
+            dwd_paths = base_config['dwd_paths']
+            for key, value in dwd_paths.items():
+                if isinstance(value, (str, Path)):
+                    # Prefix DWD paths with 'dwd_' to avoid naming conflicts
+                    path_objects[f"dwd_{key}"] = Path(value)
+                else:
+                    error_msg = f"Invalid DWD path configuration for '{key}': {value}"
+                    logger.error(error_msg, extra={"component": "CONFIG"})
+                    raise ConfigurationError(error_msg)
+        
+        if not path_objects:
+            error_msg = "No path configurations found in base configuration"
             logger.error(error_msg, extra={"component": "CONFIG"})
             raise ConfigurationError(error_msg)
-        
-        paths = base_config['paths']
-        
-        # Ensure all paths are Path objects
-        path_objects = {}
-        for key, value in paths.items():
-            if isinstance(value, (str, Path)):
-                path_objects[key] = Path(value)
-            else:
-                error_msg = f"Invalid path configuration for '{key}': {value}"
-                logger.error(error_msg, extra={"component": "CONFIG"})
-                raise ConfigurationError(error_msg)
         
         logger.info(f"Data paths loaded successfully: {list(path_objects.keys())}", 
                    extra={"component": "CONFIG"})
@@ -254,6 +273,50 @@ def get_data_paths(logger: logging.Logger, config_root: Optional[Path] = None) -
         
     except Exception as e:
         error_msg = f"Failed to load data paths: {str(e)}"
+        logger.error(error_msg, extra={"component": "CONFIG"})
+        raise ConfigurationError(error_msg) from e
+
+def get_dwd_paths(logger: logging.Logger, config_root: Optional[Path] = None) -> Dict[str, Path]:
+    """
+    Get DWD-specific data directory paths.
+    
+    Convenience function to get only the DWD pipeline paths without the 'dwd_' prefix.
+    
+    Args:
+        logger: Logger instance for error reporting
+        config_root: Root directory for configuration files (defaults to app/config)
+        
+    Returns:
+        Dictionary mapping DWD path names to Path objects (without 'dwd_' prefix)
+        
+    Raises:
+        ConfigurationError: If base config is missing or dwd_paths section is invalid
+    """
+    try:
+        base_config = _load_base_config(logger, config_root)
+        
+        if 'dwd_paths' not in base_config:
+            error_msg = "Missing 'dwd_paths' section in base configuration"
+            logger.error(error_msg, extra={"component": "CONFIG"})
+            raise ConfigurationError(error_msg)
+        
+        dwd_paths = base_config['dwd_paths']
+        path_objects = {}
+        
+        for key, value in dwd_paths.items():
+            if isinstance(value, (str, Path)):
+                path_objects[key] = Path(value)
+            else:
+                error_msg = f"Invalid DWD path configuration for '{key}': {value}"
+                logger.error(error_msg, extra={"component": "CONFIG"})
+                raise ConfigurationError(error_msg)
+        
+        logger.info(f"DWD paths loaded successfully: {list(path_objects.keys())}", 
+                   extra={"component": "CONFIG"})
+        return path_objects
+        
+    except Exception as e:
+        error_msg = f"Failed to load DWD paths: {str(e)}"
         logger.error(error_msg, extra={"component": "CONFIG"})
         raise ConfigurationError(error_msg) from e
 
@@ -295,6 +358,10 @@ class ConfigManager:
     def get_data_paths(self) -> Dict[str, Path]:
         """Get standardized data directory paths"""
         return get_data_paths(self.logger, self.config_root)
+    
+    def get_dwd_paths(self) -> Dict[str, Path]:
+        """Get DWD-specific data directory paths"""
+        return get_dwd_paths(self.logger, self.config_root)
 
 # Example usage and testing
 if __name__ == "__main__":
@@ -306,19 +373,25 @@ if __name__ == "__main__":
         print("Testing ClimaStation Configuration Manager")
         print("=" * 50)
         
-        # Test data paths loading
+        # Test general data paths loading
         print("\n1. Testing get_data_paths():")
         paths = get_data_paths(logger)
         for name, path in paths.items():
             print(f"   {name}: {path} (type: {type(path).__name__})")
         
+        # Test DWD-specific paths loading
+        print("\n2. Testing get_dwd_paths():")
+        dwd_paths = get_dwd_paths(logger)
+        for name, path in dwd_paths.items():
+            print(f"   {name}: {path} (type: {type(path).__name__})")
+        
         # Test base configuration only
-        print("\n2. Testing load_config() with non-existent dataset:")
+        print("\n3. Testing load_config() with non-existent dataset:")
         config = load_config("non_existent_dataset", logger)
         print(f"   Loaded config keys: {list(config.keys())}")
         
         # Test dataset-specific configuration
-        print("\n3. Testing load_config() with 10-minute air temperature dataset:")
+        print("\n4. Testing load_config() with 10-minute air temperature dataset:")
         config = load_config("10_minutes_air_temperature", logger)
         print(f"   Loaded config keys: {list(config.keys())}")
         
@@ -327,22 +400,23 @@ if __name__ == "__main__":
             print(f"   Dataset script code: {config['dataset']['script_code']}")
         
         if 'processing' in config:
-            print(f"   Max workers: {config['processing']['max_workers']}")
-            if 'parallel_folders' in config['processing']:
-                print(f"   Parallel folders: {config['processing']['parallel_folders']}")
+            print(f"   Default workers: {config['processing']['default_workers']}")
+            print(f"   Batch size: {config['processing']['batch_size']}")
         
         # Test caching
-        print("\n4. Testing configuration caching:")
+        print("\n5. Testing configuration caching:")
         config2 = load_config("10_minutes_air_temperature", logger)
         print(f"   Same object reference: {config is config2}")
         
         # Test legacy ConfigManager
-        print("\n5. Testing legacy ConfigManager:")
+        print("\n6. Testing legacy ConfigManager:")
         config_manager = ConfigManager(logger=logger)
         legacy_config = config_manager.load_dataset_config("10_minutes_air_temperature")
         legacy_paths = config_manager.get_data_paths()
+        legacy_dwd_paths = config_manager.get_dwd_paths()
         print(f"   Legacy config keys: {list(legacy_config.keys())}")
         print(f"   Legacy paths: {list(legacy_paths.keys())}")
+        print(f"   Legacy DWD paths: {list(legacy_dwd_paths.keys())}")
         
         print("\n✅ All configuration tests passed successfully!")
         

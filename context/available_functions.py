@@ -76,22 +76,38 @@ def get_processing_stats(dataset: str, config: Dict[str, Any], logger: Structure
 
 
 
+# ---- Crawler (crawler.py) ----
+def crawl_dwd_repository(config: Dict[str, Any], logger: StructuredLoggerAdapter) -> CrawlResult: 
+    """Crawl DWD repository using configuration and logger."""
+
+
+
+
+
+# ---- Downloader (downloader.py) ----
+def load_urls_from_jsonl(urls_file: Path, logger: StructuredLoggerAdapter, limit: Optional[int] = None, filter_subfolder: Optional[str] = None) -> List[Dict[str, Any]]:
+    """Stream-read JSONL, filter by subfolder in `relative_path`, return dicts."""
+
+def download_with_retry(url: str, destination: Path, config: Dict[str, Any], logger: StructuredLoggerAdapter) -> bool:
+    """Download a file with exponential-backoff retry logic."""
+
+def run_downloader(config: Dict[str, Any], logger: StructuredLoggerAdapter, max_downloads: Optional[int] = None) -> ProcessingResult:
+    """Orchestrate the filtered, limited download of ZIP files."""
+
+
+
+
+
+
 # ---- Run Pipeline (run_pipeline.py) ----
-
-def setup_argument_parser() -> argparse.ArgumentParser:
-    """Set up command line argument parser with validation and help text."""
-
-def validate_dataset_config(dataset_name: str) -> bool:
-    """Validate that dataset configuration file exists."""
+def setup_argument_parser():
+    """Run the data processing pipeline."""
 
 def run_crawl_mode(dataset_name: str, logger: StructuredLoggerAdapter, dry_run: bool = False) -> int:
     """Execute crawl mode to discover DWD repository structure."""
 
-def run_download_mode(dataset_name: str, logger: StructuredLoggerAdapter, dry_run: bool = False) -> int:
+def run_download_mode(dataset_name: str, logger: StructuredLoggerAdapter, dry_run: bool = False, limit: Optional[int] = None) -> int:
     """Execute download mode to fetch DWD data files."""
-
-def run_process_mode(dataset_name: str, logger: StructuredLoggerAdapter, dry_run: bool = False) -> int:
-    """Execute process mode to transform downloaded files."""
 
 def main() -> int:
     """Main entrypoint for the pipeline runner."""

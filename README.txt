@@ -361,24 +361,30 @@ Architectural Constraints:
 
 ## Immediate Task (Current Focus)
 
-### 🔧 Crawler and Downloader Refactor
+### 🔧 Crawler and Downloader Throttle + User-Agent (Responsible Access Review)
 
-- `downloader.py` was implemented but is not yet working correctly
-- `run_pipeline.py` was updated to support `--mode download`, but it depends on a working downloader
-- `crawler.py` must be updated to recursively discover and list **all ZIP file URLs**, not just folder paths
-  - Each `.jsonl` line must represent one downloadable ZIP file
-- `downloader.py` must be refactored to **only download** the listed files from `dwd_urls.jsonl`
-  - No directory crawling should happen in this step
+Now that the pipeline efficiently downloads files, we must ensure it follows best practices to avoid overloading DWD servers. This applies to both the crawler and downloader scripts.
+
+We will update `crawler.py` and `downloader.py` to implement responsible access strategies:
+
+- Add a **custom User-Agent header** to all HTTP requests identifying ClimaStation
+- Add an optional `--throttle` argument to `run_pipeline.py`
+  - Applies to both crawler and downloader
+  - Introduces a delay (e.g., 0.3 seconds) between HTTP requests
+- Keep all operations sequential (no parallel requests)
+- Confirm that `crawler.py` is not revisiting the same directory multiple times or issuing excessive requests
 
 **Success Criteria:**
-- `crawler.py` outputs one `.jsonl` line per ZIP file (not per folder)
-- `downloader.py` downloads all listed files and respects retry logic
-- Downloaded files are saved into the correct dataset subfolders
-- Works when invoked via:
-  python app/main/run_pipeline.py --mode download --dataset 10_minutes_air_temperature
+- `downloader.py` pauses between file downloads when `--throttle` is set
+- `crawler.py` pauses between directory requests when `--throttle` is set
+- A custom User-Agent string is used for **all** HTTP requests
+- Logs reflect both header use and throttle sleep intervals
+- Default behavior remains fast for offline or local testing (`--throttle` defaults to 0.0)
+
 
 
 ---
+
 
 ### Current Folder Structure
 
@@ -418,6 +424,7 @@ CLIMASTATION
 │   │   ├── config_manager.py (finished, can't tell if it is working as intended or not)
 │   │   ├── enhanced_logger.py (finished and is working fine for crawling, needs validation for other tasks)
 │   │   ├── file_operations.py (finished, can't tell if it is working as intended or not)
+│   │   ├── http_headers.py
 │   │   └── progress_tracker.py (finished, but needs validation in practice)
 │   └── __init__.py
 ├── context/             (For AI implementation)

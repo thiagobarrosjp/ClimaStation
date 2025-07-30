@@ -71,7 +71,8 @@ import traceback
 
 from app.config.ten_minutes_air_temperature_config import (
     PARAM_NAME_MAP, SENSOR_TYPE_TRANSLATIONS, 
-    MEASUREMENT_METHOD_TRANSLATIONS, COLUMN_NAME_MAP
+    MEASUREMENT_METHOD_TRANSLATIONS, COLUMN_NAME_MAP,
+    TRANSLATIONS
 )
 
 # Import logger utility
