@@ -231,7 +231,7 @@ This project uses a two-chat development strategy to split architectural plannin
   - Creates clear implementation prompts
   - Ensures modularity and consistency
 
-- **v0 (Implementation Assistant)**:
+- **ChatGPT o4-mini-high (Implementation Assistant)**:
   - Writes code based on context files and task prompts
   - Follows strict constraints with no architectural decisions
 
@@ -336,7 +336,7 @@ Architectural Constraints:
 
 --------------------------------------------------------------------------------------------------------------
 ---------------------------------------- PART 3: DAILY STATUS ------------------------------------------------
----------------------------------------- Last updated: 2025-07-29 --------------------------------------------
+---------------------------------------- Last updated: 2025-07-31 --------------------------------------------
 
 
 ### Development Roadmap
@@ -361,25 +361,56 @@ Architectural Constraints:
 
 ## Immediate Task (Current Focus)
 
-### 🔧 Crawler and Downloader Throttle + User-Agent (Responsible Access Review)
+### 🔧 Two‑Stage Crawler Refactor + Throttle & User‑Agent Compliance
 
-Now that the pipeline efficiently downloads files, we must ensure it follows best practices to avoid overloading DWD servers. This applies to both the crawler and downloader scripts.
+We need to complete the **crawler-side** responsible access work and finalize the **two‑stage crawl design** so we don’t have to crawl the entire repository to get URLs for a single dataset.
 
-We will update `crawler.py` and `downloader.py` to implement responsible access strategies:
+**Goals**
+- Keep server load low (custom User‑Agent + throttle).
+- Make crawling **dataset‑scoped** and fast via a cached directory index.
+- Preserve our sequential, fail‑fast, streaming design.
 
-- Add a **custom User-Agent header** to all HTTP requests identifying ClimaStation
-- Add an optional `--throttle` argument to `run_pipeline.py`
-  - Applies to both crawler and downloader
-  - Introduces a delay (e.g., 0.3 seconds) between HTTP requests
-- Keep all operations sequential (no parallel requests)
-- Confirm that `crawler.py` is not revisiting the same directory multiple times or issuing excessive requests
+**What to implement**
 
-**Success Criteria:**
-- `downloader.py` pauses between file downloads when `--throttle` is set
-- `crawler.py` pauses between directory requests when `--throttle` is set
-- A custom User-Agent string is used for **all** HTTP requests
-- Logs reflect both header use and throttle sleep intervals
-- Default behavior remains fast for offline or local testing (`--throttle` defaults to 0.0)
+1. **Two sub‑modes for crawling**
+   - **`index`**: Fetch **directory listing pages only** (no file GETs), starting at `--root-url`; build or refresh a lightweight cache:  
+     `data/dwd/1_crawl_dwd/index_manifest.jsonl`
+   - **`expand`**: For `--dataset <key>`, read the dataset YAML and expand **only the configured subpaths** into file URLs **using the cached index**; write to:  
+     `data/dwd/1_crawl_dwd/<dataset>/urls.jsonl`
+
+2. **CLI & parameters (in `run_pipeline.py`)**
+   - `--crawl-mode index|expand` (default: `expand`)
+   - `--root-url` (required for `index`)
+   - `--dataset` (required for `expand`)
+   - `--throttle <seconds>` (default: `0.0`, applies to crawler HTTP requests)
+   - `--force-refresh` (re-crawl directories even if cached)
+
+3. **Responsible access**
+   - Use a **centralized custom User‑Agent** for **all** crawler requests via `http_headers.get_default_headers()`.
+   - Enforce throttle **inside crawler** after each HTTP request (directory fetch), e.g., `time.sleep(throttle)` when `throttle > 0`.
+   - Keep operations strictly **sequential** (no parallelism).
+
+4. **Behavior & logging**
+   - `index`: traverse directory pages (BFS/DFS), collect child directories, **do not** request file URLs here.
+   - `expand`: parse file links only for subpaths defined in the dataset YAML; deduplicate outputs.
+   - Log at INFO: visited URL, mode, counts; at DEBUG: **User‑Agent** once at start and each **throttle sleep** interval.
+   - Support **resume**: skip directories already present in the index unless `--force-refresh` is set.
+
+**Acceptance / Success Criteria**
+- Running `--crawl-mode index` builds or updates `index_manifest.jsonl` while:
+  - Using the centralized **User‑Agent** for every HTTP request.
+  - Applying throttle sleeps between directory requests when `--throttle > 0`.
+  - Logging UA and throttle sleeps in DEBUG.
+- Running `--crawl-mode expand --dataset 10_minutes_air_temperature` produces  
+  `data/dwd/1_crawl_dwd/10_minutes_air_temperature/urls.jsonl` containing only the file URLs from the dataset’s configured subpaths (`historical`, `recent`, `now`, `meta_data`).
+- **Downloader** continues to consume `urls.jsonl` unchanged.
+- Default behavior remains fast for offline/local testing (`--throttle` defaults to `0.0`).
+- The process remains **sequential** and **fail‑fast**; no duplicate URL entries are emitted.
+
+**Notes**
+- Recommended production throttle for directory crawling: **0.3–1.0s** (tune as needed).
+- Indexing directory pages should require **orders of magnitude fewer requests** than file‑by‑file crawling; the full file fetch happens later in the **downloader** stage.
+
 
 
 
@@ -403,7 +434,7 @@ CLIMASTATION
 │   │   └── run_pipeline.py
 │   ├── pipeline/
 │   │   ├── crawler.py    (finished and validated)
-│   │   ├── downloader.py (next)
+│   │   ├── downloader.py (successfully tested for small number of files)
 │   │   ├── enricher.py
 │   │   ├── extractor.py
 │   │   ├── parser.py
@@ -425,6 +456,7 @@ CLIMASTATION
 │   │   ├── enhanced_logger.py (finished and is working fine for crawling, needs validation for other tasks)
 │   │   ├── file_operations.py (finished, can't tell if it is working as intended or not)
 │   │   ├── http_headers.py
+│   │   ├── paths.py
 │   │   └── progress_tracker.py (finished, but needs validation in practice)
 │   └── __init__.py
 ├── context/             (For AI implementation)

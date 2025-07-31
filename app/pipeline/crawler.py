@@ -25,7 +25,6 @@ USAGE:
     logger = get_logger("CRAWLER")
     config = load_config("10_minutes_air_temperature", logger)
 
-    # Crawl repository
     result = crawl_dwd_repository(config, logger)
     # result.output_files["urls"] points to dwd_urls.jsonl
 
@@ -42,7 +41,6 @@ INTEGRATION:
 - Uses enhanced_logger with CRAWLER component
 - Compatible with run_pipeline.py in crawl mode
 """
-
 import requests
 from bs4 import BeautifulSoup, Tag
 from urllib.parse import urljoin
@@ -50,7 +48,7 @@ from dataclasses import dataclass
 import json
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Optional
 
 from app.utils.http_headers import default_headers
 from app.utils.enhanced_logger import StructuredLoggerAdapter
@@ -71,7 +69,12 @@ class DWDRepositoryCrawler:
     Recursively discovers all ZIP file URLs under the DWD dataset root
     and writes them out as one JSONL record per file.
     """
-    def __init__(self, config: Dict[str, Any], logger: StructuredLoggerAdapter):
+    def __init__(
+        self,
+        config: Dict[str, Any],
+        logger: StructuredLoggerAdapter,
+        throttle: Optional[float] = None,  # CLI throttle overrides config float = None
+    ):
         self.config = config
         self.logger = logger
 
@@ -82,7 +85,11 @@ class DWDRepositoryCrawler:
         )
         self.max_depth = crawler_cfg.get('max_depth', 10)
         self.request_timeout = crawler_cfg.get('request_timeout_seconds', 30)
-        self.request_delay = crawler_cfg.get('request_delay_seconds', 0.1)
+
+        # Determine request_delay: CLI throttle overrides config
+        cfg_delay = crawler_cfg.get('request_delay_seconds', 0.1)
+        self.request_delay = throttle if throttle is not None else cfg_delay
+
         self.max_retries = crawler_cfg.get('max_retries', 3)
 
         # Determine output directory (data/dwd/1_crawl_dwd/{dataset_name})
@@ -106,17 +113,41 @@ class DWDRepositoryCrawler:
                 "structured_data": {
                     "base_url": self.base_url,
                     "output_dir": str(self.output_dir),
-                    "max_depth": self.max_depth
+                    "max_depth": self.max_depth,
+                    "throttle": self.request_delay
                 }
             }
         )
 
     def _make_request(self, url: str, retries: int = 0) -> Any:
         try:
-            resp = requests.get(url, timeout=self.request_timeout)
+            resp = requests.get(
+                url,
+                headers=default_headers(),
+                timeout=self.request_timeout
+            )
             resp.raise_for_status()
-            if self.request_delay > 0:
+
+            # Log the visited URL
+            self.logger.info(
+                f"Visited URL: {url}",
+                extra={
+                    "component": "CRAWLER",
+                    "structured_data": {"url": url}
+                }
+            )
+
+            # Apply throttle if set
+            if self.request_delay and self.request_delay > 0.0:
+                self.logger.info(
+                    f"Sleeping for {self.request_delay}s before next crawl request...",
+                    extra={
+                        "component": "CRAWLER",
+                        "structured_data": {"sleep_duration": self.request_delay}
+                    }
+                )
                 time.sleep(self.request_delay)
+
             return resp
         except requests.exceptions.RequestException as e:
             if retries < self.max_retries:
@@ -129,6 +160,7 @@ class DWDRepositoryCrawler:
                 )
                 time.sleep(2 ** retries)
                 return self._make_request(url, retries + 1)
+
             self.logger.error(
                 f"Failed request after retries: {url}",
                 extra={"component": "CRAWLER", "structured_data": {"url": url, "error": str(e)}}
@@ -137,18 +169,18 @@ class DWDRepositoryCrawler:
 
     def _parse_listing(self, response: Any) -> Tuple[List[str], List[str]]:
         soup = BeautifulSoup(response.text, "html.parser")
-        # Extract only string hrefs from <a> tags
-        hrefs = [
-            tag['href']
+        # Extract all hfrefs as plain strings
+        hrefs: List[str] = [
+            str(tag['href']) 
             for tag in soup.find_all("a", href=True)
             if isinstance(tag, Tag)
                and isinstance(tag['href'], str)
                and tag['href'] not in ('../', '/')
         ]
-        # Use explicit str conversions to satisfy typing
-        subdirs = [h for h in hrefs if str(h).endswith("/")]
-        zip_files = [h for h in hrefs if str(h).lower().endswith(".zip")]
-        return list(map(str, subdirs)), list(map(str, zip_files))
+        # Now these are truly List[str]
+        subdirs: List[str] = [h for h in hrefs if str(h).endswith("/")]
+        zip_files: List[str] = [h for h in hrefs if str(h).lower().endswith(".zip")]
+        return subdirs, zip_files
 
     def _crawl_directory(self, url: str, path_parts: List[str], fp) -> None:
         self.crawled_count += 1
@@ -157,7 +189,10 @@ class DWDRepositoryCrawler:
         if len(path_parts) > self.max_depth:
             self.logger.warning(
                 f"Max depth {self.max_depth} reached at {rel_path}",
-                extra={"component": "CRAWLER", "structured_data": {"path": rel_path, "depth": len(path_parts)}}
+                extra={
+                    "component": "CRAWLER",
+                    "structured_data": {"path": rel_path, "depth": len(path_parts)}
+                }
             )
             return
 
@@ -242,6 +277,10 @@ class DWDRepositoryCrawler:
             output_files={"urls": urls_path}
         )
 
-def crawl_dwd_repository(config: Dict[str, Any], logger: StructuredLoggerAdapter) -> CrawlResult:
-    crawler = DWDRepositoryCrawler(config, logger)
+def crawl_dwd_repository(
+    config: Dict[str, Any],
+    logger: StructuredLoggerAdapter,
+    throttle: Optional[float] = None,  # CLI throttle overrides config float = None
+) -> CrawlResult:
+    crawler = DWDRepositoryCrawler(config, logger, throttle=throttle)
     return crawler.crawl_repository()

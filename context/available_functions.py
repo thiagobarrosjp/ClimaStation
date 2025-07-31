@@ -76,6 +76,16 @@ def get_processing_stats(dataset: str, config: Dict[str, Any], logger: Structure
 
 
 
+# ---- Paths (paths.py) ----
+def get_index_manifest_path() -> Path:
+    """Returns the canonical path for the index manifest file."""
+
+def get_dataset_crawl_outdir(dataset: str) -> Path:
+    """Returns the canonical output directory for a dataset's crawl."""
+
+
+
+
 # ---- Crawler (crawler.py) ----
 def crawl_dwd_repository(config: Dict[str, Any], logger: StructuredLoggerAdapter) -> CrawlResult: 
     """Crawl DWD repository using configuration and logger."""
@@ -93,7 +103,6 @@ def download_with_retry(url: str, destination: Path, config: Dict[str, Any], log
 
 def run_downloader(config: Dict[str, Any], logger: StructuredLoggerAdapter, max_downloads: Optional[int] = None) -> ProcessingResult:
     """Orchestrate the filtered, limited download of ZIP files."""
-
 
 
 

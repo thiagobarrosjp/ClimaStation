@@ -108,9 +108,11 @@ def download_file(url: str, destination: Path, config: Dict[str, Any], logger: S
         session.mount("http://", adapter)
         session.mount("https://", adapter)
         
-        # Set headers to identify as a research/academic user
+        # Centralize User-Agent via default_headers()
+        from app.utils.http_headers import default_headers
+        default = default_headers()
         headers = {
-            'User-Agent': 'ClimaStation/1.0 (Climate Data Research Tool)',
+            **default,
             'Accept': 'application/octet-stream, */*',
             'Accept-Encoding': 'gzip, deflate'
         }

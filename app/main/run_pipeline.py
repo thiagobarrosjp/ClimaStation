@@ -65,7 +65,8 @@ def setup_argument_parser():
 def run_crawl_mode(
     dataset_name: str,
     logger: StructuredLoggerAdapter,
-    dry_run: bool = False
+    dry_run: bool = False,
+    throttle: Optional[float] = None
 ) -> int:
     """
     Execute crawl mode to discover DWD repository structure.
@@ -73,7 +74,7 @@ def run_crawl_mode(
     try:
         logger.info("Starting crawl mode", extra={
             "component": "CRAWLER",
-            "structured_data": {"dataset": dataset_name, "mode": "crawl", "dry_run": dry_run}
+            "structured_data": {"dataset": dataset_name, "mode": "crawl", "dry_run": dry_run, "throttle": throttle}
         })
 
         # Load dataset configuration
@@ -98,7 +99,7 @@ def run_crawl_mode(
             "component": "CRAWLER",
             "structured_data": {"dataset": dataset_name}
         })
-        result = crawl_dwd_repository(config, logger)
+        result = crawl_dwd_repository(config, logger, throttle=throttle)
 
         # Print success summary
         print("\n" + "="*60)
@@ -265,7 +266,8 @@ def main():
         return run_crawl_mode(
             dataset_name=args.dataset,
             logger=logger,
-            dry_run=args.dry_run
+            dry_run=args.dry_run,
+            throttle=args.throttle
         )
     elif args.mode == 'download':
         return run_download_mode(
