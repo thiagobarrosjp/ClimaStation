@@ -22,6 +22,15 @@ dwd_paths:
   debug: "data/dwd/0_debug"
   crawl_data: "data/dwd/1_crawl_dwd"
 
+crawler:
+  # This is the root of the DWD repository
+  base_url: "https://opendata.dwd.de/climate_environment/CDC/observations_germany/"
+  max_depth: 10
+  request_timeout_seconds: 30
+  request_delay_seconds: 0.1
+  max_retries: 3
+
+
 # Logging configuration
 logging:
   # Log level: DEBUG, INFO, WARNING, ERROR, CRITICAL

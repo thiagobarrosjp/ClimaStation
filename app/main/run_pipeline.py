@@ -1,5 +1,6 @@
 import argparse
 import sys
+import os
 from pathlib import Path
 from typing import Optional
 import traceback
@@ -57,7 +58,7 @@ def setup_argument_parser():
         '--throttle',
         dest='throttle',
         type=float,
-        help="Seconds to wait between each file download (optional)"
+        help="Seconds to wait between each HTTP request (optional)"
     )
     return parser
 
@@ -74,7 +75,12 @@ def run_crawl_mode(
     try:
         logger.info("Starting crawl mode", extra={
             "component": "CRAWLER",
-            "structured_data": {"dataset": dataset_name, "mode": "crawl", "dry_run": dry_run, "throttle": throttle}
+            "structured_data": {
+                "dataset": dataset_name,
+                "mode": "crawl",
+                "dry_run": dry_run,
+                "throttle": throttle
+            }
         })
 
         # Load dataset configuration
@@ -85,9 +91,32 @@ def run_crawl_mode(
         config = load_config(dataset_name, logger.logger)
         config['name'] = dataset_name
 
+        # Derive crawler scope from the dataset's `paths:` section
+        dataset_paths = config.get('paths', {})
+        if not dataset_paths:
+            raise ConfigurationError("Dataset YAML must include a top-level 'paths:' mapping")
+
+        # Compute the common parent (e.g. "10_minutes/air_temperature")
+        common_parent = os.path.commonpath([str(p) for p in dataset_paths.values()])
+
+        # INFORM crawler of dataset root under base_url
+        config['base_path'] = common_parent.rstrip('/') + '/'
+
+        # Inject into crawler config for fallback
+        crawler_cfg = config.setdefault('crawler', {})
+        crawler_cfg['dataset_path'] = common_parent.rstrip('/') + '/'
+        # subpaths are individual folder names
+        crawler_cfg['subpaths'] = [
+            Path(str(p)).name.rstrip('/') + '/' for p in dataset_paths.values()
+        ]
+
         logger.info("Configuration loaded successfully", extra={
             "component": "CRAWLER",
-            "structured_data": {"dataset": dataset_name}
+            "structured_data": {
+                "dataset": dataset_name,
+                "base_path": config['base_path'],
+                "subpaths": crawler_cfg['subpaths']
+            }
         })
 
         if dry_run:
@@ -110,7 +139,7 @@ def run_crawl_mode(
         print("="*60)
         print(f"📁 URLs discovered: {len(result.url_records):,}")
         print(f"⏱️  Elapsed time: {result.elapsed_time:.2f} seconds")
-        print(f"💾 URL records file: {result.output_files['urls']}")
+        print(f"💾 URL records file: {result.output_files['urls']}" )
 
         logger.info("Crawl mode completed", extra={
             "component": "CRAWLER",
@@ -250,7 +279,7 @@ def run_download_mode(
             "structured_data": {"dataset": dataset_name, "error": str(e)}
         })
         print(f"❌ Download failed: {e}")
-        if logger.logger.level <= 10:
+        if logger.logger.level <= 10:  # DEBUG
             traceback.print_exc()
         return 1
 
@@ -259,32 +288,32 @@ def main():
     parser = setup_argument_parser()
     args = parser.parse_args()
 
-    component_name = "PIPELINE"
-    logger = get_logger(component_name)
+    logger = get_logger("PIPELINE")
 
     if args.mode == 'crawl':
-        return run_crawl_mode(
+        sys.exit(run_crawl_mode(
             dataset_name=args.dataset,
             logger=logger,
             dry_run=args.dry_run,
             throttle=args.throttle
-        )
+        ))
     elif args.mode == 'download':
-        return run_download_mode(
+        sys.exit(run_download_mode(
             dataset_name=args.dataset,
             logger=logger,
             dry_run=args.dry_run,
             subfolder=args.subfolder,
             max_downloads=args.max_downloads,
             throttle=args.throttle
-        )
+        ))
     elif args.mode == 'process':
         # Process mode logic here
-        pass
+        print("Process mode is not yet implemented.")
+        sys.exit(1)
     else:
         print("Invalid mode specified")
-        return 1
+        sys.exit(1)
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    main()

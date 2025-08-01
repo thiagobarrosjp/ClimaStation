@@ -359,58 +359,23 @@ Architectural Constraints:
 
 ---
 
-## Immediate Task (Current Focus)
+### 🔧 Immediate Task (Current Focus) — Crawl Only Dataset-Defined Subpaths
 
-### 🔧 Two‑Stage Crawler Refactor + Throttle & User‑Agent Compliance
+#### Problem
 
-We need to complete the **crawler-side** responsible access work and finalize the **two‑stage crawl design** so we don’t have to crawl the entire repository to get URLs for a single dataset.
+The current crawler explores the entire DWD repository, even when a specific dataset is passed via `--dataset`. This wastes time, violates intended modularity, and stores ambiguous output (`dwd_urls.jsonl`) that doesn’t reflect its scope.
 
-**Goals**
-- Keep server load low (custom User‑Agent + throttle).
-- Make crawling **dataset‑scoped** and fast via a cached directory index.
-- Preserve our sequential, fail‑fast, streaming design.
+#### Goal
 
-**What to implement**
+Update the crawler logic to:
 
-1. **Two sub‑modes for crawling**
-   - **`index`**: Fetch **directory listing pages only** (no file GETs), starting at `--root-url`; build or refresh a lightweight cache:  
-     `data/dwd/1_crawl_dwd/index_manifest.jsonl`
-   - **`expand`**: For `--dataset <key>`, read the dataset YAML and expand **only the configured subpaths** into file URLs **using the cached index**; write to:  
-     `data/dwd/1_crawl_dwd/<dataset>/urls.jsonl`
+1. **Only crawl subpaths explicitly defined** in the dataset YAML file.
+2. **Write output to a dataset-specific filename** (e.g., `dwd_10_minutes_air_temperature_urls.jsonl`).
+3. **Preserve per-dataset output folder** (`data/dwd/1_crawl_dwd/<dataset>/`).
 
-2. **CLI & parameters (in `run_pipeline.py`)**
-   - `--crawl-mode index|expand` (default: `expand`)
-   - `--root-url` (required for `index`)
-   - `--dataset` (required for `expand`)
-   - `--throttle <seconds>` (default: `0.0`, applies to crawler HTTP requests)
-   - `--force-refresh` (re-crawl directories even if cached)
+#### Example Command
 
-3. **Responsible access**
-   - Use a **centralized custom User‑Agent** for **all** crawler requests via `http_headers.get_default_headers()`.
-   - Enforce throttle **inside crawler** after each HTTP request (directory fetch), e.g., `time.sleep(throttle)` when `throttle > 0`.
-   - Keep operations strictly **sequential** (no parallelism).
-
-4. **Behavior & logging**
-   - `index`: traverse directory pages (BFS/DFS), collect child directories, **do not** request file URLs here.
-   - `expand`: parse file links only for subpaths defined in the dataset YAML; deduplicate outputs.
-   - Log at INFO: visited URL, mode, counts; at DEBUG: **User‑Agent** once at start and each **throttle sleep** interval.
-   - Support **resume**: skip directories already present in the index unless `--force-refresh` is set.
-
-**Acceptance / Success Criteria**
-- Running `--crawl-mode index` builds or updates `index_manifest.jsonl` while:
-  - Using the centralized **User‑Agent** for every HTTP request.
-  - Applying throttle sleeps between directory requests when `--throttle > 0`.
-  - Logging UA and throttle sleeps in DEBUG.
-- Running `--crawl-mode expand --dataset 10_minutes_air_temperature` produces  
-  `data/dwd/1_crawl_dwd/10_minutes_air_temperature/urls.jsonl` containing only the file URLs from the dataset’s configured subpaths (`historical`, `recent`, `now`, `meta_data`).
-- **Downloader** continues to consume `urls.jsonl` unchanged.
-- Default behavior remains fast for offline/local testing (`--throttle` defaults to `0.0`).
-- The process remains **sequential** and **fail‑fast**; no duplicate URL entries are emitted.
-
-**Notes**
-- Recommended production throttle for directory crawling: **0.3–1.0s** (tune as needed).
-- Indexing directory pages should require **orders of magnitude fewer requests** than file‑by‑file crawling; the full file fetch happens later in the **downloader** stage.
-
+python app/main/run_pipeline.py --mode crawl --dataset 10_minutes_air_temperature --throttle 1
 
 
 

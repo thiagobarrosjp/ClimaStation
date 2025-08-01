@@ -20,10 +20,10 @@ dataset:
   description: "DWD 10-minute air temperature measurements"
 
 paths:
-  historical: "10_minutes/air_temperature/historical"
-  recent: "10_minutes/air_temperature/recent"
-  now: "10_minutes/air_temperature/now"
-  metadata: "10_minutes/air_temperature/meta_data"
+  historical: "climate/10_minutes/air_temperature/historical"
+  recent: "climate/10_minutes/air_temperature/recent"
+  now: "climate/10_minutes/air_temperature/now"
+  metadata: "climate/10_minutes/air_temperature/meta_data"
 
 processing:
   parallel_folders: true            # Process historical/recent/now in parallel
