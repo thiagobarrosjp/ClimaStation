@@ -30,19 +30,9 @@ Thumbs.db
 # === Output from data pipeline ===
 # Ignore all generated data — keep only README.md or .gitkeep to preserve folder structure
 
-# Debug logs
-data/dwd/0_debug/*
-!data/dwd/0_debug/.gitkeep
+# === Ignore everything under data/ ===
+data/**
 
-# Downloaded files (raw data - can be large)
-data/dwd/2_downloaded_files/*
-!data/dwd/2_downloaded_files/.gitkeep
-!data/dwd/2_downloaded_files/README.md
-
-# Parsed files (processed output - can be large)
-data/dwd/3_parsed_files/*
-!data/dwd/3_parsed_files/.gitkeep
-!data/dwd/3_parsed_files/README.md
 
 # === Backup or development files ===
 *.old
