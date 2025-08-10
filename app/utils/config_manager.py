@@ -1,428 +1,234 @@
 """
 ClimaStation Configuration Manager
 
-SCRIPT IDENTIFICATION: DWD10TAH3C (Configuration Manager)
+SCRIPT IDENTIFICATION: DWD10TAH2T (Configuration Manager)
 
 PURPOSE:
-Centralized configuration loading and management for the ClimaStation platform.
-Handles layered configuration (base + dataset-specific) and provides typed
-access to configuration values with caching and proper error handling.
+Centralized configuration management for the ClimaStation platform.
+Handles loading and validation of YAML configuration files for both
+base system settings and dataset-specific configurations.
 
 RESPONSIBILITIES:
 - Load and parse YAML configuration files
-- Merge base configuration with dataset-specific overrides
-- Provide typed configuration objects for different components
-- Cache configurations to avoid repeated file reads
-- Convert string paths to Path objects automatically
-- Handle configuration file errors gracefully with proper logging
+- Provide unified access to base and dataset configurations
+- Validate configuration structure and required fields
+- Handle configuration file errors gracefully
+- Support configuration inheritance and overrides
+
+CONFIGURATION STRUCTURE:
+- base_config.yaml: System-wide settings (paths, logging, etc.)
+- {dataset_name}.yaml: Dataset-specific settings (source paths, processing options)
 
 USAGE:
-    logger = get_logger("config_test")
-    config = load_config("10_minutes_air_temperature", logger)
-    paths = get_data_paths(logger)
-
-CONFIGURATION HIERARCHY:
-1. base_config.yaml - Global settings for all processing
-2. datasets/{name}.yaml - Dataset-specific overrides and settings
-3. Merged result with dataset settings taking precedence
+    config_manager = ConfigManager()
+    base_config = config_manager.get_base_config()
+    dataset_config = config_manager.get_dataset_config("10_minutes_air_temperature")
 
 ERROR HANDLING:
-- Missing configuration files raise ConfigurationError with CONFIG component logging
-- Invalid YAML syntax raises ConfigurationError with detailed messages
-- Missing required configuration keys raise ConfigurationError
-- Graceful handling of missing dataset configs (falls back to base only)
+- FileNotFoundError for missing configuration files
+- yaml.YAMLError for malformed YAML syntax
+- Detailed error messages with file paths and context
+
+THREAD SAFETY:
+Configuration loading is stateless and thread-safe.
+Multiple instances can safely load configurations concurrently.
 """
 
 import yaml
 from pathlib import Path
-from typing import Dict, Any, Optional, Union
-import logging
-from functools import lru_cache
+from typing import Dict, Any
 
-class ConfigurationError(Exception):
-    """Raised when configuration loading or validation fails"""
-    pass
 
-# Global cache for configurations to avoid repeated file reads
-_config_cache: Dict[str, Optional[Dict[str, Any]]] = {}
-_base_config_cache: Optional[Dict[str, Any]] = None
-
-def _load_base_config(logger: logging.Logger, config_root: Optional[Path] = None) -> Dict[str, Any]:
-    """
-    Load base configuration file with caching.
-    
-    Args:
-        logger: Logger instance for error reporting
-        config_root: Root directory for configuration files (defaults to app/config)
-        
-    Returns:
-        Dictionary containing base configuration
-        
-    Raises:
-        ConfigurationError: If base config file is missing or invalid
-    """
-    global _base_config_cache
-    
-    if _base_config_cache is not None:
-        return _base_config_cache
-    
-    config_root = config_root or Path("app/config")
-    config_path = config_root / "base_config.yaml"
-    
-    if not config_path.exists():
-        error_msg = f"Base configuration file not found: {config_path}"
-        logger.error(error_msg, extra={"component": "CONFIG"})
-        raise ConfigurationError(error_msg)
-        
-    try:
-        with open(config_path, 'r', encoding='utf-8') as f:
-            config = yaml.safe_load(f)
-            
-        if not config:
-            error_msg = f"Base configuration file is empty: {config_path}"
-            logger.error(error_msg, extra={"component": "CONFIG"})
-            raise ConfigurationError(error_msg)
-            
-        # Convert string paths to Path objects in both paths and dwd_paths sections
-        if 'paths' in config:
-            for key, value in config['paths'].items():
-                if isinstance(value, str):
-                    config['paths'][key] = Path(value)
-        
-        if 'dwd_paths' in config:
-            for key, value in config['dwd_paths'].items():
-                if isinstance(value, str):
-                    config['dwd_paths'][key] = Path(value)
-        
-        _base_config_cache = config
-        logger.info(f"Base configuration loaded successfully from {config_path}", 
-                   extra={"component": "CONFIG"})
-        return config
-        
-    except yaml.YAMLError as e:
-        error_msg = f"Invalid YAML in base configuration: {e}"
-        logger.error(error_msg, extra={"component": "CONFIG"})
-        raise ConfigurationError(error_msg)
-    except Exception as e:
-        error_msg = f"Error loading base configuration: {e}"
-        logger.error(error_msg, extra={"component": "CONFIG"})
-        raise ConfigurationError(error_msg)
-
-def _load_dataset_config(dataset_name: str, logger: logging.Logger, 
-                        config_root: Optional[Path] = None) -> Optional[Dict[str, Any]]:
-    """
-    Load dataset-specific configuration with caching.
-    
-    Args:
-        dataset_name: Name of the dataset (e.g., "10_minutes_air_temperature")
-        logger: Logger instance for error reporting
-        config_root: Root directory for configuration files (defaults to app/config)
-        
-    Returns:
-        Dictionary containing dataset configuration or None if not found
-        
-    Raises:
-        ConfigurationError: If dataset config file exists but is invalid
-    """
-    if dataset_name in _config_cache:
-        return _config_cache[dataset_name]
-    
-    config_root = config_root or Path("app/config")
-    config_path = config_root / "datasets" / f"{dataset_name}.yaml"
-    
-    if not config_path.exists():
-        logger.warning(f"Dataset configuration file not found: {config_path}. Using base config only.", 
-                      extra={"component": "CONFIG"})
-        _config_cache[dataset_name] = None
-        return None
-        
-    try:
-        with open(config_path, 'r', encoding='utf-8') as f:
-            config = yaml.safe_load(f)
-            
-        if not config:
-            error_msg = f"Dataset configuration file is empty: {config_path}"
-            logger.error(error_msg, extra={"component": "CONFIG"})
-            raise ConfigurationError(error_msg)
-            
-        # Convert string paths to Path objects in dataset config
-        if 'paths' in config:
-            for key, value in config['paths'].items():
-                if isinstance(value, str):
-                    config['paths'][key] = Path(value)
-                    
-        _config_cache[dataset_name] = config
-        logger.info(f"Dataset configuration loaded successfully: {dataset_name}", 
-                   extra={"component": "CONFIG"})
-        return config
-        
-    except yaml.YAMLError as e:
-        error_msg = f"Invalid YAML in dataset configuration {dataset_name}: {e}"
-        logger.error(error_msg, extra={"component": "CONFIG"})
-        raise ConfigurationError(error_msg)
-    except Exception as e:
-        error_msg = f"Error loading dataset configuration {dataset_name}: {e}"
-        logger.error(error_msg, extra={"component": "CONFIG"})
-        raise ConfigurationError(error_msg)
-
-def load_config(dataset_name: str, logger: logging.Logger, 
-                config_root: Optional[Path] = None) -> Dict[str, Any]:
-    """
-    Load merged configuration (base + dataset-specific).
-    
-    This is one of the required functions from available_functions.py.
-    Loads base configuration and merges it with dataset-specific settings,
-    with dataset settings taking precedence over base settings.
-    
-    Args:
-        dataset_name: Name of the dataset (e.g., "10_minutes_air_temperature")
-        logger: Logger instance for error reporting
-        config_root: Root directory for configuration files (defaults to app/config)
-        
-    Returns:
-        Dictionary containing merged configuration with Path objects for paths
-        
-    Raises:
-        ConfigurationError: If base config is missing or invalid, or if dataset config is invalid
-    """
-    try:
-        # Load base configuration (required)
-        base_config = _load_base_config(logger, config_root)
-        
-        # Load dataset configuration (optional)
-        dataset_config = _load_dataset_config(dataset_name, logger, config_root)
-        
-        if dataset_config is None:
-            logger.info(f"Using base configuration only for dataset: {dataset_name}", 
-                       extra={"component": "CONFIG"})
-            return base_config.copy()
-        
-        # Merge configurations - dataset settings override base settings
-        merged_config = base_config.copy()
-        
-        # Deep merge for nested dictionaries
-        for key, value in dataset_config.items():
-            if key in merged_config and isinstance(merged_config[key], dict) and isinstance(value, dict):
-                merged_config[key] = {**merged_config[key], **value}
-            else:
-                merged_config[key] = value
-        
-        logger.info(f"Configuration merged successfully for dataset: {dataset_name}", 
-                   extra={"component": "CONFIG"})
-        return merged_config
-        
-    except Exception as e:
-        error_msg = f"Failed to load configuration for dataset {dataset_name}: {str(e)}"
-        logger.error(error_msg, extra={"component": "CONFIG"})
-        raise ConfigurationError(error_msg) from e
-
-def get_data_paths(logger: logging.Logger, config_root: Optional[Path] = None) -> Dict[str, Path]:
-    """
-    Get standardized data directory paths.
-    
-    This is one of the required functions from available_functions.py.
-    Returns all configured paths as Path objects for consistent file handling.
-    Now includes both general paths and DWD-specific paths.
-    
-    Args:
-        logger: Logger instance for error reporting
-        config_root: Root directory for configuration files (defaults to app/config)
-        
-    Returns:
-        Dictionary mapping path names to Path objects, including both 'paths' and 'dwd_paths'
-        
-    Raises:
-        ConfigurationError: If base config is missing or paths section is invalid
-    """
-    try:
-        base_config = _load_base_config(logger, config_root)
-        
-        path_objects = {}
-        
-        # Process general paths section
-        if 'paths' in base_config:
-            paths = base_config['paths']
-            for key, value in paths.items():
-                if isinstance(value, (str, Path)):
-                    path_objects[key] = Path(value)
-                else:
-                    error_msg = f"Invalid path configuration for '{key}': {value}"
-                    logger.error(error_msg, extra={"component": "CONFIG"})
-                    raise ConfigurationError(error_msg)
-        
-        # Process DWD-specific paths section
-        if 'dwd_paths' in base_config:
-            dwd_paths = base_config['dwd_paths']
-            for key, value in dwd_paths.items():
-                if isinstance(value, (str, Path)):
-                    # Prefix DWD paths with 'dwd_' to avoid naming conflicts
-                    path_objects[f"dwd_{key}"] = Path(value)
-                else:
-                    error_msg = f"Invalid DWD path configuration for '{key}': {value}"
-                    logger.error(error_msg, extra={"component": "CONFIG"})
-                    raise ConfigurationError(error_msg)
-        
-        if not path_objects:
-            error_msg = "No path configurations found in base configuration"
-            logger.error(error_msg, extra={"component": "CONFIG"})
-            raise ConfigurationError(error_msg)
-        
-        logger.info(f"Data paths loaded successfully: {list(path_objects.keys())}", 
-                   extra={"component": "CONFIG"})
-        return path_objects
-        
-    except Exception as e:
-        error_msg = f"Failed to load data paths: {str(e)}"
-        logger.error(error_msg, extra={"component": "CONFIG"})
-        raise ConfigurationError(error_msg) from e
-
-def get_dwd_paths(logger: logging.Logger, config_root: Optional[Path] = None) -> Dict[str, Path]:
-    """
-    Get DWD-specific data directory paths.
-    
-    Convenience function to get only the DWD pipeline paths without the 'dwd_' prefix.
-    
-    Args:
-        logger: Logger instance for error reporting
-        config_root: Root directory for configuration files (defaults to app/config)
-        
-    Returns:
-        Dictionary mapping DWD path names to Path objects (without 'dwd_' prefix)
-        
-    Raises:
-        ConfigurationError: If base config is missing or dwd_paths section is invalid
-    """
-    try:
-        base_config = _load_base_config(logger, config_root)
-        
-        if 'dwd_paths' not in base_config:
-            error_msg = "Missing 'dwd_paths' section in base configuration"
-            logger.error(error_msg, extra={"component": "CONFIG"})
-            raise ConfigurationError(error_msg)
-        
-        dwd_paths = base_config['dwd_paths']
-        path_objects = {}
-        
-        for key, value in dwd_paths.items():
-            if isinstance(value, (str, Path)):
-                path_objects[key] = Path(value)
-            else:
-                error_msg = f"Invalid DWD path configuration for '{key}': {value}"
-                logger.error(error_msg, extra={"component": "CONFIG"})
-                raise ConfigurationError(error_msg)
-        
-        logger.info(f"DWD paths loaded successfully: {list(path_objects.keys())}", 
-                   extra={"component": "CONFIG"})
-        return path_objects
-        
-    except Exception as e:
-        error_msg = f"Failed to load DWD paths: {str(e)}"
-        logger.error(error_msg, extra={"component": "CONFIG"})
-        raise ConfigurationError(error_msg) from e
-
-def clear_config_cache():
-    """
-    Clear the configuration cache.
-    
-    Useful for development/testing when configuration files are modified
-    and need to be reloaded.
-    """
-    global _config_cache, _base_config_cache
-    _config_cache.clear()
-    _base_config_cache = None
-
-# Legacy ConfigManager class for backward compatibility
 class ConfigManager:
     """
-    Legacy configuration manager class.
+    Manages loading and accessing configuration files for the ClimaStation platform.
     
-    Maintained for backward compatibility with existing code.
-    New code should use the load_config() and get_data_paths() functions directly.
+    Provides centralized access to both base system configuration and 
+    dataset-specific configurations with proper error handling and validation.
     """
     
-    def __init__(self, config_root: Optional[Path] = None, logger: Optional[logging.Logger] = None):
+    def __init__(self, config_dir: str = "configs"):
         """
-        Initialize configuration manager.
+        Initialize the ConfigManager with the directory containing configuration files.
         
         Args:
-            config_root: Root directory for configuration files (defaults to app/config)
-            logger: Logger instance (creates basic logger if not provided)
+            config_dir: Directory where configuration files are stored
         """
-        self.config_root = config_root or Path("app/config")
-        self.logger = logger or logging.getLogger("climastation.config")
+        self.config_dir = Path(config_dir)
+        self.base_config_path = self.config_dir / "base_config.yaml"
+    
+    def _load_config(self, config_path: Path) -> Dict[str, Any]:
+        """
+        Load a YAML configuration file from the specified path.
         
-    def load_dataset_config(self, dataset_name: str) -> Dict[str, Any]:
-        """Load merged configuration for a dataset"""
-        return load_config(dataset_name, self.logger, self.config_root)
+        Args:
+            config_path: Path to the YAML configuration file
+            
+        Returns:
+            Dictionary containing the configuration data
+        
+        Raises:
+            FileNotFoundError: If the configuration file does not exist
+            yaml.YAMLError: If there is an error parsing the YAML file
+        """
+        try:
+            with open(config_path, "r", encoding="utf-8") as f:
+                config = yaml.safe_load(f)
+            return config or {}  # Return empty dict if file is empty
+        except FileNotFoundError:
+            raise FileNotFoundError(f"Configuration file not found: {config_path}")
+        except yaml.YAMLError as e:
+            raise yaml.YAMLError(f"Error parsing YAML file: {config_path}\n{e}")
     
-    def get_data_paths(self) -> Dict[str, Path]:
-        """Get standardized data directory paths"""
-        return get_data_paths(self.logger, self.config_root)
+    def _load_base_config(self) -> Dict[str, Any]:
+        """
+        Load the base configuration.
+        
+        Returns:
+            Dictionary containing the base configuration
+        """
+        return self._load_config(self.base_config_path)
     
-    def get_dwd_paths(self) -> Dict[str, Path]:
-        """Get DWD-specific data directory paths"""
-        return get_dwd_paths(self.logger, self.config_root)
+    def _load_dataset_config(self, dataset_name: str) -> Dict[str, Any]:
+        """
+        Load the configuration for a specific dataset.
+        
+        Args:
+            dataset_name: Name of the dataset
+            
+        Returns:
+            Dictionary containing the dataset configuration
+        
+        Raises:
+            FileNotFoundError: If the dataset configuration file does not exist
+        """
+        dataset_config_path = self.config_dir / f"{dataset_name}.yaml"
+        return self._load_config(dataset_config_path)
+    
+    def get_base_config(self) -> Dict[str, Any]:
+        """
+        Get the base configuration.
+        
+        Returns:
+            Dictionary containing base configuration
+        """
+        return self._load_base_config()
+    
+    def get_dataset_config(self, dataset_name: str) -> Dict[str, Any]:
+        """
+        Get configuration for a specific dataset.
+        
+        Args:
+            dataset_name: Name of the dataset
+        
+        Returns:
+            Dictionary containing dataset configuration
+        """
+        return self._load_dataset_config(dataset_name)
+    
+    def validate_base_config(self, config: Dict[str, Any]) -> bool:
+        """
+        Validate that base configuration has required fields.
+        
+        Args:
+            config: Base configuration dictionary
+            
+        Returns:
+            True if configuration is valid
+            
+        Raises:
+            ValueError: If required fields are missing
+        """
+        required_fields = ['paths', 'logging']
+        required_paths = ['progress_db', 'temp_dir']
+        
+        for field in required_fields:
+            if field not in config:
+                raise ValueError(f"Missing required field in base config: {field}")
+        
+        for path_field in required_paths:
+            if path_field not in config.get('paths', {}):
+                raise ValueError(f"Missing required path in base config: paths.{path_field}")
+        
+        return True
+    
+    def validate_dataset_config(self, config: Dict[str, Any], dataset_name: str) -> bool:
+        """
+        Validate that dataset configuration has required fields.
+        
+        Args:
+            config: Dataset configuration dictionary
+            dataset_name: Name of the dataset for error messages
+            
+        Returns:
+            True if configuration is valid
+            
+        Raises:
+            ValueError: If required fields are missing
+        """
+        required_fields = ['source', 'output', 'processing']
+        
+        for field in required_fields:
+            if field not in config:
+                raise ValueError(f"Missing required field in {dataset_name} config: {field}")
+        
+        # Validate source configuration
+        if 'base_path' not in config.get('source', {}):
+            raise ValueError(f"Missing required field in {dataset_name} config: source.base_path")
+        
+        # Validate output configuration
+        if 'base_path' not in config.get('output', {}):
+            raise ValueError(f"Missing required field in {dataset_name} config: output.base_path")
+        
+        return True
+    
+    def get_validated_base_config(self) -> Dict[str, Any]:
+        """
+        Get base configuration with validation.
+        
+        Returns:
+            Validated base configuration dictionary
+            
+        Raises:
+            ValueError: If configuration is invalid
+        """
+        config = self.get_base_config()
+        self.validate_base_config(config)
+        return config
+    
+    def get_validated_dataset_config(self, dataset_name: str) -> Dict[str, Any]:
+        """
+        Get dataset configuration with validation.
+        
+        Args:
+            dataset_name: Name of the dataset
+            
+        Returns:
+            Validated dataset configuration dictionary
+            
+        Raises:
+            ValueError: If configuration is invalid
+        """
+        config = self.get_dataset_config(dataset_name)
+        self.validate_dataset_config(config, dataset_name)
+        return config
+
 
 # Example usage and testing
 if __name__ == "__main__":
-    # Set up basic logging for testing
-    logging.basicConfig(level=logging.INFO, format='%(levelname)s - %(message)s')
-    logger = logging.getLogger("config_test")
-    
     try:
-        print("Testing ClimaStation Configuration Manager")
-        print("=" * 50)
+        # Test configuration manager
+        config_manager = ConfigManager()
         
-        # Test general data paths loading
-        print("\n1. Testing get_data_paths():")
-        paths = get_data_paths(logger)
-        for name, path in paths.items():
-            print(f"   {name}: {path} (type: {type(path).__name__})")
+        # Test base config loading
+        base_config = config_manager.get_base_config()
+        print(f"✅ Loaded base config: {len(base_config)} sections")
         
-        # Test DWD-specific paths loading
-        print("\n2. Testing get_dwd_paths():")
-        dwd_paths = get_dwd_paths(logger)
-        for name, path in dwd_paths.items():
-            print(f"   {name}: {path} (type: {type(path).__name__})")
+        # Test dataset config loading
+        dataset_config = config_manager.get_dataset_config("10_minutes_air_temperature")
+        print(f"✅ Loaded dataset config: {len(dataset_config)} sections")
         
-        # Test base configuration only
-        print("\n3. Testing load_config() with non-existent dataset:")
-        config = load_config("non_existent_dataset", logger)
-        print(f"   Loaded config keys: {list(config.keys())}")
+        print("✅ Configuration manager test successful")
         
-        # Test dataset-specific configuration
-        print("\n4. Testing load_config() with 10-minute air temperature dataset:")
-        config = load_config("10_minutes_air_temperature", logger)
-        print(f"   Loaded config keys: {list(config.keys())}")
-        
-        if 'dataset' in config:
-            print(f"   Dataset name: {config['dataset']['name']}")
-            print(f"   Dataset script code: {config['dataset']['script_code']}")
-        
-        if 'processing' in config:
-            print(f"   Default workers: {config['processing']['default_workers']}")
-            print(f"   Batch size: {config['processing']['batch_size']}")
-        
-        # Test caching
-        print("\n5. Testing configuration caching:")
-        config2 = load_config("10_minutes_air_temperature", logger)
-        print(f"   Same object reference: {config is config2}")
-        
-        # Test legacy ConfigManager
-        print("\n6. Testing legacy ConfigManager:")
-        config_manager = ConfigManager(logger=logger)
-        legacy_config = config_manager.load_dataset_config("10_minutes_air_temperature")
-        legacy_paths = config_manager.get_data_paths()
-        legacy_dwd_paths = config_manager.get_dwd_paths()
-        print(f"   Legacy config keys: {list(legacy_config.keys())}")
-        print(f"   Legacy paths: {list(legacy_paths.keys())}")
-        print(f"   Legacy DWD paths: {list(legacy_dwd_paths.keys())}")
-        
-        print("\n✅ All configuration tests passed successfully!")
-        
-    except ConfigurationError as e:
-        print(f"\n❌ Configuration error: {e}")
     except Exception as e:
-        print(f"\n❌ Unexpected error: {e}")
-        import traceback
-        traceback.print_exc()
+        print(f"❌ Configuration manager test failed: {e}")

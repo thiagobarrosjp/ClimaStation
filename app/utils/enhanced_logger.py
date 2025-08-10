@@ -1,404 +1,401 @@
 """
-ClimaStation Enhanced Logging System
+ClimaStation Enhanced Logger
 
-SCRIPT IDENTIFICATION: DWD10TAH3L (Enhanced Logger)
+SCRIPT IDENTIFICATION: DWDLOG1T (Enhanced Logger)
 
 PURPOSE:
 Centralized logging system for the ClimaStation platform with component-based
-identification codes, structured formatting, and high-volume processing support.
-Provides consistent logging across all pipeline components with proper integration
-to the configuration system.
+identification, structured output, and performance monitoring capabilities.
+Provides consistent logging across all processors, orchestrators, and utilities.
 
 RESPONSIBILITIES:
-- Create component-specific loggers with standardized formatting
-- Support multiple output destinations (file, console) with different levels
-- Provide structured logging for processing statistics and metadata
-- Handle high-volume logging for bulk file processing (500k+ files)
-- Integrate with configuration system for dynamic log settings
-- Support component-based traceability across the entire pipeline
-
-USAGE:
-    from app.utils.enhanced_logger import get_logger
-    logger = get_logger("PROCESSOR")
-    logger.info("Processing started", extra={"component": "PROCESSOR", "dataset": "air_temp"})
+- Create component-specific loggers with unique identification codes
+- Provide structured logging with consistent formatting
+- Support multiple log levels and output destinations
+- Enable performance monitoring and timing
+- Handle log rotation and file management
+- Support both console and file output
 
 COMPONENT CODES:
-- CONFIG: Configuration loading and validation
-- PROCESSOR: Dataset processing operations  
-- ORCHESTRATOR: Pipeline orchestration and coordination
-- WORKER: Parallel file processing workers
-- DOWNLOAD: File download operations
-- EXTRACT: ZIP extraction operations
-- VALIDATE: Data validation operations
+- DWD10TAH1T: Main orchestrator
+- DWD10TAH2T: Configuration manager
+- DWD10TAH3T: Raw parser
+- DWD10TAH4T: Base processor
+- DWD10TAH5T: Dataset processors
+- DWDLOG1T: Enhanced logger
+- DWDTRANS1T: Translation manager
 
-LOG FORMAT:
-[TIMESTAMP] [COMPONENT] [LEVEL] MESSAGE {structured_data}
+USAGE:
+    from utils.enhanced_logger import setup_logger, get_logger
+    
+    # Create component logger
+    logger = setup_logger("DWD10TAH5T", "air_temperature_processor")
+    
+    # Use structured logging
+    logger.info("Processing started", extra={"file_count": 100, "dataset": "air_temp"})
+    
+    # Performance timing
+    with logger.timer("file_processing"):
+        process_file(file_path)
 
-PERFORMANCE:
-- Optimized for high-volume logging scenarios
-- Efficient file rotation and buffering
-- Minimal performance impact on processing pipeline
+FEATURES:
+- Component-based identification for traceability
+- Structured logging with extra context
+- Performance timing utilities
+- Automatic log rotation
+- Console and file output
+- Debug mode support
+- Memory usage tracking
+
+ERROR HANDLING:
+- Graceful fallback if log directory creation fails
+- Safe handling of log rotation errors
+- Proper cleanup of resources
 """
 
 import logging
 import logging.handlers
-from pathlib import Path
-from typing import Dict, Any, Optional, Union
-import json
 import sys
+from pathlib import Path
+from typing import Optional, Dict, Any, Union
+from datetime import datetime
+from contextlib import contextmanager
+import time
+import traceback
 import threading
-
-# Global logger registry to avoid duplicate logger creation
-_logger_registry: Dict[str, "StructuredLoggerAdapter"] = {}
-_logging_configured = False
-_config_lock = threading.Lock()
-
-# Centralized log directory path (change here if needed)
-DEFAULT_LOG_DIR = Path("data/dwd/0_debug")
-DEFAULT_LOG_FILE = DEFAULT_LOG_DIR / "climastation.log"
+from dataclasses import dataclass
 
 
-class ComponentFormatter(logging.Formatter):
+@dataclass
+class LogConfig:
+    """Configuration for logger setup"""
+    level: str = "INFO"
+    console_output: bool = True
+    file_output: bool = True
+    log_dir: Path = Path("logs")
+    max_file_size: int = 10 * 1024 * 1024  # 10MB
+    backup_count: int = 5
+    format_string: str = "%(asctime)s - [%(component_id)s] - %(name)s - %(levelname)s - %(message)s"
+
+
+class ComponentLogger(logging.Logger):
     """
-    Custom formatter for component-based logging with structured data support.
+    Enhanced logger with component identification and performance monitoring.
     
-    Provides consistent formatting across all ClimaStation components with
-    support for structured data and component identification.
+    Extends the standard Python logger with ClimaStation-specific features
+    like component codes, structured logging, and timing utilities.
     """
     
-    def __init__(self, include_structured_data: bool = True):
+    def __init__(self, name: str, component_id: str, level: int = logging.NOTSET):
         """
-        Initialize the component formatter.
+        Initialize component logger.
         
         Args:
-            include_structured_data: Whether to include structured data in output
+            name: Logger name
+            component_id: Component identification code (e.g., "DWD10TAH5T")
+            level: Logging level
         """
-        self.include_structured_data = include_structured_data
-        # Base format: [TIMESTAMP] [COMPONENT] [LEVEL] MESSAGE
-        super().__init__(
-            fmt='%(asctime)s [%(component)s] [%(levelname)s] %(message)s',
-            datefmt='%Y-%m-%d %H:%M:%S'
-        )
+        super().__init__(name, level)
+        self.component_id = component_id
+        self._timers: Dict[str, float] = {}
+        self._lock = threading.Lock()
     
-    def format(self, record: logging.LogRecord) -> str:
-        """
-        Format log record with component information and structured data.
+    def _log_with_component(self, level: int, msg: Any, args, exc_info=None, extra=None, stack_info=False, **kwargs):
+        """Override to add component ID to all log records"""
+        if extra is None:
+            extra = {}
+        extra['component_id'] = self.component_id
         
-        Args:
-            record: Log record to format
+        # Add structured data if provided
+        if kwargs:
+            extra.update(kwargs)
+        
+        super()._log(level, msg, args, exc_info=exc_info, extra=extra, stack_info=stack_info)
+    
+    def debug(self, msg, *args, **kwargs):
+        """Log debug message with component ID"""
+        if self.isEnabledFor(logging.DEBUG):
+            self._log_with_component(logging.DEBUG, msg, args, **kwargs)
+    
+    def info(self, msg, *args, **kwargs):
+        """Log info message with component ID"""
+        if self.isEnabledFor(logging.INFO):
+            self._log_with_component(logging.INFO, msg, args, **kwargs)
+    
+    def warning(self, msg, *args, **kwargs):
+        """Log warning message with component ID"""
+        if self.isEnabledFor(logging.WARNING):
+            self._log_with_component(logging.WARNING, msg, args, **kwargs)
+    
+    def error(self, msg, *args, **kwargs):
+        """Log error message with component ID"""
+        if self.isEnabledFor(logging.ERROR):
+            self._log_with_component(logging.ERROR, msg, args, **kwargs)
+    
+    def critical(self, msg, *args, **kwargs):
+        """Log critical message with component ID"""
+        if self.isEnabledFor(logging.CRITICAL):
+            self._log_with_component(logging.CRITICAL, msg, args, **kwargs)
+    
+    def start_timer(self, timer_name: str):
+        """Start a performance timer"""
+        with self._lock:
+            self._timers[timer_name] = time.time()
+            self.debug(f"Timer started: {timer_name}")
+    
+    def stop_timer(self, timer_name: str) -> Optional[float]:
+        """Stop a performance timer and return elapsed time"""
+        with self._lock:
+            if timer_name not in self._timers:
+                self.warning(f"Timer '{timer_name}' was not started")
+                return None
             
-        Returns:
-            Formatted log message string
-        """
-        # Ensure component is always present
-        if not hasattr(record, 'component'):
-            setattr(record, 'component', 'UNKNOWN')
-        
-        # Format the base message
-        formatted_message = super().format(record)
-        
-        # Add structured data if present and enabled
-        if self.include_structured_data:
-            structured_data = getattr(record, 'structured_data', None)
-            if structured_data is not None:
-                try:
-                    structured_str = json.dumps(structured_data, separators=(',', ':'))
-                    formatted_message += f" {structured_str}"
-                except (TypeError, ValueError):
-                    # Fallback if structured data can't be serialized
-                    formatted_message += f" {structured_data}"
-        
-        return formatted_message
-
-class StructuredLoggerAdapter(logging.LoggerAdapter):
-    """
-    Logger adapter that automatically adds component information and supports structured data.
-    
-    Enhances standard logging with component identification and structured data support
-    for better traceability and analysis.
-    """
-    
-    def __init__(self, logger: logging.Logger, component_code: str):
-        """
-        Initialize the structured logger adapter.
-        
-        Args:
-            logger: Base logger instance
-            component_code: Component identification code (e.g., 'PROCESSOR', 'CONFIG')
-        """
-        super().__init__(logger, {'component': component_code})
-        self.component_code = component_code
-    
-    def process(self, msg: str, kwargs: Dict[str, Any]) -> tuple:
-        """
-        Process log message and add component information.
-        
-        Args:
-            msg: Log message
-            kwargs: Keyword arguments including 'extra'
+            elapsed = time.time() - self._timers[timer_name]
+            del self._timers[timer_name]
             
-        Returns:
-            Tuple of (message, kwargs) with component information added
-        """
-        # Ensure extra dict exists
+            self.info(f"Timer completed: {timer_name} ({elapsed:.3f}s)")
+            return elapsed
+    
+    @contextmanager
+    def timer(self, timer_name: str):
+        """Context manager for timing operations"""
+        self.start_timer(timer_name)
+        try:
+            yield
+        finally:
+            self.stop_timer(timer_name)
+    
+    def log_exception(self, msg: str = "Exception occurred"):
+        """Log current exception with full traceback"""
+        self.error(f"{msg}: {traceback.format_exc()}")
+    
+    def log_performance(self, operation: str, duration: float, **metrics):
+        """Log performance metrics"""
+        extra_data = {"operation": operation, "duration_seconds": duration}
+        extra_data.update(metrics)
+        
+        self.info(f"Performance: {operation} completed in {duration:.3f}s", **extra_data)
+
+
+class ComponentLoggerAdapter(logging.LoggerAdapter):
+    """Adapter to add component ID to existing loggers"""
+    
+    def __init__(self, logger: logging.Logger, component_id: str):
+        super().__init__(logger, {"component_id": component_id})
+        self.component_id = component_id
+    
+    def process(self, msg, kwargs):
+        """Add component ID to log record"""
         if 'extra' not in kwargs:
             kwargs['extra'] = {}
-        
-        # Add component information
-        kwargs['extra']['component'] = self.component_code
-        
-        # Handle structured data
-        if 'structured_data' in kwargs:
-            kwargs['extra']['structured_data'] = kwargs.pop('structured_data')
-        
+        kwargs['extra']['component_id'] = self.component_id
         return msg, kwargs
-    
-    def log_processing_stats(self, level: int, dataset: str, files_processed: int, 
-                           files_failed: int, duration_seconds: float, **kwargs):
-        """
-        Log processing statistics in a structured format.
-        
-        Args:
-            level: Log level (logging.INFO, logging.ERROR, etc.)
-            dataset: Dataset name being processed
-            files_processed: Number of files successfully processed
-            files_failed: Number of files that failed processing
-            duration_seconds: Processing duration in seconds
-            **kwargs: Additional structured data
-        """
-        structured_data = {
-            'dataset': dataset,
-            'files_processed': files_processed,
-            'files_failed': files_failed,
-            'duration_seconds': round(duration_seconds, 2),
-            'success_rate': round((files_processed / (files_processed + files_failed)) * 100, 1) if (files_processed + files_failed) > 0 else 0,
-            **kwargs
-        }
-        
-        message = f"Processing completed for {dataset}: {files_processed} success, {files_failed} failed"
-        self.log(level, message, structured_data=structured_data)
-    
-    def log_file_operation(self, level: int, operation: str, file_path: Union[str, Path], 
-                          success: bool, error_msg: Optional[str] = None, **kwargs):
-        """
-        Log file operation with structured data.
-        
-        Args:
-            level: Log level
-            operation: Operation type (download, extract, process, validate)
-            file_path: Path to file being operated on
-            success: Whether operation succeeded
-            error_msg: Error message if operation failed
-            **kwargs: Additional structured data
-        """
-        structured_data = {
-            'operation': operation,
-            'file_path': str(file_path),
-            'success': success,
-            **kwargs
-        }
-        
-        if error_msg:
-            structured_data['error'] = error_msg
-        
-        status = "completed" if success else "failed"
-        message = f"File {operation} {status}: {Path(file_path).name}"
-        
-        self.log(level, message, structured_data=structured_data)
 
-def _setup_logging_configuration(config: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+
+# Global logger registry
+_logger_registry: Dict[str, ComponentLogger] = {}
+_registry_lock = threading.Lock()
+
+
+def setup_logger(
+    component_id: str,
+    name: Optional[str] = None,
+    config: Optional[LogConfig] = None
+) -> ComponentLogger:
     """
-    Set up logging configuration.
-    """
-    logging_config = {
-        'level': 'INFO',
-        'log_to_file': True,
-        'max_file_size_mb': 100,
-        'backup_count': 5,
-        'format': '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    }
-    # Use fixed debug folder
-    log_dir = DEFAULT_LOG_DIR
-    log_file = DEFAULT_LOG_FILE
-
-    log_dir.mkdir(parents=True, exist_ok=True)
-    logging_config['log_file'] = log_file
-
-    return logging_config
-
-
-
-def _create_file_handler(log_file_path: Path, logging_config: Dict[str, Any]) -> logging.Handler:
-    """
-    Create rotating file handler for centralized logging.
+    Set up a component logger with standardized configuration.
     
     Args:
-        log_file_path: Path to log file
-        logging_config: Logging configuration dictionary
+        component_id: Component identification code (e.g., "DWD10TAH5T")
+        name: Logger name (defaults to component_id)
+        config: Logger configuration (uses defaults if not provided)
         
     Returns:
-        Configured file handler
+        Configured ComponentLogger instance
     """
-    # First remove any existing log file so we can start fresh
-    try:
-        if log_file_path.exists():
-            log_file_path.unlink()
-    except Exception:
-        # If we can't delete, proceed anyway (handler's mode ='w' will truncate it)
-        pass
-
-    # Use rotating file handler for high-volume logging
-    max_bytes = logging_config.get('max_file_size_mb', 100) * 1024 * 1024
-    backup_count = logging_config.get('backup_count', 5)
+    if config is None:
+        config = LogConfig()
     
-    file_handler = logging.handlers.RotatingFileHandler(
-        filename=log_file_path,
-        mode='w',
-        maxBytes=max_bytes,
-        backupCount=backup_count,
-        encoding='utf-8'
-    )
+    if name is None:
+        name = component_id.lower()
     
-    log_level = logging_config.get('level', 'INFO')
-    file_handler.setLevel(getattr(logging, log_level.upper()))
-    file_handler.setFormatter(ComponentFormatter(include_structured_data=True))
-    
-    return file_handler
-
-def _create_console_handler(logging_config: Dict[str, Any]) -> logging.Handler:
-    """
-    Create console handler for development and debugging.
-    
-    Args:
-        logging_config: Logging configuration dictionary
-        
-    Returns:
-        Configured console handler
-    """
-    console_handler = logging.StreamHandler(sys.stdout)
-    
-    # Console typically shows INFO and above to reduce noise
-    console_handler.setLevel(logging.INFO)
-    console_handler.setFormatter(ComponentFormatter(include_structured_data=False))
-    
-    return console_handler
-
-def configure_logging(config: Optional[Dict[str, Any]] = None):
-    """
-    Configure the global logging system.
-    
-    This function should be called once at application startup to set up
-    the centralized logging configuration.
-    
-    Args:
-        config: Configuration dictionary from config manager
-    """
-    global _logging_configured
-    
-    with _config_lock:
-        if _logging_configured:
-            return
-        
-        logging_config = _setup_logging_configuration(config)
-        
-        # Configure root logger
-        root_logger = logging.getLogger()
-        log_level = logging_config.get('level', 'INFO')
-        root_logger.setLevel(getattr(logging, log_level.upper()))
-        
-        # Clear any existing handlers
-        root_logger.handlers.clear()
-        
-        # Add file handler if enabled
-        if logging_config.get('log_to_file', True):
-            log_file_path = logging_config['log_file']
-            file_handler = _create_file_handler(log_file_path, logging_config)
-            root_logger.addHandler(file_handler)
-        
-        # Add console handler
-        console_handler = _create_console_handler(logging_config)
-        root_logger.addHandler(console_handler)
-        
-        _logging_configured = True
-
-def get_logger(component_name: str, config: Optional[Dict[str, Any]] = None) -> StructuredLoggerAdapter:
-    """
-    Get a component-specific logger with structured logging support.
-    
-    This is the main function from available_functions.py that provides
-    standardized logging across all ClimaStation components.
-    
-    Args:
-        component_name: Component code (CONFIG, PROCESSOR, ORCHESTRATOR, etc.)
-        config: Optional configuration dictionary (will load from config manager if not provided)
-        
-    Returns:
-        Structured logger adapter configured for the component
-        
-    Raises:
-        ValueError: If component_name is invalid
-    """
-    # Validate component name
-    valid_components = {
-        'CONFIG', 'PROCESSOR', 'PIPELINE', 'ORCHESTRATOR', 'WORKER', 
-        'DOWNLOAD', 'EXTRACT', 'VALIDATE', 'CRAWLER',  'UNKNOWN'
-    }
-    
-    if component_name not in valid_components:
-        raise ValueError(f"Invalid component name: {component_name}. Must be one of: {valid_components}")
-    
-    # Configure logging if not already done
-    if not _logging_configured:
-        configure_logging(config)
-    
-    # Check if logger already exists in our manual cache
-    logger_key = f"climastation.{component_name.lower()}"
-    
-    if logger_key in _logger_registry:
-        return _logger_registry[logger_key]
+    # Check if logger already exists
+    registry_key = f"{component_id}_{name}"
+    with _registry_lock:
+        if registry_key in _logger_registry:
+            return _logger_registry[registry_key]
     
     # Create new logger
-    base_logger = logging.getLogger(logger_key)
-    structured_logger = StructuredLoggerAdapter(base_logger, component_name)
+    logger = ComponentLogger(name, component_id)
+    logger.setLevel(getattr(logging, config.level.upper()))
     
-    # Cache the logger manually
-    _logger_registry[logger_key] = structured_logger
+    # Remove existing handlers to avoid duplicates
+    logger.handlers.clear()
     
-    return structured_logger
+    # Create formatter
+    formatter = logging.Formatter(config.format_string)
+    
+    # Console handler
+    if config.console_output:
+        console_handler = logging.StreamHandler(sys.stdout)
+        console_handler.setFormatter(formatter)
+        console_handler.setLevel(getattr(logging, config.level.upper()))
+        logger.addHandler(console_handler)
+    
+    # File handler with rotation
+    if config.file_output:
+        try:
+            # Ensure log directory exists
+            config.log_dir.mkdir(parents=True, exist_ok=True)
+            
+            # Create rotating file handler
+            log_file = config.log_dir / f"{component_id.lower()}_{name}.log"
+            file_handler = logging.handlers.RotatingFileHandler(
+                log_file,
+                maxBytes=config.max_file_size,
+                backupCount=config.backup_count,
+                encoding='utf-8'
+            )
+            file_handler.setFormatter(formatter)
+            file_handler.setLevel(getattr(logging, config.level.upper()))
+            logger.addHandler(file_handler)
+            
+        except Exception as e:
+            # Fallback: log to console only
+            logger.warning(f"Failed to create file handler: {e}")
+    
+    # Register logger
+    with _registry_lock:
+        _logger_registry[registry_key] = logger
+    
+    logger.info(f"Logger initialized: {component_id} ({name})")
+    return logger
 
-def get_logger_with_config_manager(component_name: str, config_manager=None) -> StructuredLoggerAdapter:
+
+def get_logger(component_id: str, name: Optional[str] = None) -> Optional[ComponentLogger]:
     """
-    Get logger with automatic config manager integration.
-    
-    Convenience function that automatically loads configuration from
-    the config manager if available.
+    Get existing logger from registry.
     
     Args:
-        component_name: Component code
-        config_manager: ConfigManager instance (optional)
+        component_id: Component identification code
+        name: Logger name (defaults to component_id)
         
     Returns:
-        Structured logger adapter
+        Existing ComponentLogger or None if not found
     """
-    config = None
-    if config_manager:
+    if name is None:
+        name = component_id.lower()
+    
+    registry_key = f"{component_id}_{name}"
+    with _registry_lock:
+        return _logger_registry.get(registry_key)
+
+
+def configure_root_logger(config: Optional[LogConfig] = None):
+    """
+    Configure the root logger for the entire application.
+    
+    Args:
+        config: Logger configuration
+    """
+    if config is None:
+        config = LogConfig()
+    
+    # Configure root logger
+    root_logger = logging.getLogger()
+    root_logger.setLevel(getattr(logging, config.level.upper()))
+    
+    # Remove existing handlers
+    root_logger.handlers.clear()
+    
+    # Create formatter
+    formatter = logging.Formatter(
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
+    
+    # Console handler
+    if config.console_output:
+        console_handler = logging.StreamHandler(sys.stdout)
+        console_handler.setFormatter(formatter)
+        root_logger.addHandler(console_handler)
+    
+    # File handler
+    if config.file_output:
         try:
-            # Try to get logging config from config manager
-            base_config = config_manager._load_base_config(logging.getLogger("temp"))
-            config = base_config  # Use the full config now
-        except Exception:
-            # Fall back to default config if config manager fails
-            pass
-    
-    return get_logger(component_name, config)
+            config.log_dir.mkdir(parents=True, exist_ok=True)
+            log_file = config.log_dir / "climastation.log"
+            
+            file_handler = logging.handlers.RotatingFileHandler(
+                log_file,
+                maxBytes=config.max_file_size,
+                backupCount=config.backup_count,
+                encoding='utf-8'
+            )
+            file_handler.setFormatter(formatter)
+            root_logger.addHandler(file_handler)
+            
+        except Exception as e:
+            print(f"Warning: Failed to create root file handler: {e}")
 
-def clear_logger_cache():
-    """
-    Clear the logger cache.
-    
-    Useful for testing and development when logger configuration changes.
-    """
-    global _logger_registry, _logging_configured
-    _logger_registry.clear()
-    _logging_configured = False
 
+def shutdown_logging():
+    """Shutdown all loggers and clean up resources"""
+    with _registry_lock:
+        for logger in _logger_registry.values():
+            for handler in logger.handlers:
+                handler.close()
+        _logger_registry.clear()
+    
+    logging.shutdown()
+
+
+# Convenience functions for common logging patterns
+def log_function_entry(logger: ComponentLogger, func_name: str, **kwargs):
+    """Log function entry with parameters"""
+    params = ", ".join(f"{k}={v}" for k, v in kwargs.items())
+    logger.debug(f"Entering {func_name}({params})")
+
+
+def log_function_exit(logger: ComponentLogger, func_name: str, result=None, duration: Optional[float] = None):
+    """Log function exit with result and timing"""
+    msg = f"Exiting {func_name}"
+    if duration is not None:
+        msg += f" (took {duration:.3f}s)"
+    if result is not None:
+        msg += f" -> {result}"
+    logger.debug(msg)
+
+
+# Example usage and testing
+if __name__ == "__main__":
+    print("Testing ClimaStation Enhanced Logger...")
+    
+    # Test basic logger setup
+    logger = setup_logger("DWDLOG1T", "test_logger")
+    
+    # Test different log levels
+    logger.debug("This is a debug message")
+    logger.info("This is an info message")
+    logger.warning("This is a warning message")
+    logger.error("This is an error message")
+    
+    # Test structured logging
+    logger.info("Processing file", file_name="test.zip", file_size=1024)
+    
+    # Test timing
+    with logger.timer("test_operation"):
+        time.sleep(0.1)  # Simulate work
+    
+    # Test performance logging
+    logger.log_performance("file_processing", 0.5, files_processed=10, records=1000)
+    
+    # Test exception logging
+    try:
+        raise ValueError("Test exception")
+    except ValueError:
+        logger.log_exception("Test exception handling")
+    
+    print("✅ Enhanced logger test completed")
+    
+    # Clean up
+    shutdown_logging()

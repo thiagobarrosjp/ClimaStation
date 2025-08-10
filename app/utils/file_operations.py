@@ -8,634 +8,464 @@ Robust file handling utilities for downloading, extracting, and validating DWD
 climate data files. Provides standardized file operations with proper error
 handling, retry logic, and comprehensive logging integration.
 
-RESPONSIBILITIES:
-- Download files from DWD servers with retry logic and validation
-- Extract ZIP archives and return lists of extracted files
-- Validate CSV/TXT file structure against expected schemas
-- Handle DWD-specific file formats (semicolon-delimited, German encoding)
-- Integrate with configuration system for timeouts and retry settings
-- Provide detailed logging for all file operations
+PUBLIC API (stable):
+- download_file(url: str, destination: Path, config: Dict[str, Any], logger: StructuredLoggerAdapter) -> bool
+- extract_zip(zip_path: Path, extract_to: Path, config: Dict[str, Any], logger: StructuredLoggerAdapter) -> List[Path]
+- validate_file_structure(file_path: Path, expected_columns: List[str], config: Dict[str, Any], logger: StructuredLoggerAdapter) -> bool
 
-USAGE:
-    from app.utils.file_operations import download_file, extract_zip, validate_file_structure
-    from app.utils.enhanced_logger import get_logger
-    from app.utils.config_manager import load_config
-    
-    logger = get_logger("DOWNLOAD")
-    config = load_config("10_minutes_air_temperature", logger)
-    
-    # Download file
-    success = download_file("https://example.com/file.zip", Path("data/file.zip"), config, logger)
-    
-    # Extract ZIP
-    extracted_files = extract_zip(Path("data/file.zip"), Path("data/extracted/"), config, logger)
-    
-    # Validate file structure
-    is_valid = validate_file_structure(Path("data/file.txt"), ["STATIONS_ID", "MESS_DATUM"], config, logger)
+NOTES:
+- Uses absolute imports consistent with the project layout.
+- No third‑party deps beyond stdlib + requests.
 
-FILE FORMAT SUPPORT:
-- DWD ZIP archives containing multiple data files
-- Semicolon-delimited CSV/TXT files with German encoding (ISO-8859-1/UTF-8)
-- Station metadata files and measurement data files
-- Handles both historical and recent data file formats
-
-ERROR HANDLING:
-- Network timeouts and connection errors for downloads
-- Corrupted or incomplete ZIP files
-- Invalid file structures and encoding issues
-- Partial extraction cleanup on failures
-- Detailed error logging with component-specific codes
+Minimal smoke tests (not executed by default):
 """
+# Smoke-test snippet (kept in a guarded block for reference only)
+#
+# if __name__ == "__main__":
+#     from app.utils.enhanced_logger import get_logger
+#     import tempfile, csv, zipfile
+#     from pathlib import Path
+#
+#     logger = get_logger("SMOKE")
+#     cfg = {}
+#
+#     # validate_file_structure: create tiny semicolon CSV
+#     tmpdir = Path(tempfile.mkdtemp())
+#     csv_path = tmpdir / "sample.csv"
+#     with csv_path.open("w", encoding="utf-8") as f:
+#         f.write("A;B\n1;2\n")
+#     assert validate_file_structure(csv_path, ["A", "B"], cfg, logger) is True
+#
+#     # extract_zip: zip a small file
+#     zip_path = tmpdir / "t.zip"
+#     with zipfile.ZipFile(zip_path, "w") as z:
+#         z.writestr("foo.txt", "bar")
+#     out_dir = tmpdir / "out"
+#     extracted = extract_zip(zip_path, out_dir, cfg, logger)
+#     assert extracted and (out_dir / "foo.txt").exists()
+#
+#     # download_file: simulate skip-if-exists (no network)
+#     # We simulate by creating destination and setting a fake Content-Length check to be skipped
+#     # In practice, call download_file() with a real URL. Here we ensure path creation/skip branch doesn't error.
+#     dest = tmpdir / "already_there.bin"
+#     dest.write_bytes(b"x" * 10)
+#     # Direct call would try network; this snippet is illustrative only.
 
-import requests
+from __future__ import annotations
+
+import csv
+import os
+import shutil
+import time
 import zipfile
 from pathlib import Path
-from typing import List, Dict, Any
-import time
-import shutil
+from typing import Any, Dict, List
+
+import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
-import os
 
-# Import the StructuredLoggerAdapter type for proper type hints
-from .enhanced_logger import StructuredLoggerAdapter
+# Compatibility import: support both legacy StructuredLoggerAdapter and new ComponentLogger
+try:
+    from app.utils.enhanced_logger import StructuredLoggerAdapter  # type: ignore
+except Exception:  # pragma: no cover - fallback for newer logger module
+    try:
+        from app.utils.enhanced_logger import ComponentLogger as StructuredLoggerAdapter  # type: ignore
+    except Exception:
+        # Last-resort fallback to stdlib logger to avoid import errors in type-checkers/IDEs
+        from logging import Logger as StructuredLoggerAdapter  # type: ignore
+from app.utils.http_headers import default_headers
+
+
+# ------------------------------
+# Helpers
+# ------------------------------
+
+def _get_timeout_seconds(config: Dict[str, Any]) -> int:
+    # Prefer explicit network timeout; fall back to a sane default
+    try:
+        network = config.get("network", {})
+        if isinstance(network.get("timeout_seconds"), (int, float)):
+            return int(network["timeout_seconds"]) or 60
+    except Exception:
+        pass
+    # Fallback to processing timeout (minutes) if present; otherwise 60s
+    try:
+        proc = config.get("processing", {})
+        if isinstance(proc.get("worker_timeout_minutes"), (int, float)):
+            return max(30, int(proc["worker_timeout_minutes"] * 60))
+    except Exception:
+        pass
+    return 60
+
+
+def _get_retry_config(config: Dict[str, Any]) -> tuple[int, int]:
+    fh = config.get("failure_handling", {}) if isinstance(config, dict) else {}
+    max_retries = int(fh.get("max_retries", 3))
+    retry_delay = int(fh.get("retry_delay_seconds", 5))
+    return max_retries, retry_delay
+
+
+# ------------------------------
+# Public API
+# ------------------------------
 
 def download_file(url: str, destination: Path, config: Dict[str, Any], logger: StructuredLoggerAdapter) -> bool:
-    """
-    Download file with retry logic and validation.
-    
-    Downloads files from DWD servers with configurable retry logic, timeout handling,
-    and comprehensive validation. Supports resuming partial downloads and handles
-    network errors gracefully.
-    
-    Args:
-        url: URL to download from
-        destination: Path where file should be saved
-        config: Configuration dictionary containing retry and timeout settings
-        logger: StructuredLoggerAdapter instance for progress and error reporting
-        
-    Returns:
-        True if download successful, False otherwise
-        
-    Example:
-        config = load_config("10_minutes_air_temperature", logger)
-        success = download_file(
-            "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/air_temperature/historical/stundenwerte_TU_00001_19370101_19860630_hist.zip",
-            Path("data/downloaded/temp_data.zip"),
-            config,
-            logger
-        )
+    """Download a file with retries, resume support, and atomic write.
+
+    - Uses default_headers() for HTTP requests.
+    - Creates parent directories if needed.
+    - Streams to a temporary ".part" file then atomically renames.
+    - If local file exists and appears complete (via HEAD content-length), it is skipped.
+    - Returns True/False; expected failures are logged without raising.
     """
     try:
-        # Get configuration settings with defaults
-        failure_config = config.get('failure_handling', {})
-        max_retries = failure_config.get('max_retries', 3)
-        retry_delay = failure_config.get('retry_delay_seconds', 300)
-        timeout_seconds = config.get('processing', {}).get('worker_timeout_minutes', 30) * 60
-        
-        # Create destination directory if it doesn't exist
+        destination = Path(destination)
         destination.parent.mkdir(parents=True, exist_ok=True)
-        
-        # Configure session with retry strategy
+        tmp_path = destination.with_suffix(destination.suffix + ".part")
+
+        timeout_seconds = _get_timeout_seconds(config)
+        max_retries, retry_delay = _get_retry_config(config)
+
         session = requests.Session()
         retry_strategy = Retry(
             total=max_retries,
             backoff_factor=1,
             status_forcelist=[429, 500, 502, 503, 504],
-            allowed_methods=["HEAD", "GET", "OPTIONS"]
+            allowed_methods=["HEAD", "GET", "OPTIONS"],
         )
         adapter = HTTPAdapter(max_retries=retry_strategy)
         session.mount("http://", adapter)
         session.mount("https://", adapter)
-        
-        # Centralize User-Agent via default_headers()
-        from app.utils.http_headers import default_headers
-        default = default_headers()
-        headers = {
-            **default,
-            'Accept': 'application/octet-stream, */*',
-            'Accept-Encoding': 'gzip, deflate'
-        }
-        
-        logger.info(f"Starting download: {url}", extra={
+
+        base_headers = {**default_headers(), "Accept": "*/*"}
+
+        # Try a HEAD to determine remote size for skip/validation
+        remote_size: int | None = None
+        try:
+            head = session.head(url, headers=base_headers, timeout=timeout_seconds, allow_redirects=True)
+            if head.ok:
+                cl = head.headers.get("content-length")
+                if cl and cl.isdigit():
+                    remote_size = int(cl)
+        except Exception as e:
+            logger.debug("HEAD request failed; continuing without size check", extra={
+                "component": "DOWNLOAD",
+                "structured_data": {"url": url, "error": str(e)},
+            })
+
+        # Skip if destination exists and size matches remote_size
+        if destination.exists() and remote_size is not None and destination.stat().st_size == remote_size:
+            logger.info("Download skipped (already complete)", extra={
+                "component": "DOWNLOAD",
+                "structured_data": {
+                    "url": url,
+                    "destination": str(destination),
+                    "size_bytes": remote_size,
+                    "reason": "size_match",
+                },
+            })
+            return True
+
+        logger.info("Starting download", extra={
             "component": "DOWNLOAD",
             "structured_data": {
                 "url": url,
                 "destination": str(destination),
+                "timeout_seconds": timeout_seconds,
                 "max_retries": max_retries,
-                "timeout_seconds": timeout_seconds
-            }
+                "remote_size": remote_size,
+            },
         })
-        
-        # Attempt download with retries
-        for attempt in range(max_retries + 1):
+
+        # Retry loop for GET
+        for attempt in range(1, max_retries + 2):
             try:
-                # Check if file already exists and get its size
-                resume_header = {}
-                if destination.exists():
-                    existing_size = destination.stat().st_size
-                    resume_header['Range'] = f'bytes={existing_size}-'
-                    logger.info(f"Resuming download from byte {existing_size}", extra={
-                        "component": "DOWNLOAD",
-                        "structured_data": {"existing_size": existing_size, "attempt": attempt + 1}
-                    })
-                
-                # Make the request
-                response = session.get(
-                    url, 
-                    headers={**headers, **resume_header},
-                    timeout=timeout_seconds,
-                    stream=True
-                )
-                response.raise_for_status()
-                
-                # Get content length for progress tracking
-                content_length = response.headers.get('content-length')
-                if content_length:
-                    total_size = int(content_length)
-                    logger.info(f"Download size: {total_size:,} bytes", extra={
-                        "component": "DOWNLOAD",
-                        "structured_data": {"total_size": total_size}
-                    })
-                
-                # Download with progress tracking
-                mode = 'ab' if 'Range' in resume_header else 'wb'
-                downloaded_size = destination.stat().st_size if destination.exists() and mode == 'ab' else 0
-                
-                with open(destination, mode) as f:
-                    start_time = time.time()
-                    chunk_size = 8192  # 8KB chunks
-                    
-                    for chunk in response.iter_content(chunk_size=chunk_size):
-                        if chunk:  # Filter out keep-alive chunks
-                            f.write(chunk)
-                            downloaded_size += len(chunk)
-                            
-                            # Log progress every 10MB
-                            if downloaded_size % (10 * 1024 * 1024) == 0:
-                                elapsed = time.time() - start_time
-                                speed = downloaded_size / elapsed if elapsed > 0 else 0
-                                logger.debug(f"Downloaded {downloaded_size:,} bytes ({speed/1024:.1f} KB/s)", extra={
-                                    "component": "DOWNLOAD",
-                                    "structured_data": {
-                                        "downloaded_size": downloaded_size,
-                                        "speed_kbps": round(speed/1024, 1)
-                                    }
-                                })
-                
-                # Validate download
-                if not destination.exists():
-                    raise Exception("Downloaded file does not exist")
-                
-                final_size = destination.stat().st_size
-                if final_size == 0:
-                    raise Exception("Downloaded file is empty")
-                
-                # Verify file is not corrupted (basic check for ZIP files)
-                if destination.suffix.lower() == '.zip':
+                # Determine resume offset from temporary file if present
+                resume_from = tmp_path.stat().st_size if tmp_path.exists() else 0
+                headers = dict(base_headers)
+                mode = "ab" if resume_from > 0 else "wb"
+                if resume_from > 0:
+                    headers["Range"] = f"bytes={resume_from}-"
+
+                resp = session.get(url, headers=headers, timeout=timeout_seconds, stream=True)
+                # If server ignored our Range and sent 200, start over
+                if resp.status_code == 200 and "Range" in headers:
+                    resume_from = 0
+                    mode = "wb"
+
+                resp.raise_for_status()
+
+                start_time = time.time()
+                bytes_written = resume_from
+
+                with tmp_path.open(mode) as fh:
+                    for chunk in resp.iter_content(chunk_size=1024 * 64):  # 64KB chunks
+                        if chunk:
+                            fh.write(chunk)
+                            bytes_written += len(chunk)
+
+                # If we know expected size, verify
+                final_size = tmp_path.stat().st_size
+                if remote_size is not None and final_size != remote_size:
+                    raise IOError(f"size_mismatch: got={final_size} expected={remote_size}")
+
+                # Basic ZIP integrity check (only when destination looks like zip)
+                if destination.suffix.lower() == ".zip":
                     try:
-                        with zipfile.ZipFile(destination, 'r') as zip_file:
-                            zip_file.testzip()  # Test ZIP integrity
-                    except zipfile.BadZipFile:
-                        raise Exception("Downloaded ZIP file is corrupted")
-                
-                elapsed_time = time.time() - start_time
-                logger.info(f"Download completed successfully", extra={
+                        with zipfile.ZipFile(tmp_path, "r") as zf:
+                            bad = zf.testzip()
+                            if bad is not None:
+                                raise zipfile.BadZipFile(f"bad member: {bad}")
+                    except zipfile.BadZipFile as e:
+                        raise IOError(f"zip_corrupt: {e}")
+
+                os.replace(tmp_path, destination)
+
+                elapsed = time.time() - start_time
+                logger.info("Download completed", extra={
                     "component": "DOWNLOAD",
                     "structured_data": {
-                        "final_size": final_size,
-                        "duration_seconds": round(elapsed_time, 2),
-                        "average_speed_kbps": round((final_size / elapsed_time) / 1024, 1) if elapsed_time > 0 else 0,
-                        "attempts_used": attempt + 1
-                    }
+                        "destination": str(destination),
+                        "size_bytes": destination.stat().st_size,
+                        "duration_seconds": round(elapsed, 2),
+                        "attempt": attempt,
+                    },
                 })
-                
                 return True
-                
+
             except Exception as e:
-                error_msg = f"Download attempt {attempt + 1} failed: {str(e)}"
-                
-                if attempt < max_retries:
-                    logger.warning(f"{error_msg}. Retrying in {retry_delay} seconds...", extra={
+                # On failure, optionally wait and retry
+                will_retry = attempt <= max_retries
+                level = logger.warning if will_retry else logger.error
+                level(
+                    "Download attempt failed",
+                    extra={
                         "component": "DOWNLOAD",
                         "structured_data": {
-                            "attempt": attempt + 1,
+                            "url": url,
+                            "destination": str(destination),
+                            "attempt": attempt,
                             "max_retries": max_retries,
-                            "retry_delay": retry_delay,
-                            "error": str(e)
-                        }
-                    })
+                            "error": str(e),
+                        },
+                    },
+                )
+                if will_retry:
                     time.sleep(retry_delay)
                 else:
-                    logger.error(f"{error_msg}. All retry attempts exhausted.", extra={
-                        "component": "DOWNLOAD",
-                        "structured_data": {
-                            "final_attempt": attempt + 1,
-                            "total_attempts": max_retries + 1,
-                            "error": str(e)
-                        }
-                    })
-                    
-                    # Clean up partial download
-                    if destination.exists():
-                        try:
-                            destination.unlink()
-                            logger.info("Cleaned up partial download", extra={"component": "DOWNLOAD"})
-                        except Exception as cleanup_error:
-                            logger.warning(f"Failed to clean up partial download: {cleanup_error}", extra={"component": "DOWNLOAD"})
-                    
+                    # Cleanup temp file on terminal failure
+                    try:
+                        if tmp_path.exists():
+                            tmp_path.unlink()
+                    except Exception:
+                        pass
                     return False
-        
         return False
-        
     except Exception as e:
-        logger.error(f"Download failed with unexpected error: {str(e)}", extra={
+        logger.error("Download failed with unexpected error", extra={
             "component": "DOWNLOAD",
-            "structured_data": {"error": str(e), "url": url}
+            "structured_data": {"url": url, "destination": str(destination), "error": str(e)},
         })
+        # Best-effort cleanup of temp file
+        try:
+            tmp = destination.with_suffix(destination.suffix + ".part")
+            if tmp.exists():
+                tmp.unlink()
+        except Exception:
+            pass
         return False
 
+
 def extract_zip(zip_path: Path, extract_to: Path, config: Dict[str, Any], logger: StructuredLoggerAdapter) -> List[Path]:
+    """Extract a ZIP archive using stdlib zipfile.
+
+    - Creates `extract_to` if missing.
+    - Returns a list of extracted file paths.
+    - On error, logs and returns an empty list (does not raise).
     """
-    Extract ZIP file and return list of extracted files.
-    
-    Extracts ZIP archives with proper error handling, progress logging, and cleanup
-    of partial extractions on failure. Handles DWD ZIP file structures and encoding issues.
-    
-    Args:
-        zip_path: Path to ZIP file to extract
-        extract_to: Directory to extract files to
-        config: Configuration dictionary (currently unused but kept for consistency)
-        logger: StructuredLoggerAdapter instance for progress and error reporting
-        
-    Returns:
-        List of Path objects for successfully extracted files
-        
-    Raises:
-        Exception: If ZIP file is corrupted or extraction fails
-        
-    Example:
-        extracted_files = extract_zip(
-            Path("data/downloaded/temp_data.zip"),
-            Path("data/extracted/temp_data/"),
-            config,
-            logger
-        )
-        for file_path in extracted_files:
-            print(f"Extracted: {file_path}")
-    """
-    extracted_files = []
-    
+    extracted: List[Path] = []
     try:
-        # Validate input
+        zip_path = Path(zip_path)
+        extract_to = Path(extract_to)
+
         if not zip_path.exists():
-            raise FileNotFoundError(f"ZIP file not found: {zip_path}")
-        
-        if not zip_path.suffix.lower() == '.zip':
-            raise ValueError(f"File is not a ZIP archive: {zip_path}")
-        
-        # Create extraction directory
+            logger.error("ZIP file not found", extra={
+                "component": "EXTRACT",
+                "structured_data": {"zip_path": str(zip_path)},
+            })
+            return []
+        if zip_path.suffix.lower() != ".zip":
+            logger.error("Not a ZIP archive", extra={
+                "component": "EXTRACT",
+                "structured_data": {"zip_path": str(zip_path)},
+            })
+            return []
+
         extract_to.mkdir(parents=True, exist_ok=True)
-        
-        logger.info(f"Starting ZIP extraction: {zip_path.name}", extra={
+        logger.info("Starting ZIP extraction", extra={
             "component": "EXTRACT",
             "structured_data": {
                 "zip_path": str(zip_path),
                 "extract_to": str(extract_to),
-                "zip_size": zip_path.stat().st_size
-            }
+                "zip_size": zip_path.stat().st_size,
+            },
         })
-        
-        # Extract ZIP file
-        with zipfile.ZipFile(zip_path, 'r') as zip_file:
-            # Get list of files in ZIP
-            file_list = zip_file.namelist()
-            total_files = len(file_list)
-            
-            logger.info(f"ZIP contains {total_files} files", extra={
-                "component": "EXTRACT",
-                "structured_data": {
-                    "total_files": total_files,
-                    "file_list": file_list[:10]  # Log first 10 files to avoid spam
-                }
-            })
-            
-            # Test ZIP integrity first
-            bad_file = zip_file.testzip()
-            if bad_file:
-                raise zipfile.BadZipFile(f"ZIP file is corrupted. Bad file: {bad_file}")
-            
-            # Extract all files
-            start_time = time.time()
-            for i, file_info in enumerate(zip_file.infolist()):
-                try:
-                    # Skip directories
-                    if file_info.is_dir():
-                        continue
-                    
-                    # Extract file
-                    extracted_path = extract_to / file_info.filename
-                    
-                    # Create subdirectories if needed
-                    extracted_path.parent.mkdir(parents=True, exist_ok=True)
-                    
-                    # Extract the file
-                    with zip_file.open(file_info) as source, open(extracted_path, 'wb') as target:
-                        shutil.copyfileobj(source, target)
-                    
-                    # Preserve file timestamps if available
-                    if hasattr(file_info, 'date_time'):
-                        timestamp = time.mktime(file_info.date_time + (0, 0, -1))
-                        os.utime(extracted_path, (timestamp, timestamp))
-                    
-                    extracted_files.append(extracted_path)
-                    
-                    # Log progress for large extractions
-                    if (i + 1) % 100 == 0 or (i + 1) == total_files:
-                        logger.debug(f"Extracted {i + 1}/{total_files} files", extra={
-                            "component": "EXTRACT",
-                            "structured_data": {
-                                "progress": f"{i + 1}/{total_files}",
-                                "current_file": file_info.filename
-                            }
-                        })
-                
-                except Exception as file_error:
-                    logger.warning(f"Failed to extract file {file_info.filename}: {file_error}", extra={
-                        "component": "EXTRACT",
-                        "structured_data": {
-                            "failed_file": file_info.filename,
-                            "error": str(file_error)
-                        }
-                    })
+
+        with zipfile.ZipFile(zip_path, "r") as zf:
+            bad = zf.testzip()
+            if bad is not None:
+                logger.error("ZIP integrity check failed", extra={
+                    "component": "EXTRACT",
+                    "structured_data": {"zip_path": str(zip_path), "bad_member": bad},
+                })
+                return []
+
+            start = time.time()
+            for info in zf.infolist():
+                if info.is_dir():
+                    # Ensure dir exists for completeness
+                    (extract_to / info.filename).mkdir(parents=True, exist_ok=True)
                     continue
-        
-        extraction_time = time.time() - start_time
-        logger.info(f"ZIP extraction completed", extra={
-            "component": "EXTRACT",
-            "structured_data": {
-                "extracted_files_count": len(extracted_files),
-                "total_files_in_zip": total_files,
-                "duration_seconds": round(extraction_time, 2),
-                "success_rate": round((len(extracted_files) / total_files) * 100, 1) if total_files > 0 else 0
-            }
-        })
-        
-        return extracted_files
-        
-    except Exception as e:
-        logger.error(f"ZIP extraction failed: {str(e)}", extra={
+                target = extract_to / info.filename
+                target.parent.mkdir(parents=True, exist_ok=True)
+                with zf.open(info) as src, target.open("wb") as dst:
+                    shutil.copyfileobj(src, dst)
+                # Try to preserve timestamps
+                try:
+                    ts = time.mktime(info.date_time + (0, 0, -1))
+                    os.utime(target, (ts, ts))
+                except Exception:
+                    pass
+                extracted.append(target)
+
+        logger.info("ZIP extraction completed", extra={
             "component": "EXTRACT",
             "structured_data": {
                 "zip_path": str(zip_path),
-                "error": str(e),
-                "extracted_files_count": len(extracted_files)
-            }
+                "extracted_count": len(extracted),
+                "extract_to": str(extract_to),
+                "duration_seconds": round(time.time() - start, 2),
+            },
         })
-        
-        # Clean up partial extraction
-        if extracted_files:
-            logger.info("Cleaning up partial extraction", extra={"component": "EXTRACT"})
-            for file_path in extracted_files:
-                try:
-                    if file_path.exists():
-                        file_path.unlink()
-                except Exception as cleanup_error:
-                    logger.warning(f"Failed to clean up {file_path}: {cleanup_error}", extra={"component": "EXTRACT"})
-        
-        raise
+        return extracted
+    except Exception as e:
+        logger.error("ZIP extraction failed", extra={
+            "component": "EXTRACT",
+            "structured_data": {"zip_path": str(zip_path), "error": str(e), "extracted_count": len(extracted)},
+        })
+        # Best-effort cleanup of partially extracted files
+        for p in extracted:
+            try:
+                if p.exists():
+                    p.unlink()
+            except Exception:
+                pass
+        return []
 
-def validate_file_structure(file_path: Path, expected_columns: List[str], config: Dict[str, Any], logger: StructuredLoggerAdapter) -> bool:
-    """
-    Validate CSV/TXT file has expected structure.
-    
-    Validates DWD data files against expected column schemas, handling German
-    encoding and semicolon delimiters. Checks for minimum data requirements
-    and provides detailed validation feedback.
-    
-    Args:
-        file_path: Path to file to validate
-        expected_columns: List of expected column names
-        config: Configuration dictionary containing validation settings
-        logger: StructuredLoggerAdapter instance for validation results
-        
-    Returns:
-        True if file structure is valid, False otherwise
-        
-    Example:
-        is_valid = validate_file_structure(
-            Path("data/extracted/produkt_tu_stunde_19370101_19861231_00001.txt"),
-            ["STATIONS_ID", "MESS_DATUM", "TT_TU", "RF_TU"],
-            config,
-            logger
-        )
+
+def validate_file_structure(
+    file_path: Path,
+    expected_columns: List[str],
+    config: Dict[str, Any],
+    logger: StructuredLoggerAdapter,
+) -> bool:
+    """Validate a semicolon-delimited text file for header + at least one data row.
+
+    - Tries UTF-8 first, falls back to Latin-1 (ISO-8859-1). Also tries CP1252 as a last resort.
+    - Uses csv.reader with delimiter=";" (DWD standard) and order-insensitive header check.
+    - Logs specific reasons on failure and returns True/False.
     """
     try:
-        # Validate input
+        file_path = Path(file_path)
         if not file_path.exists():
-            logger.error(f"File not found: {file_path}", extra={
+            logger.error("File not found", extra={
                 "component": "VALIDATE",
-                "structured_data": {"file_path": str(file_path), "error": "file_not_found"}
+                "structured_data": {"file_path": str(file_path)},
             })
             return False
-        
         if file_path.stat().st_size == 0:
-            logger.error(f"File is empty: {file_path}", extra={
+            logger.error("File is empty", extra={
                 "component": "VALIDATE",
-                "structured_data": {"file_path": str(file_path), "error": "empty_file"}
+                "structured_data": {"file_path": str(file_path)},
             })
             return False
-        
-        # Get validation configuration
-        validation_config = config.get('validation', {})
-        min_measurements = validation_config.get('min_measurements_per_file', 1)
-        
-        logger.info(f"Validating file structure: {file_path.name}", extra={
-            "component": "VALIDATE",
-            "structured_data": {
-                "file_path": str(file_path),
-                "expected_columns": expected_columns,
-                "min_measurements": min_measurements,
-                "file_size": file_path.stat().st_size
-            }
-        })
-        
-        # Try different encodings common in DWD files
-        encodings = ['utf-8', 'iso-8859-1', 'cp1252']
-        file_content = None
-        used_encoding = None
-        
-        for encoding in encodings:
+
+        encodings = ["utf-8", "latin-1", "cp1252"]
+        used_enc = None
+        for enc in encodings:
             try:
-                with open(file_path, 'r', encoding=encoding) as f:
-                    file_content = f.read()
-                    used_encoding = encoding
-                    break
-            except UnicodeDecodeError:
-                continue
-        
-        if file_content is None:
-            logger.error(f"Could not decode file with any supported encoding", extra={
-                "component": "VALIDATE",
-                "structured_data": {
-                    "file_path": str(file_path),
-                    "tried_encodings": encodings,
-                    "error": "encoding_error"
-                }
-            })
-            return False
-        
-        logger.debug(f"Successfully decoded file using {used_encoding} encoding", extra={
-            "component": "VALIDATE",
-            "structured_data": {"encoding": used_encoding}
-        })
-        
-        # Parse CSV content (DWD uses semicolon delimiter)
-        lines = file_content.strip().split('\n')
-        if len(lines) < 2:  # Need at least header + 1 data row
-            logger.error(f"File has insufficient data (only {len(lines)} lines)", extra={
-                "component": "VALIDATE",
-                "structured_data": {
-                    "file_path": str(file_path),
-                    "line_count": len(lines),
-                    "error": "insufficient_data"
-                }
-            })
-            return False
-        
-        # Parse header row
-        header_line = lines[0].strip()
-        
-        # Try different delimiters
-        delimiters = [';', ',', '\t']
-        columns = None
-        used_delimiter = None
-        
-        for delimiter in delimiters:
-            test_columns = [col.strip() for col in header_line.split(delimiter)]
-            if len(test_columns) > 1:  # Must have multiple columns
-                columns = test_columns
-                used_delimiter = delimiter
-                break
-        
-        if columns is None:
-            logger.error(f"Could not parse header with any supported delimiter", extra={
-                "component": "VALIDATE",
-                "structured_data": {
-                    "file_path": str(file_path),
-                    "header_line": header_line[:100],  # First 100 chars
-                    "tried_delimiters": delimiters,
-                    "error": "delimiter_error"
-                }
-            })
-            return False
-        
-        logger.debug(f"Parsed header using '{used_delimiter}' delimiter", extra={
-            "component": "VALIDATE",
-            "structured_data": {
-                "delimiter": used_delimiter,
-                "column_count": len(columns),
-                "columns": columns
-            }
-        })
-        
-        # Check for expected columns
-        missing_columns = []
-        for expected_col in expected_columns:
-            if expected_col not in columns:
-                missing_columns.append(expected_col)
-        
-        if missing_columns:
-            logger.error(f"Missing expected columns: {missing_columns}", extra={
-                "component": "VALIDATE",
-                "structured_data": {
-                    "file_path": str(file_path),
-                    "missing_columns": missing_columns,
-                    "found_columns": columns,
-                    "error": "missing_columns"
-                }
-            })
-            return False
-        
-        # Count data rows (excluding header)
-        data_rows = len(lines) - 1
-        if data_rows < min_measurements:
-            logger.error(f"Insufficient data rows: {data_rows} (minimum: {min_measurements})", extra={
-                "component": "VALIDATE",
-                "structured_data": {
-                    "file_path": str(file_path),
-                    "data_rows": data_rows,
-                    "min_required": min_measurements,
-                    "error": "insufficient_measurements"
-                }
-            })
-            return False
-        
-        # Validate a sample of data rows
-        sample_size = min(10, data_rows)  # Check first 10 rows or all if fewer
-        valid_rows = 0
-        
-        for i in range(1, sample_size + 1):
-            try:
-                data_line = lines[i].strip()
-                data_values = [val.strip() for val in data_line.split(used_delimiter)]
-                
-                if len(data_values) == len(columns):
-                    valid_rows += 1
-                else:
-                    logger.warning(f"Row {i} has {len(data_values)} values, expected {len(columns)}", extra={
+                with file_path.open("r", encoding=enc, newline="") as fh:
+                    reader = csv.reader(fh, delimiter=";")
+                    try:
+                        header = next(reader)
+                    except StopIteration:
+                        header = []
+                    if not header:
+                        # empty header under this encoding, try next
+                        continue
+                    used_enc = enc
+                    # Normalize header
+                    header_norm = [h.strip() for h in header]
+
+                    # Check all expected columns are present (order-insensitive)
+                    missing = [col for col in expected_columns if col not in header_norm]
+                    if missing:
+                        logger.error("Missing expected columns", extra={
+                            "component": "VALIDATE",
+                            "structured_data": {
+                                "file_path": str(file_path),
+                                "missing": missing,
+                                "found": header_norm,
+                            },
+                        })
+                        return False
+
+                    # Ensure at least one data row (non-empty)
+                    data_rows = 0
+                    for row in reader:
+                        # Skip completely empty rows
+                        if not any(cell.strip() for cell in row):
+                            continue
+                        data_rows += 1
+                        break
+
+                    if data_rows == 0:
+                        logger.error("No data rows found", extra={
+                            "component": "VALIDATE",
+                            "structured_data": {"file_path": str(file_path)},
+                        })
+                        return False
+
+                    logger.info("File validation successful", extra={
                         "component": "VALIDATE",
                         "structured_data": {
-                            "row_number": i,
-                            "expected_columns": len(columns),
-                            "actual_values": len(data_values)
-                        }
+                            "file_path": str(file_path),
+                            "encoding": used_enc,
+                            "column_count": len(header_norm),
+                            "expected_columns": expected_columns,
+                        },
                     })
-            except Exception as row_error:
-                logger.warning(f"Error parsing row {i}: {row_error}", extra={
+                    return True
+            except UnicodeDecodeError:
+                # try next encoding
+                continue
+            except Exception as e:
+                logger.error("Parse error during validation", extra={
                     "component": "VALIDATE",
-                    "structured_data": {"row_number": i, "error": str(row_error)}
+                    "structured_data": {"file_path": str(file_path), "error": str(e), "encoding": enc},
                 })
-        
-        # Calculate validation success rate
-        success_rate = (valid_rows / sample_size) * 100 if sample_size > 0 else 0
-        
-        if success_rate < 80:  # Require at least 80% of sample rows to be valid
-            logger.error(f"Low data quality: only {success_rate:.1f}% of sample rows are valid", extra={
-                "component": "VALIDATE",
-                "structured_data": {
-                    "file_path": str(file_path),
-                    "success_rate": success_rate,
-                    "valid_rows": valid_rows,
-                    "sample_size": sample_size,
-                    "error": "low_data_quality"
-                }
-            })
-            return False
-        
-        # Validation successful
-        logger.info(f"File validation successful", extra={
+                return False
+
+        logger.error("Failed to decode file with supported encodings", extra={
             "component": "VALIDATE",
-            "structured_data": {
-                "file_path": str(file_path),
-                "encoding": used_encoding,
-                "delimiter": used_delimiter,
-                "column_count": len(columns),
-                "data_rows": data_rows,
-                "sample_success_rate": round(success_rate, 1),
-                "all_expected_columns_found": True
-            }
-        })
-        
-        return True
-        
-    except Exception as e:
-        logger.error(f"File validation failed with unexpected error: {str(e)}", extra={
-            "component": "VALIDATE",
-            "structured_data": {
-                "file_path": str(file_path),
-                "error": str(e)
-            }
+            "structured_data": {"file_path": str(file_path), "encodings_tried": encodings},
         })
         return False
 
+    except Exception as e:
+        logger.error("File validation failed with unexpected error", extra={
+            "component": "VALIDATE",
+            "structured_data": {"file_path": str(file_path), "error": str(e)},
+        })
+        return False

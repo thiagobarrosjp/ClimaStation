@@ -1,7 +1,45 @@
 """
-Standard coding patterns for ClimaStation components.
-Implementation chat should follow these patterns for consistency.
+ClimaStation Coding Patterns (Reference Only)
+
+SCRIPT IDENTIFICATION: (patterns-reference)
+
+PURPOSE:
+Provides canonical coding patterns for ClimaStation components and the implementation chat.
+These patterns ensure consistent structure and behavior across modules.
+
+This file serves as a REFERENCE for implementation. It MUST NOT be imported
+or executed at runtime.
+
+RESPONSIBILITIES:
+- Act as a single source of truth for idiomatic patterns used in the pipeline
+- Promote consistency in logging, configuration access, file path handling, and dependency injection
+- Offer safe, copy-adaptable snippets that clarify intent and conventions
+
+SCOPE:
+- Standard Imports Pattern
+- Configuration Loading Pattern
+- Error Handling Pattern
+- Logging Setup Pattern
+- File Path Handling Pattern
+- Dependency Injection Pattern
+
+USAGE:
+    # Do NOT import or call this module directly!
+    # Refer to it when implementing a component. Adapt the pattern to your module;
+    # do not copy verbatim.
+
+    # Example (conceptual):
+    # logger = logging.getLogger("climastation.my_component")
+    # cfg = load_my_config(...)
+    # progress = ProgressTracker(...)
+    # Use the patterns below to structure your implementation.
+
+PROTECTION:
+This file is for reference only and MUST NOT be imported during runtime.
+(Optionally enforce this by adding right after this header):
+    raise ImportError("Do not import 'coding_patterns.py' directly — it is for reference only.")
 """
+
 
 # Standard Imports Pattern
 from pathlib import Path

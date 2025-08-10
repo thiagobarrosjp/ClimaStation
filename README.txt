@@ -226,16 +226,16 @@ Stations_id von_datum bis_datum Stationshoehe geoBreite geoLaenge Stationsname B
 
 This project uses a two-chat development strategy to split architectural planning and implementation:
 
-- **ChatGPT (Project Manager)**:
+- **GPT-5 Thinking (Project Manager)**:
   - Plans architecture and file structure
   - Creates clear implementation prompts
   - Ensures modularity and consistency
 
-- **ChatGPT o4-mini-high (Implementation Assistant)**:
+- **GPT-5 (Implementation Assistant)**:
   - Writes code based on context files and task prompts
   - Follows strict constraints with no architectural decisions
 
-This workflow allows clean separation of concerns and reproducibility between sessions. Context files used by v0 are version-controlled and updated by the developer as needed.
+This workflow allows clean separation of concerns and reproducibility between sessions. Context files used by GPT-5 are version-controlled and updated by the developer as needed.
 
 ### Project Manager Instructions
 
@@ -336,55 +336,35 @@ Architectural Constraints:
 
 --------------------------------------------------------------------------------------------------------------
 ---------------------------------------- PART 3: DAILY STATUS ------------------------------------------------
----------------------------------------- Last updated: 2025-07-31 --------------------------------------------
+---------------------------------------- Last updated: 2025-08-10 --------------------------------------------
 
 
-### Development Roadmap
+## 🔧 Immediate Task — Fix dataset YAML ↔ crawler path mismatch
 
-**Phase 1: Foundation Components (PARTIALLY COMPLETED)**
-- Core utilities (config manager, enhanced logger, file operations)
-- Progress tracking system (finished, but needs validation in practice)
+**Problem (symptom):** Crawler keeps retrying and failing; no URLs JSONL produced. Likely using **wrong DWD base/root paths** from `configs/datasets/10_minutes_air_temperature.yaml`.
 
-**Phase 2: Modular Processing Pipeline (DEVELOPMENT IN PROGRESS)**  
-- Translation Manager (finished, but needs validation in practice)
-- Crawler (must be updated to list individual file URLs, not just folder paths)  
-- Downloader (initial implementation complete, needs fix: must download only, no crawling)
-- Extractor → Parser → Enricher → Writer  
-- Pipeline orchestration via `run_pipeline.py` (updated for downloader mode)
+**Objective:** Make the crawler resolve a valid DWD listing URL and write a **non-empty, idempotent** URLs JSONL for a *small scope* (e.g., `recent/`).
 
-**Phase 3: Full Bulk Ingestion (PLANNED)**  
-- Bulk controller, retry logic  
-- Performance tuning  
-- Multi-dataset config testing
+**What to do next (tomorrow):**
+1) **Audit key lookups** in `run_pipeline.py` and `crawler.py` (only the keys used for: base URL, dataset root path, subfolders, crawl output JSONL path).
+2) **Align the YAML** keys/values to those lookups (prefer YAML edits; avoid code changes unless an obvious typo).
+3) **Keep paths repo-relative**; ensure `base_url` + `root_path` (+ optional subfolder) join cleanly (trailing slashes).
+4) **Test small scope** (`recent/`) first; confirm the JSONL contains only `.zip` entries and re-runs don’t duplicate.
+5) **Improve error logs** if needed: include failing URL + HTTP status (no generic “Request failed”).
 
----
+**Acceptance (quick):**
+- `crawl --dry-run` logs resolved root URL and output path, exits `0`.
+- `crawl` (small scope, limited) writes/merges a non-empty URLs JSONL and logs counts clearly.
 
-### 🔧 Immediate Task (Current Focus) — Crawl Only Dataset-Defined Subpaths
-
-#### Problem
-
-The current crawler explores the entire DWD repository, even when a specific dataset is passed via `--dataset`. This wastes time, violates intended modularity, and stores ambiguous output (`dwd_urls.jsonl`) that doesn’t reflect its scope.
-
-#### Goal
-
-Update the crawler logic to:
-
-1. **Only crawl subpaths explicitly defined** in the dataset YAML file.
-2. **Write output to a dataset-specific filename** (e.g., `dwd_10_minutes_air_temperature_urls.jsonl`).
-3. **Preserve per-dataset output folder** (`data/dwd/1_crawl_dwd/<dataset>/`).
-
-#### Example Command
-
-python app/main/run_pipeline.py --mode crawl --dataset 10_minutes_air_temperature --throttle 1
-
-
+**Deliverables:**
+- Updated `configs/datasets/10_minutes_air_temperature.yaml` with brief inline comments.
+- One-sentence changelog: which keys were aligned and where the URLs JSONL is written.
 
 ---
-
 
 ### Current Folder Structure
 
-CLIMASTATION
+CLIMASTATIONz
 ├── _legacy/
 ├── .venv/
 ├── vscode/
@@ -400,11 +380,10 @@ CLIMASTATION
 │   ├── pipeline/
 │   │   ├── crawler.py    (finished and validated)
 │   │   ├── downloader.py (successfully tested for small number of files)
-│   │   ├── enricher.py
-│   │   ├── extractor.py
-│   │   ├── parser.py
-│   │   └── writer.py
-│   ├── tests/
+│   │   ├── enricher.py   (empty, not started yet)
+│   │   ├── extractor.py  (empty, not started yet)
+│   │   ├── parser.py     (empty, not started yet)
+│   │   └── writer.py     (empty, not started yet)
 │   ├── translations/
 │   │   ├── meteorological/
 │   │   │  ├── __init__.py
@@ -421,13 +400,12 @@ CLIMASTATION
 │   │   ├── enhanced_logger.py (finished and is working fine for crawling, needs validation for other tasks)
 │   │   ├── file_operations.py (finished, can't tell if it is working as intended or not)
 │   │   ├── http_headers.py
-│   │   ├── paths.py
+│   │   ├── paths.py   (empty, do we still need this file?)
 │   │   └── progress_tracker.py (finished, but needs validation in practice)
 │   └── __init__.py
 ├── context/             (For AI implementation)
-│   ├── available_functions.py (updated)
+│   ├── available_functions.md (updated)
 │   ├── coding_patterns.py
-│   ├── current_task.md
 │   └── processor_interface.py
 ├── data/
 │   └── dwd/

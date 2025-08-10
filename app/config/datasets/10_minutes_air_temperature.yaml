@@ -1,232 +1,233 @@
-# ClimaStation Dataset Configuration: 10-Minute Air Temperature
-# 
-# This file contains dataset-specific settings for processing DWD 10-minute
-# air temperature measurements from historical, recent, and now folders.
-# 
-# Dataset URL: https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/air_temperature/
-# 
-# Used by: AirTemperatureProcessor, DatasetOrchestrator
-# Modified: When dataset structure changes or validation rules need updates
-# 
-# Key sections:
-# - dataset: Basic identification and script codes
-# - paths: Relative paths within the DWD repository structure
-# - processing: Dataset-specific processing options
-# - validation: Data quality and completeness checks
+# ClimaStation 10-Minute Air Temperature Dataset Configuration
+# Dataset-specific settings for DWD 10-minute air temperature data
 
+# Dataset metadata
 dataset:
   name: "10_minutes_air_temperature"
-  script_code: "DWD10TAH3"          # Base code for logging identification
   description: "DWD 10-minute air temperature measurements"
+  version: "1.0"
+  
+  # Data provider information
+  provider:
+    name: "Deutscher Wetterdienst (DWD)"
+    url: "https://opendata.dwd.de"
+    contact: "opendata@dwd.de"
 
+# Base path to the dataset
+base_path: "/climate_environment/CDC/observations_germany/climate/10_minutes/air_temperature/"
+
+# Subfolder structure
 paths:
-  historical: "climate/10_minutes/air_temperature/historical"
-  recent: "climate/10_minutes/air_temperature/recent"
-  now: "climate/10_minutes/air_temperature/now"
-  metadata: "climate/10_minutes/air_temperature/meta_data"
+  historical: climate/10_minutes/air_temperature/historical/
+  recent: climate/10_minutes/air_temperature/recent/
+  now: climate/10_minutes/air_temperature/now/
+  metadata: climate/10_minutes/air_temperature/meta_data/
 
-processing:
-  parallel_folders: true            # Process historical/recent/now in parallel
-  expected_files:                   # Expected file counts for validation
-    historical: 1623
-    recent: 478
-    now: 469
+# Where crawl JSONL(s) and downloads go (repo-relative)
+dwd_paths:
+  crawl_data:    data/dwd/1_crawl_dwd
+  download_data: data/dwd/2_downloaded_files
 
-validation:
-  required_columns: ["STATIONS_ID", "MESS_DATUM", "TT_10", "RF_10"]
-  station_info_required: true       # Require station metadata for processing
-  min_measurements_per_file: 1      # Minimum valid measurements per file
+# Crawler base. It will join base_url + base_path
+crawler:
+  base_url: https://opendata.dwd.de/climate_environment/CDC/observations_germany/  
+  subpaths:
+     - historical/
+     - recent/
+     - now/
 
-# File Processing Configuration
-file_processing:
-  batch_size: 50                    # Files to process in each batch
-  timeout_per_file: 300            # Maximum seconds per file
-  retry_failed_files: true         # Retry files that failed processing
-  cleanup_temp_files: true         # Remove temporary extraction files
 
-# Data Quality Configuration
-quality_control:
-  temperature_range:                # Valid temperature ranges (°C)
-    min: -50.0
-    max: 60.0
-  humidity_range:                   # Valid humidity ranges (%)
-    min: 0.0
-    max: 100.0
-  pressure_range:                   # Valid pressure ranges (hPa)
-    min: 800.0
-    max: 1100.0
-  missing_data_threshold: 0.95      # Max fraction of missing data allowed
 
-# Output Configuration
+# Source data configuration
+source:
+  # File patterns for different data types
+  file_patterns:
+    historical_zip: "10minutenwerte_TU_*_hist.zip"
+    recent_zip: "10minutenwerte_TU_*_akt.zip"
+    now_zip: "10minutenwerte_TU_*_now.zip"
+    metadata_zip: "Meta_Daten_zehn_min_tu_*.zip"
+  
+  # Expected internal file patterns
+  internal_patterns:
+    historical_data: "produkt_zehn_min_tu_*.txt"
+    recent_data: "produkt_zehn_min_tu_*.txt"
+    now_data: "produkt_zehn_now_tu_*.txt"
+
+
+
+# Output configuration
 output:
-  format: "jsonl"                   # Output format (jsonl, json, csv)
-  compression: false                # Compress output files
-  include_metadata: true            # Include station and sensor metadata
-  include_quality_flags: true       # Include data quality indicators
-  bilingual_descriptions: true      # Include German and English descriptions
 
-# Logging Configuration (dataset-specific)
-logging:
-  component_prefix: "DWD10TAH3"     # Prefix for all log messages
-  detailed_progress: true           # Log detailed processing progress
-  performance_metrics: true        # Log timing and performance data
-  error_details: true              # Include full error traces
+  # Base path for processed data
+  base_path: "data/processed/10_minutes_air_temperature"
+  
+  # Output file format
+  format: "csv"
+  
+  # File naming pattern
+  filename_pattern: "{source_name}_processed_{timestamp}.csv"
+  
+  # Compression (none, gzip, bz2)
+  compression: "none"
+  
+  # Create subdirectories by date
+  organize_by_date: true
+  
+  # Date format for subdirectories (YYYY/MM/DD)
+  date_format: "%Y/%m/%d"
 
-# Station Information
-station_info:
-  description_file: "zehn_min_tu_Beschreibung_Stationen.txt"
-  encoding: "latin-1"              # File encoding for German characters
-  coordinate_validation: true       # Validate station coordinates
-  altitude_validation: true        # Validate station altitudes
+# Processing configuration
+processing:
+  # Processing mode: bulk, incremental, or both
+  default_mode: "incremental"
+  
+  # Parallel processing settings
+  parallel:
+    enabled: true
+    max_workers: 2  # Conservative for this dataset
+    chunk_size: 100  # Files per worker batch
+  
+  # Data validation settings
+  validation:
+    # Temperature range validation (°C)
+    temperature_range:
+      min: -50.0
+      max: 60.0
+    
+    # Quality flag validation
+    quality_flags:
+      valid_codes: [1, 2, 3, 5, 7, 8, 9]
+      default_code: 9  # Unknown quality
+    
+    # Timestamp validation
+    timestamp:
+      format: "YYYYMMDDHHMM"
+      min_year: 1880
+      max_year: 2030
+    
+    # Station ID validation
+    station_id:
+      min_id: 1
+      max_id: 99999
+  
+  # Error handling
+  error_handling:
+    # Skip invalid records or fail entire file
+    skip_invalid_records: true
+    
+    # Maximum percentage of invalid records before failing file
+    max_invalid_percentage: 10.0
+    
+    # Log invalid records for debugging
+    log_invalid_records: true
+  
+  # Performance settings
+  performance:
+    # Buffer size for reading large files
+    read_buffer_size: 8192
+    
+    # Batch size for database inserts
+    insert_batch_size: 1000
+    
+    # Memory limit per file (MB)
+    memory_limit_mb: 512
 
-# Parameter Mapping (CSV columns to standardized names)
-parameters:
-  STATIONS_ID:
-    standard_name: "station_id"
-    description: "Station identifier"
-    required: true
-  MESS_DATUM:
-    standard_name: "measurement_datetime"
-    description: "Measurement date and time (YYYYMMDDHHMM)"
-    required: true
-    format: "YYYYMMDDHHMM"
-  QN:
-    standard_name: "quality_flag"
-    description: "Quality level of following columns"
-    required: true
-  TT_10:
-    standard_name: "air_temperature_2m"
-    description: "Air temperature 2m above ground"
-    unit: "°C"
-    missing_value: -999
-    quality_range: [-50.0, 60.0]
-  TM5_10:
-    standard_name: "air_temperature_5cm"
-    description: "Air temperature 5cm above ground"
-    unit: "°C"
-    missing_value: -999
-    quality_range: [-50.0, 60.0]
-  RF_10:
-    standard_name: "relative_humidity"
-    description: "Relative humidity 2m above ground"
-    unit: "%"
-    missing_value: -999
-    quality_range: [0.0, 100.0]
-  PP_10:
-    standard_name: "air_pressure"
-    description: "Air pressure at station altitude"
-    unit: "hPa"
-    missing_value: -999
-    quality_range: [800.0, 1100.0]
-  TD_10:
-    standard_name: "dew_point_temperature"
-    description: "Dew point temperature 2m above ground"
-    unit: "°C"
-    missing_value: -999
-    quality_range: [-50.0, 40.0]
+# Data schema configuration
+schema:
+  # Output columns and their types
+  columns:
+    station_id:
+      type: "integer"
+      required: true
+      description: "DWD station identifier"
+    
+    timestamp:
+      type: "datetime"
+      required: true
+      description: "Measurement timestamp (UTC)"
+    
+    temperature:
+      type: "float"
+      required: true
+      description: "Air temperature in °C"
+      precision: 1
+    
+    quality_flag:
+      type: "string"
+      required: false
+      description: "Data quality indicator"
+      max_length: 10
+    
+    source_file:
+      type: "string"
+      required: true
+      description: "Original source file name"
+      max_length: 255
+    
+    processed_at:
+      type: "datetime"
+      required: true
+      description: "Processing timestamp"
 
-# Quality Levels (DWD standard)
-quality_levels:
-  1:
-    description: "Only formal control"
-    reliability: "basic"
-  2:
-    description: "Controlled with individually defined criteria"
-    reliability: "enhanced"
-  3:
-    description: "Automatic control and correction"
-    reliability: "high"
-  5:
-    description: "Historic, subjective procedures"
-    reliability: "historical"
-  7:
-    description: "Second control done, before correction"
-    reliability: "verified_uncorrected"
-  8:
-    description: "Quality control outside ROUTINE"
-    reliability: "non_routine"
-  9:
-    description: "Not all parameters corrected"
-    reliability: "partially_corrected"
-  10:
-    description: "Quality control finished, all corrections finished"
-    reliability: "fully_processed"
-
-# Sensor Information
-sensors:
-  temperature:
-    type: "PT 100"
-    measurement_method: "electrical resistance"
-    height_above_ground: 2.0
-    accuracy: "±0.1°C"
-  humidity:
-    type: "capacitive sensor"
-    measurement_method: "electrical capacitance"
-    height_above_ground: 2.0
-    accuracy: "±2%"
-  pressure:
-    type: "digital barometer"
-    measurement_method: "piezoelectric"
-    accuracy: "±0.1 hPa"
-
-# Data Source Information
-data_sources:
-  historical:
-    description: "Historical measurements from automatic weather stations"
-    time_reference: "MEZ/CET until 1999-12-31, UTC from 2000-01-01"
-    update_frequency: "annual"
-    data_availability: "complete archive"
-  recent:
-    description: "Recent measurements from current observation network"
-    time_reference: "UTC"
-    update_frequency: "daily"
-    data_availability: "last 500 days"
-  now:
-    description: "Current measurements from active stations"
-    time_reference: "UTC"
-    update_frequency: "hourly"
-    data_availability: "last 7 days"
-
-# File Naming Patterns
-file_patterns:
-  data_files: "10minutenwerte_TU_{station_id}_{start_date}_{end_date}_hist.zip"
-  metadata_files: "Meta_Daten_zehn_min_tu_{station_id}.zip"
-  station_info: "zehn_min_tu_Beschreibung_Stationen.txt"
-
-# Processing Statistics (for validation)
-expected_statistics:
-  total_stations: 1623              # Expected number of stations
-  date_range:
-    start: "1993-04-28"            # Earliest expected data
-    end: "2024-12-31"              # Latest expected data
-  measurements_per_hour: 6          # 10-minute intervals = 6 per hour
-  parameters_per_measurement: 6     # Number of measured parameters
-
-# Error Handling
-error_handling:
-  skip_corrupted_files: true        # Skip files that cannot be extracted
-  skip_empty_files: true           # Skip files with no measurement data
-  skip_invalid_stations: false     # Fail if station info is missing
-  max_parsing_errors: 10           # Maximum parsing errors before giving up
-
-# Performance Optimization
-performance:
-  use_parallel_extraction: true     # Extract ZIP files in parallel
-  cache_station_info: true         # Cache station information in memory
-  cache_metadata: true             # Cache sensor metadata
-  batch_database_writes: true      # Batch database operations
-  memory_limit_mb: 256             # Memory limit per worker
-
-# Monitoring and Alerts
+# Monitoring and quality control
 monitoring:
-  track_processing_time: true      # Monitor file processing times
-  track_memory_usage: true         # Monitor memory consumption
-  alert_on_failures: true         # Alert when files fail processing
-  alert_threshold: 0.05            # Alert if >5% of files fail
+  # Enable dataset-specific monitoring
+  enabled: true
+  
+  # Quality metrics to track
+  quality_metrics:
+    - "record_count"
+    - "temperature_range_violations"
+    - "missing_values_percentage"
+    - "duplicate_records"
+    - "timestamp_gaps"
+  
+  # Alert conditions
+  alerts:
+    # Alert if more than 5% of records are invalid
+    high_invalid_rate: 0.05
+    
+    # Alert if processing takes longer than expected
+    slow_processing_threshold: 300  # seconds per file
+    
+    # Alert if temperature values seem unrealistic
+    suspicious_temperature_count: 100
 
-# Archive Configuration
-archive:
-  compress_output: false           # Compress final output files
-  retention_days: 365             # Keep processed files for 1 year
-  backup_raw_data: false          # Don't backup raw ZIP files
-  cleanup_failed_files: false     # Keep failed files for debugging
+# Retention and archival
+retention:
+  # Keep processed files for this many days
+  processed_files_days: 365
+  
+  # Keep error logs for this many days  
+  error_logs_days: 90
+  
+  # Archive old files instead of deleting
+  archive_old_files: true
+  
+  # Archive location
+  archive_path: "data/archive/10_minutes_air_temperature"
+
+# Integration settings
+integration:
+  # Database connection (if different from base config)
+  database:
+    # Use base config database settings
+    use_base_config: true
+  
+  # External APIs or services
+  external_services:
+    # DWD metadata service
+    dwd_metadata_api:
+      enabled: false
+      url: "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/air_temperature/"
+      timeout: 30
+  
+  # Export formats
+  export:
+    # Enable export to different formats
+    formats: ["csv", "parquet", "json"]
+    
+    # Export schedule (cron format)
+    schedule: "0 2 * * *"  # Daily at 2 AM
+
+

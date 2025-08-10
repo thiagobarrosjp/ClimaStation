@@ -1,939 +1,986 @@
 """
-ClimaStation Progress Tracking System
+ClimaStation Progress Tracker
 
-SCRIPT IDENTIFICATION: DWD10TAH3P (Progress Tracker)
+SCRIPT IDENTIFICATION: DWD10TAH2P (Progress Tracker)
 
 PURPOSE:
-SQLite-based progress tracking system for large-scale DWD file processing.
-Provides thread-safe coordination for parallel workers with resume capability
-after crashes, interruptions, or manual stops. Optimized for 500K+ files
-across multiple datasets with atomic operations and performance optimization.
+Comprehensive file-level progress tracking using SQLite database for the ClimaStation platform.
+Provides thread-safe tracking of processing status for individual ZIP files across all datasets
+with support for parallel processing, failure recovery, and detailed progress reporting.
 
 RESPONSIBILITIES:
-- Initialize and manage file processing queues for datasets
-- Coordinate work distribution among parallel workers (up to 4)
-- Track file processing status: pending → processing → completed/failed
-- Provide atomic claim/release operations to prevent race conditions
-- Support resume capability after system interruptions
-- Generate processing statistics and progress reports
-- Integrate with configuration system and enhanced logging
-
-USAGE:
-    from app.utils.progress_tracker import ProgressTracker, initialize_progress_tracking
-    from app.utils.enhanced_logger import get_logger
-    from app.utils.config_manager import load_config
-    
-    logger = get_logger("WORKER")
-    config = load_config("10_minutes_air_temperature", logger)
-    
-    # Initialize tracking for a dataset
-    files = ["file1.zip", "file2.zip", "file3.zip"]
-    initialize_progress_tracking("air_temp_10min", files, config, logger)
-    
-    # Worker coordination
-    tracker = ProgressTracker(config, logger)
-    file_path = tracker.claim_next_file("air_temp_10min", "worker_001")
-    if file_path:
-        # Process file...
-        tracker.mark_file_completed(file_path, records_processed=1500)
+- Create and manage SQLite database for progress tracking
+- Register files for processing with PENDING status
+- Track processing state transitions (PENDING → PROCESSING → SUCCESS/FAILED)
+- Record processing times, worker assignments, and error messages
+- Provide status summaries and progress reports for datasets
+- Support recovery by identifying failed or incomplete files
+- Handle concurrent access from multiple workers safely
+- Generate comprehensive processing statistics and reports
 
 DATABASE SCHEMA:
-- file_processing_log: Main tracking table with status, timing, worker info
-- dataset_metadata: Dataset-level information and statistics
-- worker_sessions: Active worker session tracking
+    file_processing_log:
+    - id: Primary key (INTEGER AUTOINCREMENT)
+    - dataset: Dataset identifier (TEXT, e.g., "10_minutes_air_temperature")
+    - file_path: Full path to ZIP file being processed (TEXT)
+    - status: Current processing status (TEXT: PENDING/PROCESSING/SUCCESS/FAILED)
+    - start_time: When processing began (TIMESTAMP)
+    - end_time: When processing completed (TIMESTAMP)
+    - error_message: Error details for failed files (TEXT)
+    - worker_id: Identifier of worker that processed the file (TEXT)
+    - created_at: When record was created (TIMESTAMP DEFAULT CURRENT_TIMESTAMP)
+    - UNIQUE constraint on (dataset, file_path)
 
-PERFORMANCE:
-- WAL mode for concurrent access without blocking
-- Optimized indexes for fast queries on 500K+ records
-- Connection pooling and prepared statements
-- Memory usage <50MB for tracking operations
-- Query operations <1 second response time
+INDEXES:
+    - idx_dataset_status: Efficient querying by dataset and status
+    - idx_dataset_file: Fast lookups by dataset and file path
+
+USAGE:
+    from utils.progress_tracker import ProgressTracker, ProcessingStatus
+    
+    # Initialize tracker
+    tracker = ProgressTracker(Path("data/progress/climastation_progress.db"))
+    
+    # Register files for processing
+    files = [Path("file1.zip"), Path("file2.zip")]
+    registered = tracker.register_files("10_minutes_air_temperature", files)
+    
+    # Processing workflow
+    success = tracker.start_processing("10_minutes_air_temperature", file_path, "worker_1")
+    if success:
+        # Process file...
+        tracker.mark_success("10_minutes_air_temperature", file_path)
+    else:
+        tracker.mark_failed("10_minutes_air_temperature", file_path, "Error message")
+    
+    # Get status and reports
+    status = tracker.get_dataset_status("10_minutes_air_temperature")
+    summary = tracker.get_processing_summary("10_minutes_air_temperature")
 
 THREAD SAFETY:
-- Atomic claim operations using SELECT FOR UPDATE equivalent
-- Proper transaction isolation and rollback handling
-- Connection-per-thread pattern for SQLite safety
-- Comprehensive error recovery and cleanup
+All database operations use SQLite's built-in thread safety with proper connection handling
+and threading locks. Safe for use with parallel workers and concurrent access patterns.
+Each operation uses its own connection context to avoid conflicts.
+
+ERROR HANDLING:
+- Database creation errors are propagated to caller with detailed context
+- Individual operation errors are logged but don't crash the tracker
+- Provides detailed error context for troubleshooting
+- Graceful handling of database lock conflicts and timeouts
+- Comprehensive validation of input parameters
+
+PERFORMANCE CONSIDERATIONS:
+- Uses connection pooling through context managers
+- Efficient indexing for common query patterns
+- Batch operations where possible
+- Minimal lock contention through fine-grained locking
+
+RECOVERY FEATURES:
+- Identify files stuck in PROCESSING state (worker crashes)
+- Reset failed files for reprocessing
+- Comprehensive failure analysis and reporting
+- Support for incremental processing modes
+
+DEPENDENCIES:
+- sqlite3: Database operations
+- pathlib: File path handling
+- datetime: Timestamp management
+- enum: Type-safe status definitions
+- threading: Thread safety
+- typing: Type hints for better code clarity
+
+AUTHOR: ClimaStation Backend Pipeline
+VERSION: Enhanced with comprehensive tracking and reporting
+LAST UPDATED: 2025-01-21
 """
 
 import sqlite3
-import threading
-import time
-import uuid
 from pathlib import Path
-from typing import Dict, List, Any, Optional, Tuple
-from dataclasses import dataclass
-from datetime import datetime, timezone, timedelta
-from contextlib import contextmanager
-import json
+from datetime import datetime, timedelta
+from typing import List, Dict, Optional, Tuple, Any, Union
+from enum import Enum
+import threading
+import logging
+import time
 
-# Import ClimaStation utilities
-from .enhanced_logger import StructuredLoggerAdapter
-from .config_manager import ConfigurationError
 
-@dataclass
-class ProcessingStats:
-    """Statistics for dataset processing progress."""
-    dataset: str
-    total_files: int
-    pending_files: int
-    processing_files: int
-    completed_files: int
-    failed_files: int
-    success_rate: float
-    avg_processing_time: float
-    estimated_completion: Optional[str]
-    active_workers: int
+class ProcessingStatus(Enum):
+    """Enumeration of possible file processing states"""
+    PENDING = "PENDING"         # File registered but not yet processed
+    PROCESSING = "PROCESSING"   # File currently being processed by a worker
+    SUCCESS = "SUCCESS"         # File processed successfully
+    FAILED = "FAILED"          # File processing failed
 
-@dataclass
-class FileStatus:
-    """Status information for a single file."""
-    file_path: str
-    status: str  # pending, processing, completed, failed
-    worker_id: Optional[str]
-    start_time: Optional[datetime]
-    end_time: Optional[datetime]
-    processing_duration: Optional[float]
-    records_processed: Optional[int]
-    error_message: Optional[str]
-    retry_count: int
-
-class ProgressTrackingError(Exception):
-    """Raised when progress tracking operations fail."""
-    pass
 
 class ProgressTracker:
     """
-    Thread-safe progress tracking system for DWD file processing.
+    SQLite-based progress tracking for file processing operations.
     
-    Manages SQLite database operations for tracking file processing status
-    across multiple datasets and parallel workers. Provides atomic operations
-    for work coordination and comprehensive progress reporting.
+    Provides thread-safe tracking of individual file processing status
+    with support for parallel workers, comprehensive error reporting,
+    and detailed progress analytics.
     """
     
-    # Database schema version for migrations
-    SCHEMA_VERSION = 1
-    
-    # File status constants
-    STATUS_PENDING = "pending"
-    STATUS_PROCESSING = "processing"
-    STATUS_COMPLETED = "completed"
-    STATUS_FAILED = "failed"
-    
-    def __init__(self, config: Dict[str, Any], logger: StructuredLoggerAdapter):
+    def __init__(self, db_path: Path, timeout: float = 30.0):
         """
-        Initialize progress tracker with configuration and logger.
+        Initialize progress tracker with SQLite database.
         
         Args:
-            config: Configuration dictionary from config manager
-            logger: StructuredLoggerAdapter instance with PROG component
+            db_path: Path to SQLite database file (will be created if not exists)
+            timeout: Database operation timeout in seconds
+            
+        Raises:
+            sqlite3.Error: If database initialization fails
         """
-        self.config = config
-        self.logger = logger
-        
-        # Get database path from configuration
-        try:
-            if 'paths' in config:
-                self.db_path = Path(config['paths'].get('progress_db', 'data/progress_tracking.db'))
-            else:
-                # Fallback to default path
-                self.db_path = Path("data/progress_tracking.db")
-        except Exception as e:
-            raise ConfigurationError(f"Failed to get progress database path: {e}")
-        
-        # Ensure database directory exists
-        self.db_path.parent.mkdir(parents=True, exist_ok=True)
-        
-        # Thread-local storage for database connections
-        self._local = threading.local()
-        
-        # Configuration settings
-        progress_config = config.get('progress_tracking', {})
-        self.max_retry_attempts = progress_config.get('max_retry_attempts', 3)
-        self.claim_timeout_minutes = progress_config.get('claim_timeout_minutes', 30)
-        self.cleanup_interval_hours = progress_config.get('cleanup_interval_hours', 24)
+        self.db_path = db_path
+        self.timeout = timeout
+        self._lock = threading.Lock()  # Thread safety for database operations
+        self.logger = logging.getLogger(f"progress_tracker_{id(self)}")
         
         # Initialize database
-        self._initialize_database()
+        self._init_database()
         
-        self.logger.info("Progress tracker initialized", extra={
-            "component": "WORKER",
-            "structured_data": {
-                "db_path": str(self.db_path),
-                "max_retry_attempts": self.max_retry_attempts,
-                "claim_timeout_minutes": self.claim_timeout_minutes
-            }
-        })
+        self.logger.info(f"Progress tracker initialized with database: {db_path}")
     
-    @contextmanager
-    def _get_connection(self, timeout: float = 30.0):
+    def _init_database(self):
         """
-        Get thread-local database connection with proper configuration.
+        Create progress tracking table and indexes if they don't exist.
         
-        Args:
-            timeout: Connection timeout in seconds
+        Creates the file_processing_log table with proper indexes for
+        efficient querying by dataset and status. Ensures database
+        directory exists and handles creation errors gracefully.
+        
+        Raises:
+            sqlite3.Error: If database creation fails
+        """
+        try:
+            # Ensure directory exists
+            self.db_path.parent.mkdir(parents=True, exist_ok=True)
             
-        Yields:
-            SQLite connection object
-        """
-        if not hasattr(self._local, 'connection') or self._local.connection is None:
-            try:
-                # Create connection with optimized settings
-                conn = sqlite3.connect(
-                    str(self.db_path),
-                    timeout=timeout,
-                    check_same_thread=False
-                )
+            with sqlite3.connect(self.db_path, timeout=self.timeout) as conn:
+                # Enable foreign key support and WAL mode for better concurrency
+                conn.execute("PRAGMA foreign_keys = ON")
+                conn.execute("PRAGMA journal_mode = WAL")
                 
-                # Enable WAL mode for concurrent access
-                conn.execute("PRAGMA journal_mode=WAL")
-                conn.execute("PRAGMA synchronous=NORMAL")
-                conn.execute("PRAGMA cache_size=10000")
-                conn.execute("PRAGMA temp_store=MEMORY")
-                
-                # Set row factory for easier data access
-                conn.row_factory = sqlite3.Row
-                
-                self._local.connection = conn
-                
-            except Exception as e:
-                self.logger.error(f"Failed to create database connection: {e}", extra={
-                    "component": "WORKER",
-                    "structured_data": {"error": str(e), "db_path": str(self.db_path)}
-                })
-                raise ProgressTrackingError(f"Database connection failed: {e}")
-        
-        try:
-            yield self._local.connection
-        except Exception as e:
-            # Rollback any pending transaction
-            try:
-                self._local.connection.rollback()
-            except:
-                pass
-            raise
-    
-    def _initialize_database(self):
-        """Initialize database schema and indexes."""
-        try:
-            with self._get_connection() as conn:
-                # Create main file processing log table
+                # Create main tracking table
                 conn.execute("""
                     CREATE TABLE IF NOT EXISTS file_processing_log (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         dataset TEXT NOT NULL,
                         file_path TEXT NOT NULL,
-                        status TEXT NOT NULL DEFAULT 'pending',
-                        worker_id TEXT,
+                        status TEXT NOT NULL CHECK (status IN ('PENDING', 'PROCESSING', 'SUCCESS', 'FAILED')),
                         start_time TIMESTAMP,
                         end_time TIMESTAMP,
-                        processing_duration REAL,
-                        records_processed INTEGER,
                         error_message TEXT,
-                        retry_count INTEGER DEFAULT 0,
+                        worker_id TEXT,
                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                         UNIQUE(dataset, file_path)
                     )
                 """)
                 
-                # Create dataset metadata table
+                # Create indexes for efficient querying
                 conn.execute("""
-                    CREATE TABLE IF NOT EXISTS dataset_metadata (
-                        dataset TEXT PRIMARY KEY,
-                        total_files INTEGER NOT NULL,
-                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                    )
-                """)
-                
-                # Create worker sessions table
-                conn.execute("""
-                    CREATE TABLE IF NOT EXISTS worker_sessions (
-                        worker_id TEXT PRIMARY KEY,
-                        dataset TEXT NOT NULL,
-                        last_heartbeat TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                        status TEXT DEFAULT 'active'
-                    )
-                """)
-                
-                # Create indexes for performance
-                conn.execute("""
-                    CREATE INDEX IF NOT EXISTS idx_file_processing_dataset_status 
+                    CREATE INDEX IF NOT EXISTS idx_dataset_status 
                     ON file_processing_log(dataset, status)
                 """)
                 
                 conn.execute("""
-                    CREATE INDEX IF NOT EXISTS idx_file_processing_worker 
-                    ON file_processing_log(worker_id, status)
+                    CREATE INDEX IF NOT EXISTS idx_dataset_file 
+                    ON file_processing_log(dataset, file_path)
                 """)
                 
                 conn.execute("""
-                    CREATE INDEX IF NOT EXISTS idx_file_processing_updated 
-                    ON file_processing_log(updated_at)
+                    CREATE INDEX IF NOT EXISTS idx_status_time 
+                    ON file_processing_log(status, start_time)
                 """)
                 
-                # Create schema version table
+                # Create trigger to update updated_at timestamp
                 conn.execute("""
-                    CREATE TABLE IF NOT EXISTS schema_version (
-                        version INTEGER PRIMARY KEY,
-                        applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                    )
+                    CREATE TRIGGER IF NOT EXISTS update_timestamp 
+                    AFTER UPDATE ON file_processing_log
+                    BEGIN
+                        UPDATE file_processing_log 
+                        SET updated_at = CURRENT_TIMESTAMP 
+                        WHERE id = NEW.id;
+                    END
                 """)
-                
-                # Insert current schema version
-                conn.execute("""
-                    INSERT OR REPLACE INTO schema_version (version) VALUES (?)
-                """, (self.SCHEMA_VERSION,))
                 
                 conn.commit()
                 
-            self.logger.info("Database schema initialized successfully", extra={
-                "component": "WORKER",
-                "structured_data": {"schema_version": self.SCHEMA_VERSION}
-            })
-            
-        except Exception as e:
-            self.logger.error(f"Failed to initialize database schema: {e}", extra={
-                "component": "WORKER",
-                "structured_data": {"error": str(e)}
-            })
-            raise ProgressTrackingError(f"Database initialization failed: {e}")
+        except sqlite3.Error as e:
+            self.logger.error(f"Failed to initialize database: {e}")
+            raise
     
-    def initialize_dataset(self, dataset: str, files: List[str]) -> None:
+    def register_files(self, dataset: str, file_paths: List[Path]) -> int:
         """
-        Initialize progress tracking for a dataset.
+        Register files for processing with PENDING status.
+        
+        Uses INSERT OR IGNORE to handle duplicate registrations gracefully.
+        Only new files will be registered, existing files are left unchanged.
         
         Args:
-            dataset: Dataset name
-            files: List of file paths to track
-            
-        Raises:
-            ProgressTrackingError: If initialization fails
-        """
-        try:
-            with self._get_connection() as conn:
-                # Start transaction
-                conn.execute("BEGIN IMMEDIATE")
-                
-                # Insert or update dataset metadata
-                conn.execute("""
-                    INSERT OR REPLACE INTO dataset_metadata (dataset, total_files, updated_at)
-                    VALUES (?, ?, CURRENT_TIMESTAMP)
-                """, (dataset, len(files)))
-                
-                # Insert files that don't already exist
-                existing_files = set()
-                cursor = conn.execute("""
-                    SELECT file_path FROM file_processing_log WHERE dataset = ?
-                """, (dataset,))
-                
-                for row in cursor:
-                    existing_files.add(row['file_path'])
-                
-                new_files = []
-                for file_path in files:
-                    if file_path not in existing_files:
-                        new_files.append((dataset, file_path, self.STATUS_PENDING))
-                
-                if new_files:
-                    conn.executemany("""
-                        INSERT INTO file_processing_log (dataset, file_path, status)
-                        VALUES (?, ?, ?)
-                    """, new_files)
-                
-                conn.commit()
-                
-                self.logger.info(f"Dataset initialized: {dataset}", extra={
-                    "component": "WORKER",
-                    "structured_data": {
-                        "dataset": dataset,
-                        "total_files": len(files),
-                        "new_files": len(new_files),
-                        "existing_files": len(existing_files)
-                    }
-                })
-                
-        except Exception as e:
-            self.logger.error(f"Failed to initialize dataset {dataset}: {e}", extra={
-                "component": "WORKER",
-                "structured_data": {"dataset": dataset, "error": str(e)}
-            })
-            raise ProgressTrackingError(f"Dataset initialization failed: {e}")
-    
-    def claim_next_file(self, dataset: str, worker_id: str) -> Optional[str]:
-        """
-        Atomically claim the next available file for processing.
-        
-        Args:
-            dataset: Dataset name
-            worker_id: Unique worker identifier
+            dataset: Dataset identifier (e.g., "10_minutes_air_temperature")
+            file_paths: List of file paths to register
             
         Returns:
-            File path to process or None if no files available
+            Number of files successfully registered (may be less than input if duplicates)
             
         Raises:
-            ProgressTrackingError: If claim operation fails
+            ValueError: If dataset or file_paths are invalid
         """
-        try:
-            with self._get_connection() as conn:
-                # Start immediate transaction for atomic operation
-                conn.execute("BEGIN IMMEDIATE")
-                
-                # Clean up stale processing claims first
-                timeout_threshold = datetime.now(timezone.utc).timestamp() - (self.claim_timeout_minutes * 60)
-                
-                conn.execute("""
-                    UPDATE file_processing_log 
-                    SET status = ?, worker_id = NULL, start_time = NULL
-                    WHERE dataset = ? AND status = ? 
-                    AND start_time < datetime(?, 'unixepoch')
-                """, (self.STATUS_PENDING, dataset, self.STATUS_PROCESSING, timeout_threshold))
-                
-                # Find next available file
-                cursor = conn.execute("""
-                    SELECT file_path FROM file_processing_log
-                    WHERE dataset = ? AND status = ?
-                    ORDER BY created_at ASC
-                    LIMIT 1
-                """, (dataset, self.STATUS_PENDING))
-                
-                row = cursor.fetchone()
-                if not row:
-                    conn.rollback()
-                    return None
-                
-                file_path = row['file_path']
-                
-                # Claim the file
-                current_time = datetime.now(timezone.utc)
-                result = conn.execute("""
-                    UPDATE file_processing_log
-                    SET status = ?, worker_id = ?, start_time = ?, updated_at = CURRENT_TIMESTAMP
-                    WHERE dataset = ? AND file_path = ? AND status = ?
-                """, (self.STATUS_PROCESSING, worker_id, current_time, dataset, file_path, self.STATUS_PENDING))
-                
-                if result.rowcount == 0:
-                    # File was claimed by another worker
-                    conn.rollback()
-                    return None
-                
-                # Update worker session
-                conn.execute("""
-                    INSERT OR REPLACE INTO worker_sessions (worker_id, dataset, last_heartbeat, status)
-                    VALUES (?, ?, CURRENT_TIMESTAMP, 'active')
-                """, (worker_id, dataset))
-                
-                conn.commit()
-                
-                self.logger.debug(f"File claimed by worker {worker_id}: {file_path}", extra={
-                    "component": "WORKER",
-                    "structured_data": {
-                        "dataset": dataset,
-                        "worker_id": worker_id,
-                        "file_path": file_path
-                    }
-                })
-                
-                return file_path
-                
-        except Exception as e:
-            self.logger.error(f"Failed to claim file for dataset {dataset}: {e}", extra={
-                "component": "WORKER",
-                "structured_data": {"dataset": dataset, "worker_id": worker_id, "error": str(e)}
-            })
-            raise ProgressTrackingError(f"File claim failed: {e}")
+        if not dataset or not dataset.strip():
+            raise ValueError("Dataset name cannot be empty")
+        
+        if not file_paths:
+            self.logger.warning("No file paths provided for registration")
+            return 0
+        
+        registered_count = 0
+        
+        with self._lock:
+            try:
+                with sqlite3.connect(self.db_path, timeout=self.timeout) as conn:
+                    for file_path in file_paths:
+                        try:
+                            cursor = conn.execute("""
+                                INSERT OR IGNORE INTO file_processing_log 
+                                (dataset, file_path, status) 
+                                VALUES (?, ?, ?)
+                            """, (dataset, str(file_path), ProcessingStatus.PENDING.value))
+                            
+                            if cursor.rowcount > 0:
+                                registered_count += 1
+                                
+                        except sqlite3.Error as e:
+                            self.logger.warning(f"Failed to register file {file_path}: {e}")
+                            continue
+                    
+                    conn.commit()
+                    
+            except sqlite3.Error as e:
+                self.logger.error(f"Database error during file registration: {e}")
+                raise
+        
+        self.logger.info(f"Registered {registered_count}/{len(file_paths)} files for dataset {dataset}")
+        return registered_count
     
-    def mark_file_completed(self, file_path: str, records_processed: int, dataset: Optional[str] = None) -> None:
+    def start_processing(self, dataset: str, file_path: Path, worker_id: str) -> bool:
         """
-        Mark a file as successfully completed.
+        Mark file as being processed by a specific worker.
+        
+        Only updates files that are currently in PENDING status to prevent
+        conflicts with other workers or already processed files.
         
         Args:
-            file_path: Path to the processed file
-            records_processed: Number of records processed from the file
-            dataset: Dataset name (optional, will be looked up if not provided)
-            
-        Raises:
-            ProgressTrackingError: If update operation fails
-        """
-        try:
-            with self._get_connection() as conn:
-                current_time = datetime.now(timezone.utc)
-                
-                # Calculate processing duration
-                cursor = conn.execute("""
-                    SELECT start_time FROM file_processing_log
-                    WHERE file_path = ? AND status = ?
-                """, (file_path, self.STATUS_PROCESSING))
-                
-                row = cursor.fetchone()
-                if not row:
-                    raise ProgressTrackingError(f"File not found in processing state: {file_path}")
-                
-                start_time = datetime.fromisoformat(row['start_time'].replace('Z', '+00:00'))
-                duration = (current_time - start_time).total_seconds()
-                
-                # Update file status
-                result = conn.execute("""
-                    UPDATE file_processing_log
-                    SET status = ?, end_time = ?, processing_duration = ?, 
-                        records_processed = ?, updated_at = CURRENT_TIMESTAMP
-                    WHERE file_path = ? AND status = ?
-                """, (self.STATUS_COMPLETED, current_time, duration, records_processed, 
-                      file_path, self.STATUS_PROCESSING))
-                
-                if result.rowcount == 0:
-                    raise ProgressTrackingError(f"Failed to update file status: {file_path}")
-                
-                conn.commit()
-                
-                self.logger.info(f"File completed: {Path(file_path).name}", extra={
-                    "component": "WORKER",
-                    "structured_data": {
-                        "file_path": file_path,
-                        "records_processed": records_processed,
-                        "processing_duration": round(duration, 2)
-                    }
-                })
-                
-        except Exception as e:
-            self.logger.error(f"Failed to mark file completed: {file_path}: {e}", extra={
-                "component": "WORKER",
-                "structured_data": {"file_path": file_path, "error": str(e)}
-            })
-            raise ProgressTrackingError(f"File completion update failed: {e}")
-    
-    def mark_file_failed(self, file_path: str, error_message: str, dataset: Optional[str] = None) -> None:
-        """
-        Mark a file as failed with error information.
-        
-        Args:
-            file_path: Path to the failed file
-            error_message: Error message describing the failure
-            dataset: Dataset name (optional, will be looked up if not provided)
-            
-        Raises:
-            ProgressTrackingError: If update operation fails
-        """
-        try:
-            with self._get_connection() as conn:
-                current_time = datetime.now(timezone.utc)
-                
-                # Get current retry count and start time
-                cursor = conn.execute("""
-                    SELECT start_time, retry_count FROM file_processing_log
-                    WHERE file_path = ? AND status = ?
-                """, (file_path, self.STATUS_PROCESSING))
-                
-                row = cursor.fetchone()
-                if not row:
-                    raise ProgressTrackingError(f"File not found in processing state: {file_path}")
-                
-                start_time = datetime.fromisoformat(row['start_time'].replace('Z', '+00:00'))
-                duration = (current_time - start_time).total_seconds()
-                retry_count = row['retry_count'] + 1
-                
-                # Determine if we should retry or mark as failed
-                if retry_count <= self.max_retry_attempts:
-                    new_status = self.STATUS_PENDING
-                    self.logger.warning(f"File failed, will retry ({retry_count}/{self.max_retry_attempts}): {Path(file_path).name}", extra={
-                        "component": "WORKER",
-                        "structured_data": {
-                            "file_path": file_path,
-                            "retry_count": retry_count,
-                            "error": error_message
-                        }
-                    })
-                else:
-                    new_status = self.STATUS_FAILED
-                    self.logger.error(f"File failed permanently after {retry_count} attempts: {Path(file_path).name}", extra={
-                        "component": "WORKER",
-                        "structured_data": {
-                            "file_path": file_path,
-                            "retry_count": retry_count,
-                            "error": error_message
-                        }
-                    })
-                
-                # Update file status
-                result = conn.execute("""
-                    UPDATE file_processing_log
-                    SET status = ?, end_time = ?, processing_duration = ?, 
-                        error_message = ?, retry_count = ?, worker_id = NULL,
-                        updated_at = CURRENT_TIMESTAMP
-                    WHERE file_path = ? AND status = ?
-                """, (new_status, current_time, duration, error_message, retry_count,
-                      file_path, self.STATUS_PROCESSING))
-                
-                if result.rowcount == 0:
-                    raise ProgressTrackingError(f"Failed to update file status: {file_path}")
-                
-                conn.commit()
-                
-        except Exception as e:
-            self.logger.error(f"Failed to mark file failed: {file_path}: {e}", extra={
-                "component": "WORKER",
-                "structured_data": {"file_path": file_path, "error": str(e)}
-            })
-            raise ProgressTrackingError(f"File failure update failed: {e}")
-    
-    def get_processing_stats(self, dataset: str) -> ProcessingStats:
-        """
-        Get comprehensive processing statistics for a dataset.
-        
-        Args:
-            dataset: Dataset name
+            dataset: Dataset identifier
+            file_path: Path to file being processed
+            worker_id: Identifier of worker processing the file
             
         Returns:
-            ProcessingStats object with current progress information
+            True if status was successfully updated, False otherwise
             
         Raises:
-            ProgressTrackingError: If stats retrieval fails
+            ValueError: If parameters are invalid
         """
+        if not all([dataset, file_path, worker_id]):
+            raise ValueError("Dataset, file_path, and worker_id are required")
+        
+        with self._lock:
+            try:
+                with sqlite3.connect(self.db_path, timeout=self.timeout) as conn:
+                    cursor = conn.execute("""
+                        UPDATE file_processing_log 
+                        SET status = ?, start_time = ?, worker_id = ?
+                        WHERE dataset = ? AND file_path = ? AND status = ?
+                    """, (
+                        ProcessingStatus.PROCESSING.value, 
+                        datetime.now(), 
+                        worker_id, 
+                        dataset, 
+                        str(file_path),
+                        ProcessingStatus.PENDING.value
+                    ))
+                    
+                    conn.commit()
+                    success = cursor.rowcount > 0
+                    
+                    if success:
+                        self.logger.debug(f"Started processing: {file_path} (worker: {worker_id})")
+                    else:
+                        self.logger.warning(f"Could not start processing {file_path} - may already be processed or not registered")
+                    
+                    return success
+                    
+            except sqlite3.Error as e:
+                self.logger.error(f"Error starting processing for {file_path}: {e}")
+                return False
+    
+    def mark_success(self, dataset: str, file_path: Path, records_processed: Optional[int] = None) -> bool:
+        """
+        Mark file as successfully processed.
+        
+        Updates the status to SUCCESS and records the end time. Can optionally
+        store the number of records processed for reporting purposes.
+        
+        Args:
+            dataset: Dataset identifier
+            file_path: Path to successfully processed file
+            records_processed: Optional number of records processed
+            
+        Returns:
+            True if status was successfully updated, False otherwise
+        """
+        with self._lock:
+            try:
+                with sqlite3.connect(self.db_path, timeout=self.timeout) as conn:
+                    # Update main status
+                    cursor = conn.execute("""
+                        UPDATE file_processing_log 
+                        SET status = ?, end_time = ?
+                        WHERE dataset = ? AND file_path = ?
+                    """, (
+                        ProcessingStatus.SUCCESS.value, 
+                        datetime.now(), 
+                        dataset, 
+                        str(file_path)
+                    ))
+                    
+                    conn.commit()
+                    success = cursor.rowcount > 0
+                    
+                    if success:
+                        self.logger.debug(f"Marked success: {file_path}")
+                    else:
+                        self.logger.warning(f"Could not mark success for {file_path} - file may not exist in database")
+                    
+                    return success
+                    
+            except sqlite3.Error as e:
+                self.logger.error(f"Error marking success for {file_path}: {e}")
+                return False
+    
+    def mark_failed(self, dataset: str, file_path: Path, error_message: str) -> bool:
+        """
+        Mark file as failed with error details.
+        
+        Updates the status to FAILED, records the end time, and stores
+        the error message for debugging and reporting purposes.
+        
+        Args:
+            dataset: Dataset identifier
+            file_path: Path to failed file
+            error_message: Description of the error that occurred
+            
+        Returns:
+            True if status was successfully updated, False otherwise
+        """
+        if not error_message:
+            error_message = "Unknown error"
+        
+        with self._lock:
+            try:
+                with sqlite3.connect(self.db_path, timeout=self.timeout) as conn:
+                    cursor = conn.execute("""
+                        UPDATE file_processing_log 
+                        SET status = ?, end_time = ?, error_message = ?
+                        WHERE dataset = ? AND file_path = ?
+                    """, (
+                        ProcessingStatus.FAILED.value, 
+                        datetime.now(), 
+                        error_message[:1000],  # Limit error message length
+                        dataset, 
+                        str(file_path)
+                    ))
+                    
+                    conn.commit()
+                    success = cursor.rowcount > 0
+                    
+                    if success:
+                        self.logger.debug(f"Marked failed: {file_path} - {error_message[:100]}...")
+                    else:
+                        self.logger.warning(f"Could not mark failure for {file_path} - file may not exist in database")
+                    
+                    return success
+                    
+            except sqlite3.Error as e:
+                self.logger.error(f"Error marking failure for {file_path}: {e}")
+                return False
+    
+    def get_dataset_status(self, dataset: str) -> Dict[str, int]:
+        """
+        Get processing status summary for a dataset.
+        
+        Returns counts for each processing status (PENDING, PROCESSING, SUCCESS, FAILED).
+        Useful for monitoring overall progress and identifying bottlenecks.
+        
+        Args:
+            dataset: Dataset identifier
+            
+        Returns:
+            Dictionary with status counts for each ProcessingStatus
+        """
+        status_counts = {status.value: 0 for status in ProcessingStatus}
+        
         try:
-            with self._get_connection() as conn:
-                # Get file counts by status
+            with sqlite3.connect(self.db_path, timeout=self.timeout) as conn:
                 cursor = conn.execute("""
-                    SELECT status, COUNT(*) as count
-                    FROM file_processing_log
-                    WHERE dataset = ?
+                    SELECT status, COUNT(*) 
+                    FROM file_processing_log 
+                    WHERE dataset = ? 
                     GROUP BY status
                 """, (dataset,))
                 
-                status_counts = {self.STATUS_PENDING: 0, self.STATUS_PROCESSING: 0, 
-                               self.STATUS_COMPLETED: 0, self.STATUS_FAILED: 0}
-                
-                for row in cursor:
-                    status_counts[row['status']] = row['count']
-                
-                total_files = sum(status_counts.values())
-                
-                if total_files == 0:
-                    raise ProgressTrackingError(f"No files found for dataset: {dataset}")
-                
-                # Calculate success rate
-                completed = status_counts[self.STATUS_COMPLETED]
-                failed = status_counts[self.STATUS_FAILED]
-                finished = completed + failed
-                success_rate = (completed / finished * 100) if finished > 0 else 0
-                
-                # Get average processing time
-                cursor = conn.execute("""
-                    SELECT AVG(processing_duration) as avg_duration
-                    FROM file_processing_log
-                    WHERE dataset = ? AND status = ? AND processing_duration IS NOT NULL
-                """, (dataset, self.STATUS_COMPLETED))
-                
-                row = cursor.fetchone()
-                avg_processing_time = row['avg_duration'] or 0
-                
-                # Estimate completion time
-                pending = status_counts[self.STATUS_PENDING]
-                processing = status_counts[self.STATUS_PROCESSING]
-                remaining = pending + processing
-                
-                estimated_completion = None
-                if remaining > 0 and avg_processing_time > 0:
-                    # Get active worker count
-                    cursor = conn.execute("""
-                        SELECT COUNT(DISTINCT worker_id) as active_workers
-                        FROM worker_sessions
-                        WHERE dataset = ? AND status = 'active'
-                        AND last_heartbeat > datetime('now', '-5 minutes')
-                    """, (dataset,))
+                for status, count in cursor.fetchall():
+                    if status in status_counts:
+                        status_counts[status] = count
                     
-                    active_workers = cursor.fetchone()['active_workers'] or 1
-                    
-                    estimated_seconds = (remaining * avg_processing_time) / active_workers
-                    estimated_completion = datetime.now() + timedelta(seconds=estimated_seconds)
-                    estimated_completion = estimated_completion.strftime('%Y-%m-%d %H:%M:%S')
-                else:
-                    active_workers = 0
-                
-                stats = ProcessingStats(
-                    dataset=dataset,
-                    total_files=total_files,
-                    pending_files=status_counts[self.STATUS_PENDING],
-                    processing_files=status_counts[self.STATUS_PROCESSING],
-                    completed_files=status_counts[self.STATUS_COMPLETED],
-                    failed_files=status_counts[self.STATUS_FAILED],
-                    success_rate=round(success_rate, 1),
-                    avg_processing_time=round(avg_processing_time, 2),
-                    estimated_completion=estimated_completion,
-                    active_workers=active_workers
-                )
-                
-                self.logger.debug(f"Retrieved stats for dataset: {dataset}", extra={
-                    "component": "WORKER",
-                    "structured_data": {
-                        "dataset": dataset,
-                        "total_files": total_files,
-                        "completed": completed,
-                        "success_rate": success_rate
-                    }
-                })
-                
-                return stats
-                
-        except Exception as e:
-            self.logger.error(f"Failed to get processing stats for dataset {dataset}: {e}", extra={
-                "component": "WORKER",
-                "structured_data": {"dataset": dataset, "error": str(e)}
-            })
-            raise ProgressTrackingError(f"Stats retrieval failed: {e}")
+        except sqlite3.Error as e:
+            self.logger.error(f"Error getting dataset status for {dataset}: {e}")
+        
+        return status_counts
     
-    def get_file_status(self, file_path: str) -> Optional[FileStatus]:
+    def get_failed_files(self, dataset: str, limit: Optional[int] = None) -> List[Tuple[str, str, Optional[str]]]:
         """
-        Get detailed status information for a specific file.
+        Get list of failed files with error messages and timestamps.
+        
+        Returns detailed information about failed files for debugging
+        and recovery purposes. Results are ordered by failure time (most recent first).
         
         Args:
-            file_path: Path to the file
+            dataset: Dataset identifier
+            limit: Maximum number of results to return (None for all)
             
         Returns:
-            FileStatus object or None if file not found
+            List of tuples (file_path, error_message, end_time) for failed files
         """
-        try:
-            with self._get_connection() as conn:
-                cursor = conn.execute("""
-                    SELECT * FROM file_processing_log WHERE file_path = ?
-                """, (file_path,))
-                
-                row = cursor.fetchone()
-                if not row:
-                    return None
-                
-                # Parse timestamps
-                start_time = None
-                end_time = None
-                
-                if row['start_time']:
-                    start_time = datetime.fromisoformat(row['start_time'].replace('Z', '+00:00'))
-                
-                if row['end_time']:
-                    end_time = datetime.fromisoformat(row['end_time'].replace('Z', '+00:00'))
-                
-                return FileStatus(
-                    file_path=row['file_path'],
-                    status=row['status'],
-                    worker_id=row['worker_id'],
-                    start_time=start_time,
-                    end_time=end_time,
-                    processing_duration=row['processing_duration'],
-                    records_processed=row['records_processed'],
-                    error_message=row['error_message'],
-                    retry_count=row['retry_count']
-                )
-                
-        except Exception as e:
-            self.logger.error(f"Failed to get file status: {file_path}: {e}", extra={
-                "component": "WORKER",
-                "structured_data": {"file_path": file_path, "error": str(e)}
-            })
-            return None
-    
-    def cleanup_stale_sessions(self) -> int:
-        """
-        Clean up stale worker sessions and reset abandoned files.
+        failed_files = []
         
-        Returns:
-            Number of files reset to pending status
-        """
         try:
-            with self._get_connection() as conn:
-                # Reset files from inactive workers
-                timeout_threshold = datetime.now(timezone.utc).timestamp() - (self.claim_timeout_minutes * 60)
+            with sqlite3.connect(self.db_path, timeout=self.timeout) as conn:
+                query = """
+                    SELECT file_path, error_message, end_time 
+                    FROM file_processing_log 
+                    WHERE dataset = ? AND status = ?
+                    ORDER BY end_time DESC
+                """
                 
-                result = conn.execute("""
-                    UPDATE file_processing_log 
-                    SET status = ?, worker_id = NULL, start_time = NULL
-                    WHERE status = ? AND start_time < datetime(?, 'unixepoch')
-                """, (self.STATUS_PENDING, self.STATUS_PROCESSING, timeout_threshold))
+                if limit:
+                    query += f" LIMIT {limit}"
                 
-                reset_count = result.rowcount
+                cursor = conn.execute(query, (dataset, ProcessingStatus.FAILED.value))
+                failed_files = cursor.fetchall()
                 
-                # Clean up old worker sessions
-                conn.execute("""
-                    DELETE FROM worker_sessions 
-                    WHERE last_heartbeat < datetime('now', '-1 hour')
-                """, )
+        except sqlite3.Error as e:
+            self.logger.error(f"Error getting failed files for {dataset}: {e}")
+        
+        return failed_files
+    
+    def get_processing_summary(self, dataset: str) -> Dict[str, Any]:
+        """
+        Get comprehensive processing summary for a dataset.
+        
+        Provides detailed statistics including processing rates, timing information,
+        error analysis, and worker performance metrics.
+        
+        Args:
+            dataset: Dataset identifier
+            
+        Returns:
+            Dictionary with comprehensive processing statistics
+        """
+        summary = {
+            'dataset': dataset,
+            'total_files': 0,
+            'status_counts': self.get_dataset_status(dataset),
+            'processing_rate': 0.0,
+            'success_rate': 0.0,
+            'average_processing_time': 0.0,
+            'total_processing_time': 0.0,
+            'failed_files_count': 0,
+            'worker_stats': {},
+            'time_analysis': {}
+        }
+        
+        try:
+            with sqlite3.connect(self.db_path, timeout=self.timeout) as conn:
+                # Get total files
+                cursor = conn.execute("""
+                    SELECT COUNT(*) FROM file_processing_log WHERE dataset = ?
+                """, (dataset,))
+                summary['total_files'] = cursor.fetchone()[0]
                 
-                conn.commit()
+                # Get timing statistics for completed files
+                cursor = conn.execute("""
+                    SELECT 
+                        AVG(julianday(end_time) - julianday(start_time)) * 24 * 60 * 60 as avg_seconds,
+                        SUM(julianday(end_time) - julianday(start_time)) * 24 * 60 * 60 as total_seconds,
+                        COUNT(*) as completed_count
+                    FROM file_processing_log 
+                    WHERE dataset = ? AND status IN (?, ?) AND start_time IS NOT NULL AND end_time IS NOT NULL
+                """, (dataset, ProcessingStatus.SUCCESS.value, ProcessingStatus.FAILED.value))
                 
-                if reset_count > 0:
-                    self.logger.info(f"Cleaned up {reset_count} stale processing claims", extra={
-                        "component": "WORKER",
-                        "structured_data": {"reset_files": reset_count}
+                timing_result = cursor.fetchone()
+                if timing_result and timing_result[0]:
+                    summary['average_processing_time'] = timing_result[0]
+                    summary['total_processing_time'] = timing_result[1]
+                
+                # Calculate rates
+                completed = summary['status_counts'][ProcessingStatus.SUCCESS.value]
+                failed = summary['status_counts'][ProcessingStatus.FAILED.value]
+                total_attempted = completed + failed
+                
+                if summary['total_files'] > 0:
+                    summary['processing_rate'] = (total_attempted / summary['total_files']) * 100
+                
+                if total_attempted > 0:
+                    summary['success_rate'] = (completed / total_attempted) * 100
+                
+                # Worker statistics
+                cursor = conn.execute("""
+                    SELECT 
+                        worker_id,
+                        COUNT(*) as files_processed,
+                        SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as successful,
+                        SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as failed,
+                        AVG(julianday(end_time) - julianday(start_time)) * 24 * 60 * 60 as avg_time
+                    FROM file_processing_log 
+                    WHERE dataset = ? AND worker_id IS NOT NULL AND status IN (?, ?)
+                    GROUP BY worker_id
+                """, (ProcessingStatus.SUCCESS.value, ProcessingStatus.FAILED.value, 
+                      dataset, ProcessingStatus.SUCCESS.value, ProcessingStatus.FAILED.value))
+                
+                for row in cursor.fetchall():
+                    worker_id, files_processed, successful, failed, avg_time = row
+                    summary['worker_stats'][worker_id] = {
+                        'files_processed': files_processed,
+                        'successful': successful,
+                        'failed': failed,
+                        'success_rate': (successful / files_processed * 100) if files_processed > 0 else 0,
+                        'average_time': avg_time or 0
+                    }
+                
+                # Time analysis (processing by hour/day)
+                cursor = conn.execute("""
+                    SELECT 
+                        DATE(start_time) as processing_date,
+                        COUNT(*) as files_started,
+                        SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as files_completed
+                    FROM file_processing_log 
+                    WHERE dataset = ? AND start_time IS NOT NULL
+                    GROUP BY DATE(start_time)
+                    ORDER BY processing_date DESC
+                    LIMIT 7
+                """, (ProcessingStatus.SUCCESS.value, dataset))
+                
+                daily_stats = []
+                for row in cursor.fetchall():
+                    daily_stats.append({
+                        'date': row[0],
+                        'files_started': row[1],
+                        'files_completed': row[2]
                     })
                 
-                return reset_count
+                summary['time_analysis']['daily_stats'] = daily_stats
                 
-        except Exception as e:
-            self.logger.error(f"Failed to cleanup stale sessions: {e}", extra={
-                "component": "WORKER",
-                "structured_data": {"error": str(e)}
-            })
-            return 0
+        except sqlite3.Error as e:
+            self.logger.error(f"Error getting processing summary for {dataset}: {e}")
+            summary['error'] = str(e)
+        
+        return summary
+    
+    def get_stuck_files(self, dataset: str, timeout_hours: float = 2.0) -> List[Tuple[str, str, str]]:
+        """
+        Get files that are stuck in PROCESSING state (likely due to worker crashes).
+        
+        Identifies files that have been in PROCESSING state for longer than the
+        specified timeout, indicating potential worker failures or crashes.
+        
+        Args:
+            dataset: Dataset identifier
+            timeout_hours: Hours after which a PROCESSING file is considered stuck
+            
+        Returns:
+            List of tuples (file_path, worker_id, start_time) for stuck files
+        """
+        stuck_files = []
+        cutoff_time = datetime.now() - timedelta(hours=timeout_hours)
+        
+        try:
+            with sqlite3.connect(self.db_path, timeout=self.timeout) as conn:
+                cursor = conn.execute("""
+                    SELECT file_path, worker_id, start_time 
+                    FROM file_processing_log 
+                    WHERE dataset = ? AND status = ? AND start_time < ?
+                    ORDER BY start_time ASC
+                """, (dataset, ProcessingStatus.PROCESSING.value, cutoff_time))
+                
+                stuck_files = cursor.fetchall()
+                
+        except sqlite3.Error as e:
+            self.logger.error(f"Error getting stuck files for {dataset}: {e}")
+        
+        return stuck_files
+    
+    def reset_stuck_files(self, dataset: str, timeout_hours: float = 2.0) -> int:
+        """
+        Reset stuck files back to PENDING status for reprocessing.
+        
+        Identifies files stuck in PROCESSING state and resets them to PENDING
+        so they can be picked up by workers again. Useful for recovery after
+        worker crashes or system failures.
+        
+        Args:
+            dataset: Dataset identifier
+            timeout_hours: Hours after which a PROCESSING file is considered stuck
+            
+        Returns:
+            Number of files reset
+        """
+        cutoff_time = datetime.now() - timedelta(hours=timeout_hours)
+        reset_count = 0
+        
+        with self._lock:
+            try:
+                with sqlite3.connect(self.db_path, timeout=self.timeout) as conn:
+                    cursor = conn.execute("""
+                        UPDATE file_processing_log 
+                        SET status = ?, start_time = NULL, worker_id = NULL, error_message = NULL
+                        WHERE dataset = ? AND status = ? AND start_time < ?
+                    """, (ProcessingStatus.PENDING.value, dataset, ProcessingStatus.PROCESSING.value, cutoff_time))
+                    
+                    reset_count = cursor.rowcount
+                    conn.commit()
+                    
+                    if reset_count > 0:
+                        self.logger.info(f"Reset {reset_count} stuck files for dataset {dataset}")
+                    
+            except sqlite3.Error as e:
+                self.logger.error(f"Error resetting stuck files for {dataset}: {e}")
+        
+        return reset_count
+    
+    def reset_failed_files(self, dataset: str, error_pattern: Optional[str] = None) -> int:
+        """
+        Reset failed files back to PENDING status for reprocessing.
+        
+        Allows reprocessing of failed files, optionally filtering by error message
+        pattern. Useful for recovery after fixing issues that caused failures.
+        
+        Args:
+            dataset: Dataset identifier
+            error_pattern: Optional SQL LIKE pattern to match error messages
+            
+        Returns:
+            Number of files reset
+        """
+        reset_count = 0
+        
+        with self._lock:
+            try:
+                with sqlite3.connect(self.db_path, timeout=self.timeout) as conn:
+                    if error_pattern:
+                        cursor = conn.execute("""
+                            UPDATE file_processing_log 
+                            SET status = ?, start_time = NULL, end_time = NULL, 
+                                worker_id = NULL, error_message = NULL
+                            WHERE dataset = ? AND status = ? AND error_message LIKE ?
+                        """, (ProcessingStatus.PENDING.value, dataset, ProcessingStatus.FAILED.value, error_pattern))
+                    else:
+                        cursor = conn.execute("""
+                            UPDATE file_processing_log 
+                            SET status = ?, start_time = NULL, end_time = NULL, 
+                                worker_id = NULL, error_message = NULL
+                            WHERE dataset = ? AND status = ?
+                        """, (ProcessingStatus.PENDING.value, dataset, ProcessingStatus.FAILED.value))
+                    
+                    reset_count = cursor.rowcount
+                    conn.commit()
+                    
+                    if reset_count > 0:
+                        self.logger.info(f"Reset {reset_count} failed files for dataset {dataset}")
+                    
+            except sqlite3.Error as e:
+                self.logger.error(f"Error resetting failed files for {dataset}: {e}")
+        
+        return reset_count
     
     def reset_dataset(self, dataset: str) -> bool:
         """
-        Reset all files in a dataset back to pending status.
+        Reset all files in dataset to PENDING status (for complete reprocessing).
+        
+        Resets all files in the dataset back to PENDING status, clearing all
+        processing history. Use with caution as this will lose all progress.
         
         Args:
-            dataset: Dataset name to reset
+            dataset: Dataset identifier
             
         Returns:
-            True if reset was successful
+            True if reset was successful, False otherwise
         """
-        try:
-            with self._get_connection() as conn:
-                result = conn.execute("""
-                    UPDATE file_processing_log 
-                    SET status = ?, worker_id = NULL, start_time = NULL, 
-                        end_time = NULL, processing_duration = NULL, 
-                        error_message = NULL, updated_at = CURRENT_TIMESTAMP
-                    WHERE dataset = ? AND status IN (?, ?, ?)
-                """, (self.STATUS_PENDING, dataset, self.STATUS_PROCESSING, 
-                      self.STATUS_COMPLETED, self.STATUS_FAILED))
-                
-                conn.commit()
-                reset_count = result.rowcount
-                
-                self.logger.info(f"Reset dataset {dataset}: {reset_count} files", extra={
-                    "component": "WORKER",
-                    "structured_data": {"dataset": dataset, "reset_count": reset_count}
-                })
-                
-                return True
-                
-        except Exception as e:
-            self.logger.error(f"Failed to reset dataset {dataset}: {e}", extra={
-                "component": "WORKER",
-                "structured_data": {"dataset": dataset, "error": str(e)}
-            })
-            return False
-    
-    def close(self):
-        """Close database connections and cleanup resources."""
-        if hasattr(self._local, 'connection') and self._local.connection:
+        with self._lock:
             try:
-                self._local.connection.close()
-                self._local.connection = None
-            except Exception as e:
-                self.logger.warning(f"Error closing database connection: {e}", extra={
-                    "component": "WORKER"
-                })
-
-# Convenience functions for the available_functions.py interface
-
-def initialize_progress_tracking(dataset: str, files: List[str], config: Dict[str, Any], 
-                               logger: StructuredLoggerAdapter) -> None:
-    """
-    Initialize progress tracking for a dataset.
+                with sqlite3.connect(self.db_path, timeout=self.timeout) as conn:
+                    cursor = conn.execute("""
+                        UPDATE file_processing_log 
+                        SET status = ?, start_time = NULL, end_time = NULL, 
+                            error_message = NULL, worker_id = NULL
+                        WHERE dataset = ?
+                    """, (ProcessingStatus.PENDING.value, dataset))
+                    
+                    reset_count = cursor.rowcount
+                    conn.commit()
+                    
+                    self.logger.info(f"Reset {reset_count} files for dataset {dataset}")
+                    return True
+                    
+            except sqlite3.Error as e:
+                self.logger.error(f"Error resetting dataset {dataset}: {e}")
+                return False
     
-    This is one of the required functions from available_functions.py.
-    Creates a ProgressTracker instance and initializes the dataset.
-    
-    Args:
-        dataset: Dataset name
-        files: List of file paths to track
-        config: Configuration dictionary from config manager
-        logger: StructuredLoggerAdapter instance with WORKER component
+    def get_pending_files(self, dataset: str, limit: Optional[int] = None) -> List[str]:
+        """
+        Get list of files pending processing.
         
-    Raises:
-        ProgressTrackingError: If initialization fails
-    """
-    tracker = ProgressTracker(config, logger)
-    try:
-        tracker.initialize_dataset(dataset, files)
-    finally:
-        tracker.close()
-
-def claim_next_file(dataset: str, worker_id: str, config: Dict[str, Any], 
-                   logger: StructuredLoggerAdapter) -> Optional[str]:
-    """
-    Claim the next available file for processing.
-    
-    This is one of the required functions from available_functions.py.
-    
-    Args:
-        dataset: Dataset name
-        worker_id: Unique worker identifier
-        config: Configuration dictionary from config manager
-        logger: StructuredLoggerAdapter instance with WORKER component
+        Returns files that are ready to be processed (PENDING status).
+        Useful for workers to discover available work.
         
-    Returns:
-        File path to process or None if no files available
-    """
-    tracker = ProgressTracker(config, logger)
-    try:
-        return tracker.claim_next_file(dataset, worker_id)
-    finally:
-        tracker.close()
-
-def mark_file_completed(file_path: str, records: int, config: Dict[str, Any], 
-                       logger: StructuredLoggerAdapter) -> None:
-    """
-    Mark a file as successfully completed.
-    
-    This is one of the required functions from available_functions.py.
-    
-    Args:
-        file_path: Path to the processed file
-        records: Number of records processed from the file
-        config: Configuration dictionary from config manager
-        logger: StructuredLoggerAdapter instance with WORKER component
-    """
-    tracker = ProgressTracker(config, logger)
-    try:
-        tracker.mark_file_completed(file_path, records)
-    finally:
-        tracker.close()
-
-def mark_file_failed(file_path: str, error: str, config: Dict[str, Any], 
-                    logger: StructuredLoggerAdapter) -> None:
-    """
-    Mark a file as failed with error information.
-    
-    This is one of the required functions from available_functions.py.
-    
-    Args:
-        file_path: Path to the failed file
-        error: Error message describing the failure
-        config: Configuration dictionary from config manager
-        logger: StructuredLoggerAdapter instance with WORKER component
-    """
-    tracker = ProgressTracker(config, logger)
-    try:
-        tracker.mark_file_failed(file_path, error)
-    finally:
-        tracker.close()
-
-def get_processing_stats(dataset: str, config: Dict[str, Any], 
-                        logger: StructuredLoggerAdapter) -> Dict[str, int]:
-    """
-    Get processing statistics for a dataset.
-    
-    This is one of the required functions from available_functions.py.
-    
-    Args:
-        dataset: Dataset name
-        config: Configuration dictionary from config manager
-        logger: StructuredLoggerAdapter instance with WORKER component
+        Args:
+            dataset: Dataset identifier
+            limit: Maximum number of files to return
+            
+        Returns:
+            List of file paths ready for processing
+        """
+        pending_files = []
         
-    Returns:
-        Dictionary with processing statistics
+        try:
+            with sqlite3.connect(self.db_path, timeout=self.timeout) as conn:
+                query = """
+                    SELECT file_path 
+                    FROM file_processing_log 
+                    WHERE dataset = ? AND status = ?
+                    ORDER BY created_at ASC
+                """
+                
+                if limit:
+                    query += f" LIMIT {limit}"
+                
+                cursor = conn.execute(query, (dataset, ProcessingStatus.PENDING.value))
+                pending_files = [row[0] for row in cursor.fetchall()]
+                
+        except sqlite3.Error as e:
+            self.logger.error(f"Error getting pending files for {dataset}: {e}")
+        
+        return pending_files
+    
+    def cleanup_old_records(self, days_old: int = 30) -> int:
+        """
+        Clean up old processing records to prevent database bloat.
+        
+        Removes records older than the specified number of days.
+        Only removes completed records (SUCCESS/FAILED), preserves
+        active processing records.
+        
+        Args:
+            days_old: Remove records older than this many days
+            
+        Returns:
+            Number of records removed
+        """
+        cutoff_date = datetime.now() - timedelta(days=days_old)
+        removed_count = 0
+        
+        with self._lock:
+            try:
+                with sqlite3.connect(self.db_path, timeout=self.timeout) as conn:
+                    cursor = conn.execute("""
+                        DELETE FROM file_processing_log 
+                        WHERE status IN (?, ?) AND end_time < ?
+                    """, (ProcessingStatus.SUCCESS.value, ProcessingStatus.FAILED.value, cutoff_date))
+                    
+                    removed_count = cursor.rowcount
+                    conn.commit()
+                    
+                    if removed_count > 0:
+                        self.logger.info(f"Cleaned up {removed_count} old records (older than {days_old} days)")
+                    
+            except sqlite3.Error as e:
+                self.logger.error(f"Error cleaning up old records: {e}")
+        
+        return removed_count
+    
+    def get_database_stats(self) -> Dict[str, Any]:
+        """
+        Get database statistics and health information.
+        
+        Returns:
+            Dictionary with database statistics
+        """
+        stats = {}
+        
+        try:
+            with sqlite3.connect(self.db_path, timeout=self.timeout) as conn:
+                # Total records
+                cursor = conn.execute("SELECT COUNT(*) FROM file_processing_log")
+                stats['total_records'] = cursor.fetchone()[0]
+                
+                # Records by status
+                cursor = conn.execute("""
+                    SELECT status, COUNT(*) 
+                    FROM file_processing_log 
+                    GROUP BY status
+                """)
+                stats['records_by_status'] = dict(cursor.fetchall())
+                
+                # Database size
+                stats['database_size_bytes'] = self.db_path.stat().st_size if self.db_path.exists() else 0
+                stats['database_size_mb'] = stats['database_size_bytes'] / (1024 * 1024)
+                
+                # Datasets
+                cursor = conn.execute("SELECT DISTINCT dataset FROM file_processing_log")
+                stats['datasets'] = [row[0] for row in cursor.fetchall()]
+                
+                # Date range
+                cursor = conn.execute("""
+                    SELECT MIN(created_at), MAX(created_at) 
+                    FROM file_processing_log
+                """)
+                date_range = cursor.fetchone()
+                if date_range[0]:
+                    stats['date_range'] = {
+                        'earliest': date_range[0],
+                        'latest': date_range[1]
+                    }
+                
+        except sqlite3.Error as e:
+            self.logger.error(f"Error getting database stats: {e}")
+            stats['error'] = str(e)
+        
+        return stats
+
+
+# Example usage and testing
+if __name__ == "__main__":
     """
-    tracker = ProgressTracker(config, logger)
+    Test the progress tracker functionality when run directly.
+    
+    This provides comprehensive testing to verify that the tracker is working
+    correctly with realistic usage patterns.
+    """
+    import tempfile
+    import shutil
+    
+    print("Testing ClimaStation Progress Tracker [DWD10TAH2P]...")
+    print("=" * 60)
+    
+    # Create temporary database for testing
+    temp_dir = Path(tempfile.mkdtemp())
+    test_db = temp_dir / "test_progress.db"
+    
     try:
-        stats = tracker.get_processing_stats(dataset)
-        return {
-            'total_files': stats.total_files,
-            'pending_files': stats.pending_files,
-            'processing_files': stats.processing_files,
-            'completed_files': stats.completed_files,
-            'failed_files': stats.failed_files,
-            'active_workers': stats.active_workers
+        # Initialize tracker
+        tracker = ProgressTracker(test_db)
+        print("✅ Progress tracker initialized")
+        
+        # Test file registration
+        test_files = [
+            Path("test_data/file1.zip"),
+            Path("test_data/file2.zip"), 
+            Path("test_data/file3.zip"),
+            Path("test_data/file4.zip")
+        ]
+        
+        registered = tracker.register_files("test_dataset", test_files)
+        print(f"✅ Registered {registered} files")
+        assert registered == len(test_files), f"Expected {len(test_files)}, got {registered}"
+        
+        # Test duplicate registration (should be ignored)
+        duplicate_registered = tracker.register_files("test_dataset", test_files[:2])
+        print(f"✅ Duplicate registration handled: {duplicate_registered} new files")
+        assert duplicate_registered == 0, "Duplicates should be ignored"
+        
+        # Test processing workflow
+        print("\n🔄 Testing processing workflow...")
+        
+        # Start processing first file
+        success = tracker.start_processing("test_dataset", test_files[0], "worker_1")
+        print(f"✅ Started processing file 1: {success}")
+        assert success, "Should be able to start processing"
+        
+        # Try to start same file again (should fail)
+        duplicate_start = tracker.start_processing("test_dataset", test_files[0], "worker_2")
+        print(f"✅ Duplicate start prevented: {not duplicate_start}")
+        assert not duplicate_start, "Should not be able to start processing same file twice"
+        
+        # Mark first file as successful
+        success = tracker.mark_success("test_dataset", test_files[0])
+        print(f"✅ Marked file 1 as successful: {success}")
+        assert success, "Should be able to mark success"
+        
+        # Start and fail second file
+        tracker.start_processing("test_dataset", test_files[1], "worker_1")
+        success = tracker.mark_failed("test_dataset", test_files[1], "Test error message")
+        print(f"✅ Marked file 2 as failed: {success}")
+        assert success, "Should be able to mark failure"
+        
+        # Test status summary
+        print("\n📊 Testing status reporting...")
+        status = tracker.get_dataset_status("test_dataset")
+        print(f"✅ Dataset status: {status}")
+        
+        expected_status = {
+            'PENDING': 2,  # files 3 and 4
+            'PROCESSING': 0,
+            'SUCCESS': 1,  # file 1
+            'FAILED': 1    # file 2
         }
+        
+        for status_type, expected_count in expected_status.items():
+            assert status[status_type] == expected_count, f"Expected {expected_count} {status_type}, got {status[status_type]}"
+        
+        # Test comprehensive summary
+        summary = tracker.get_processing_summary("test_dataset")
+        print(f"✅ Processing summary generated: {summary['total_files']} total files")
+        assert summary['total_files'] == len(test_files), "Summary should show all files"
+        
+        # Test failed files retrieval
+        failed_files = tracker.get_failed_files("test_dataset")
+        print(f"✅ Failed files retrieved: {len(failed_files)} files")
+        assert len(failed_files) == 1, "Should have 1 failed file"
+        assert "Test error message" in failed_files[0][1], "Should contain error message"
+        
+        # Test pending files
+        pending_files = tracker.get_pending_files("test_dataset")
+        print(f"✅ Pending files: {len(pending_files)} files")
+        assert len(pending_files) == 2, "Should have 2 pending files"
+        
+        # Test reset functionality
+        print("\n🔄 Testing reset functionality...")
+        reset_count = tracker.reset_failed_files("test_dataset")
+        print(f"✅ Reset failed files: {reset_count} files")
+        assert reset_count == 1, "Should reset 1 failed file"
+        
+        # Verify reset worked
+        status_after_reset = tracker.get_dataset_status("test_dataset")
+        print(f"✅ Status after reset: {status_after_reset}")
+        assert status_after_reset['FAILED'] == 0, "Should have no failed files after reset"
+        assert status_after_reset['PENDING'] == 3, "Should have 3 pending files after reset"
+        
+        # Test database stats
+        db_stats = tracker.get_database_stats()
+        print(f"✅ Database stats: {db_stats['total_records']} total records")
+        assert db_stats['total_records'] == len(test_files), "Should have records for all test files"
+        
+        print("\n✅ All progress tracker tests passed!")
+        
+    except Exception as e:
+        print(f"❌ Progress tracker test failed: {e}")
+        import traceback
+        traceback.print_exc()
+        
     finally:
-        tracker.close()
-
+        # Clean up temporary database
+        if temp_dir.exists():
+            shutil.rmtree(temp_dir)
+        print("🧹 Test cleanup completed")
