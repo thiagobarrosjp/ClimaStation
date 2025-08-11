@@ -1,5 +1,5 @@
 """
-ClimaStation DWD Repository Crawler
+ClimaStation DWD Repository Crawler (updated for NEW YAML contract)
 
 SCRIPT IDENTIFICATION: DWD10TAH3W (DWD Crawler)
 
@@ -7,8 +7,10 @@ PUBLIC API (stable):
 - crawl_dwd_repository(config: Dict[str, Any], logger: StructuredLoggerAdapter, throttle: Optional[float] = None) -> CrawlResult
 
 Notes:
-- No third‑party HTML parsers; we parse simple directory listings with stdlib.
-- Idempotent JSONL output with de‑duplication.
+- Parses simple directory listings without third‑party HTML parsers.
+- **Single JSONL output** written/merged **only** to `crawler.output_urls_jsonl` when provided.
+- Idempotent behavior (de‑dupe by URL on re‑runs).
+- Honors an optional crawl limit provided via `crawler.max_items` or `runner_args.limit`.
 """
 from __future__ import annotations
 
@@ -23,12 +25,12 @@ from urllib.parse import urljoin
 import requests
 
 # Logger compatibility: prefer StructuredLoggerAdapter; fall back to ComponentLogger
-try:
+try:  # pragma: no cover - compatibility import
     from app.utils.enhanced_logger import StructuredLoggerAdapter  # type: ignore
 except Exception:  # pragma: no cover
     try:
         from app.utils.enhanced_logger import ComponentLogger as StructuredLoggerAdapter  # type: ignore
-    except Exception:  # last resort for type-checkers
+    except Exception:  # pragma: no cover - last resort for type-checkers
         from logging import Logger as StructuredLoggerAdapter  # type: ignore
 
 from app.utils.http_headers import default_headers
@@ -109,7 +111,6 @@ def _ensure_jsonl_idempotent(target: Path, records: List[Dict[str, Any]], logger
     finally:
         if tmp.exists() and tmp != target:
             try:
-                # If replace failed earlier, avoid leaving .part around
                 pass
             except Exception:
                 pass
@@ -128,39 +129,44 @@ class DWDRepositoryCrawler:
 
         crawler_cfg = _get_cfg(self.config, "crawler", default={}) or {}
 
-        # Base URL
-        self.base_url: str = crawler_cfg.get(
+        # Base URL (NEW: crawler.base_url)
+        self.base_url: str = str(crawler_cfg.get(
             "base_url",
-            "https://opendata.dwd.de/climate_environment/CDC/observations_germany/",
-        )
+            "https://opendata.dwd.de/climate_environment/CDC/",
+        ))
 
-        # Dataset root path (relative to base_url)
-        dataset_path: Optional[str] = (
-            self.config.get("base_path")
-            or _get_cfg(self.config, "source", "base_path")
-            or crawler_cfg.get("dataset_path")
+        # Dataset root path (NEW: crawler.root_path). Fallbacks for legacy compat.
+        root_path: Optional[str] = (
+            str(crawler_cfg.get("root_path")) if crawler_cfg.get("root_path") is not None else None
         )
-        if not dataset_path:
-            # Missing configuration — log and set to root to avoid crash
-            self.logger.error("Missing dataset base_path in config; aborting crawl", extra={
-                "component": "CRAWLER",
-                "structured_data": {"required": ["base_path"], "config_keys": list(self.config.keys())},
-            })
-            # Prepare empty result
-            self.output_dir = Path(_get_cfg(self.config, "paths", "crawl_data", default="data/dwd/1_crawl_dwd"))
-            self.output_dir.mkdir(parents=True, exist_ok=True)
-            self.output_file_path = self.output_dir / "urls.jsonl"
-            self.subpaths = []
-            self.request_timeout = int(crawler_cfg.get("request_timeout_seconds", 30))
-            self.request_delay = float(throttle if throttle is not None else crawler_cfg.get("request_delay_seconds", 0.0))
-            self.max_depth = int(crawler_cfg.get("max_depth", 8))
-            self.max_retries = int(crawler_cfg.get("max_retries", 2))
-            self.start_url = self.base_url
-            return
+        if root_path is None:
+            # Legacy fallbacks
+            root_path = (
+                self.config.get("base_path")
+                or _get_cfg(self.config, "source", "base_path")
+                or crawler_cfg.get("dataset_path")
+                or ""
+            )
+        root_path = str(root_path)
+        if root_path and not root_path.endswith("/"):
+            root_path += "/"
+        self.start_url = urljoin(self.base_url.rstrip("/") + "/", root_path.lstrip("/"))
 
-        if not dataset_path.endswith("/"):
-            dataset_path += "/"
-        self.start_url = urljoin(self.base_url, dataset_path)
+        # Subfolders (NEW: crawler.subfolders as mapping) → allowed first-level subpaths list
+        subfolders = crawler_cfg.get("subfolders")
+        subpaths_cfg = crawler_cfg.get("subpaths")  # legacy list compat
+        if isinstance(subfolders, dict) and subfolders:
+            subpaths: List[str] = [str(v) for v in subfolders.values()]
+        elif isinstance(subpaths_cfg, list):
+            subpaths = [str(s) for s in subpaths_cfg]
+        else:
+            subpaths = []
+        self.subpaths: List[str] = [s if s.endswith("/") else s + "/" for s in subpaths]
+        if not self.subpaths:
+            self.logger.warning(
+                "No crawler.subfolders configured; crawl will only scan the dataset root for .zip files",
+                extra={"component": "CRAWLER", "structured_data": {"start_url": self.start_url}},
+            )
 
         # Crawl behavior
         self.max_depth = int(crawler_cfg.get("max_depth", 8))
@@ -169,36 +175,42 @@ class DWDRepositoryCrawler:
         self.request_delay = float(throttle) if throttle is not None else cfg_delay
         self.max_retries = int(crawler_cfg.get("max_retries", 2))
 
-        # Allowed first-level subpaths under dataset root (e.g., ["historical/", "recent/"])
-        subpaths = crawler_cfg.get("subpaths")
-        self.subpaths: List[str] = [s if s.endswith("/") else s + "/" for s in subpaths] if isinstance(subpaths, list) else []
-        if not self.subpaths:
-            self.logger.warning("No crawler.subpaths configured; crawl will only scan the dataset root for .zip files", extra={
-                "component": "CRAWLER",
-                "structured_data": {"start_url": self.start_url},
-            })
+        # LIMIT: prefer crawler.max_items; fallback to runner_args.limit if present
+        limit_cfg = crawler_cfg.get("max_items")
+        if limit_cfg is None:
+            limit_cfg = _get_cfg(self.config, "runner_args", "limit", default=None)
+        self.max_items: Optional[int] = int(limit_cfg) if limit_cfg is not None else None
 
-        # Output path
-        dataset_name = str(self.config.get("name") or self.config.get("dataset", "dataset"))
-        base_output = Path(_get_cfg(self.config, "dwd_paths", "crawl_data", default="data/dwd/1_crawl_dwd"))
-        self.output_dir = base_output / dataset_name
-        self.output_dir.mkdir(parents=True, exist_ok=True)
-        self.output_file_path = self.output_dir / f"dwd_{dataset_name}_urls.jsonl"
+        # Output path (NEW: crawler.output_urls_jsonl)
+        out_path_cfg = crawler_cfg.get("output_urls_jsonl")
+        if isinstance(out_path_cfg, str) and out_path_cfg.strip():
+            self.output_file_path = Path(out_path_cfg)
+        else:
+            # Robust fallback: write to <dwd_paths.crawl_data>/<dataset_name>_urls.jsonl
+            dataset_name = str(self.config.get("name") or self.config.get("dataset", "dataset"))
+            base_output = Path(_get_cfg(self.config, "dwd_paths", "crawl_data", default="data/dwd/1_crawl_dwd"))
+            self.output_file_path = base_output / f"{dataset_name}_urls.jsonl"
+        self.output_file_path.parent.mkdir(parents=True, exist_ok=True)
 
         # State
         self._seen_urls: Set[str] = set()
         self.url_records: List[Dict[str, Any]] = []
         self.crawled_count = 0
+        self._stop_flag = False
 
-        self.logger.info("Crawler initialized", extra={
-            "component": "CRAWLER",
-            "structured_data": {
-                "start_url": self.start_url,
-                "subpaths": self.subpaths,
-                "output_file": str(self.output_file_path),
-                "throttle": self.request_delay,
+        self.logger.info(
+            "Crawler initialized",
+            extra={
+                "component": "CRAWLER",
+                "structured_data": {
+                    "start_url": self.start_url,
+                    "subpaths": self.subpaths,
+                    "output_file": str(self.output_file_path),
+                    "throttle": self.request_delay,
+                    "limit": self.max_items,
+                },
             },
-        })
+        )
 
     # --------------------------
     # Networking & parsing
@@ -213,39 +225,50 @@ class DWDRepositoryCrawler:
             resp = requests.get(url, headers=default_headers(), timeout=self.request_timeout)
             self.crawled_count += 1
             if resp.status_code != 200:
-                raise requests.HTTPError(f"HTTP {resp.status_code}")
+                # Explicit status + URL in logs
+                self.logger.error(
+                    "HTTP request failed",
+                    extra={
+                        "component": "CRAWLER",
+                        "structured_data": {"url": url, "status": resp.status_code},
+                    },
+                )
+                if attempt < self.max_retries:
+                    time.sleep(min(2 ** attempt, 4))
+                    return self._request(url, attempt + 1)
+                return None
             self._sleep()
             return resp
         except Exception as e:
             if attempt < self.max_retries:
-                self.logger.warning("Retrying request", extra={
-                    "component": "CRAWLER",
-                    "structured_data": {"url": url, "attempt": attempt + 1},
-                })
+                self.logger.warning(
+                    "Retrying request",
+                    extra={"component": "CRAWLER", "structured_data": {"url": url, "attempt": attempt + 1}},
+                )
                 time.sleep(min(2 ** attempt, 4))
                 return self._request(url, attempt + 1)
-            self.logger.error("Request failed", extra={
-                "component": "CRAWLER",
-                "structured_data": {"url": url, "error": str(e)},
-            })
+            self.logger.error(
+                "Request exception",
+                extra={"component": "CRAWLER", "structured_data": {"url": url, "error": str(e)}},
+            )
             return None
 
     @staticmethod
     def _parse_listing_html(html: str) -> Tuple[List[str], List[str]]:
         """Return (subdirs, zip_names) from a simple Apache-style listing."""
-        # Extract all hrefs
         hrefs = re.findall(r'href=[\"\']([^\"\']+)', html, flags=re.IGNORECASE)
-        # Filter out parent/back links
         hrefs = [h for h in hrefs if h not in ("../", "/")]
         subdirs = [h for h in hrefs if h.endswith("/")]
         zips = [h for h in hrefs if h.lower().endswith(".zip")]
         return subdirs, zips
 
     # --------------------------
-    # Crawl
+    # Crawl helpers
     # --------------------------
 
     def _emit_zip(self, base_url: str, rel_parts: List[str], filename: str):
+        if self._stop_flag:
+            return
         url = urljoin(base_url, filename)
         if url in self._seen_urls:
             return
@@ -256,22 +279,33 @@ class DWDRepositoryCrawler:
             "filename": filename,
         }
         self.url_records.append(rec)
+        # Respect limit eagerly
+        if self.max_items is not None and len(self.url_records) >= self.max_items:
+            self._stop_flag = True
 
     def _crawl_dir(self, url: str, path_parts: List[str], depth: int):
-        if depth > self.max_depth:
+        if self._stop_flag or depth > self.max_depth:
             return
         resp = self._request(url)
         if not resp:
             return
         subdirs, zips = self._parse_listing_html(resp.text)
         for fn in zips:
+            if self._stop_flag:
+                break
             self._emit_zip(url, path_parts, fn)
         for sd in subdirs:
+            if self._stop_flag:
+                break
             # Only recurse into explicitly allowed subpaths at the first level
             if depth == 0 and self.subpaths and sd not in self.subpaths:
                 continue
             next_url = urljoin(url, sd)
             self._crawl_dir(next_url, path_parts + [sd.rstrip("/")], depth + 1)
+
+    # --------------------------
+    # Crawl entry
+    # --------------------------
 
     def crawl_repository(self) -> CrawlResult:
         start = time.time()
@@ -280,6 +314,8 @@ class DWDRepositoryCrawler:
         # Start from each configured subpath, or root if none given
         roots = self.subpaths or [""]
         for sub in roots:
+            if self._stop_flag:
+                break
             root_url = urljoin(self.start_url, sub)
             parts = [p for p in [sub.rstrip("/")] if p]
             try:
@@ -287,26 +323,39 @@ class DWDRepositoryCrawler:
             except Exception as e:
                 msg = f"crawl_error:{root_url}:{e}"
                 errors.append(msg)
-                self.logger.error("Unhandled crawl exception", extra={
-                    "component": "CRAWLER",
-                    "structured_data": {"root_url": root_url, "error": str(e)},
-                })
+                self.logger.error(
+                    "Unhandled crawl exception",
+                    extra={"component": "CRAWLER", "structured_data": {"root_url": root_url, "error": str(e)}},
+                )
 
-        # Write/merge JSONL idempotently
+        # If a limit was set, ensure we hard-cap before writing
+        limit_applied = 0
+        if self.max_items is not None and len(self.url_records) > self.max_items:
+            limit_applied = self.max_items
+            self.url_records = self.url_records[: self.max_items]
+        elif self.max_items is not None:
+            limit_applied = min(self.max_items, len(self.url_records))
+
+        # Write/merge JSONL idempotently to the **single required path**
         written, skipped = _ensure_jsonl_idempotent(self.output_file_path, self.url_records, self.logger)
 
         elapsed = time.time() - start
-        self.logger.info("Crawl completed", extra={
-            "component": "CRAWLER",
-            "structured_data": {
-                "files_found": len(self.url_records),
-                "files_written": written,
-                "files_skipped": skipped,
-                "requests": self.crawled_count,
-                "elapsed_seconds": round(elapsed, 2),
-                "output_file": str(self.output_file_path),
+        self.logger.info(
+            "Crawl completed",
+            extra={
+                "component": "CRAWLER",
+                "structured_data": {
+                    "files_found": len(self.url_records),
+                    "files_written": written,
+                    "files_skipped": skipped,
+                    "limit_applied": limit_applied if self.max_items is not None else None,
+                    "requests": self.crawled_count,
+                    "elapsed_seconds": round(elapsed, 2),
+                    "resolved_listing_url": self.start_url,
+                    "output_file": str(self.output_file_path),
+                },
             },
-        })
+        )
 
         return CrawlResult(
             url_records=self.url_records,
@@ -329,7 +378,7 @@ def crawl_dwd_repository(
     logger: StructuredLoggerAdapter,
     throttle: Optional[float] = None,
 ) -> CrawlResult:
-    """Discover per-file ZIP URLs under the dataset root and write JSONL.
+    """Discover per-file ZIP URLs under the dataset root and write a single JSONL.
 
     The function **does not raise** on expected failures; it logs a summary and
     returns a CrawlResult with counts and the JSONL output path.

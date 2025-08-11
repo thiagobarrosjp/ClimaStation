@@ -1,233 +1,43 @@
-# ClimaStation 10-Minute Air Temperature Dataset Configuration
-# Dataset-specific settings for DWD 10-minute air temperature data
-
 # Dataset metadata
 dataset:
   name: "10_minutes_air_temperature"
   description: "DWD 10-minute air temperature measurements"
   version: "1.0"
-  
-  # Data provider information
-  provider:
-    name: "Deutscher Wetterdienst (DWD)"
-    url: "https://opendata.dwd.de"
-    contact: "opendata@dwd.de"
 
-# Base path to the dataset
-base_path: "/climate_environment/CDC/observations_germany/climate/10_minutes/air_temperature/"
+# Data provider (no email until verified)
+provider:
+  name: "Deutscher Wetterdienst (DWD)"
+  url: "https://opendata.dwd.de"
 
-# Subfolder structure
-paths:
-  historical: climate/10_minutes/air_temperature/historical/
-  recent: climate/10_minutes/air_temperature/recent/
-  now: climate/10_minutes/air_temperature/now/
-  metadata: climate/10_minutes/air_temperature/meta_data/
-
-# Where crawl JSONL(s) and downloads go (repo-relative)
-dwd_paths:
-  crawl_data:    data/dwd/1_crawl_dwd
-  download_data: data/dwd/2_downloaded_files
-
-# Crawler base. It will join base_url + base_path
+# Crawler configuration (remote URLs + output)
 crawler:
-  base_url: https://opendata.dwd.de/climate_environment/CDC/observations_germany/  
-  subpaths:
-     - historical/
-     - recent/
-     - now/
+  # Join rule: base_url + root_path + optional subfolder
+  base_url: "https://opendata.dwd.de/climate_environment/CDC/"
+  root_path: "observations_germany/climate/10_minutes/air_temperature/"
+  subfolders:
+    historical: "historical/"
+    recent: "recent/"
+    now: "now/"
+    meta_data: "meta_data/"
 
+  # Where the crawler writes the URL list JSONL (repo-relative)
+  output_urls_jsonl: "data/dwd/1_crawl_dwd/10_minutes_air_temperature_urls.jsonl"
 
+  # HTTP behavior
+  request:
+    timeout_seconds: 20
+    max_retries: 3
+    request_delay_seconds: 0.5         # CLI --throttle overrides
+    user_agent: "ClimaStation/1.0"
 
-# Source data configuration
+# Downloader destination (repo-relative)
+downloader:
+  root_dir: "data/dwd/2_downloaded_files/"
+
+# (Optional today, useful for the downloader/planner to filter quickly)
 source:
-  # File patterns for different data types
   file_patterns:
     historical_zip: "10minutenwerte_TU_*_hist.zip"
     recent_zip: "10minutenwerte_TU_*_akt.zip"
     now_zip: "10minutenwerte_TU_*_now.zip"
     metadata_zip: "Meta_Daten_zehn_min_tu_*.zip"
-  
-  # Expected internal file patterns
-  internal_patterns:
-    historical_data: "produkt_zehn_min_tu_*.txt"
-    recent_data: "produkt_zehn_min_tu_*.txt"
-    now_data: "produkt_zehn_now_tu_*.txt"
-
-
-
-# Output configuration
-output:
-
-  # Base path for processed data
-  base_path: "data/processed/10_minutes_air_temperature"
-  
-  # Output file format
-  format: "csv"
-  
-  # File naming pattern
-  filename_pattern: "{source_name}_processed_{timestamp}.csv"
-  
-  # Compression (none, gzip, bz2)
-  compression: "none"
-  
-  # Create subdirectories by date
-  organize_by_date: true
-  
-  # Date format for subdirectories (YYYY/MM/DD)
-  date_format: "%Y/%m/%d"
-
-# Processing configuration
-processing:
-  # Processing mode: bulk, incremental, or both
-  default_mode: "incremental"
-  
-  # Parallel processing settings
-  parallel:
-    enabled: true
-    max_workers: 2  # Conservative for this dataset
-    chunk_size: 100  # Files per worker batch
-  
-  # Data validation settings
-  validation:
-    # Temperature range validation (°C)
-    temperature_range:
-      min: -50.0
-      max: 60.0
-    
-    # Quality flag validation
-    quality_flags:
-      valid_codes: [1, 2, 3, 5, 7, 8, 9]
-      default_code: 9  # Unknown quality
-    
-    # Timestamp validation
-    timestamp:
-      format: "YYYYMMDDHHMM"
-      min_year: 1880
-      max_year: 2030
-    
-    # Station ID validation
-    station_id:
-      min_id: 1
-      max_id: 99999
-  
-  # Error handling
-  error_handling:
-    # Skip invalid records or fail entire file
-    skip_invalid_records: true
-    
-    # Maximum percentage of invalid records before failing file
-    max_invalid_percentage: 10.0
-    
-    # Log invalid records for debugging
-    log_invalid_records: true
-  
-  # Performance settings
-  performance:
-    # Buffer size for reading large files
-    read_buffer_size: 8192
-    
-    # Batch size for database inserts
-    insert_batch_size: 1000
-    
-    # Memory limit per file (MB)
-    memory_limit_mb: 512
-
-# Data schema configuration
-schema:
-  # Output columns and their types
-  columns:
-    station_id:
-      type: "integer"
-      required: true
-      description: "DWD station identifier"
-    
-    timestamp:
-      type: "datetime"
-      required: true
-      description: "Measurement timestamp (UTC)"
-    
-    temperature:
-      type: "float"
-      required: true
-      description: "Air temperature in °C"
-      precision: 1
-    
-    quality_flag:
-      type: "string"
-      required: false
-      description: "Data quality indicator"
-      max_length: 10
-    
-    source_file:
-      type: "string"
-      required: true
-      description: "Original source file name"
-      max_length: 255
-    
-    processed_at:
-      type: "datetime"
-      required: true
-      description: "Processing timestamp"
-
-# Monitoring and quality control
-monitoring:
-  # Enable dataset-specific monitoring
-  enabled: true
-  
-  # Quality metrics to track
-  quality_metrics:
-    - "record_count"
-    - "temperature_range_violations"
-    - "missing_values_percentage"
-    - "duplicate_records"
-    - "timestamp_gaps"
-  
-  # Alert conditions
-  alerts:
-    # Alert if more than 5% of records are invalid
-    high_invalid_rate: 0.05
-    
-    # Alert if processing takes longer than expected
-    slow_processing_threshold: 300  # seconds per file
-    
-    # Alert if temperature values seem unrealistic
-    suspicious_temperature_count: 100
-
-# Retention and archival
-retention:
-  # Keep processed files for this many days
-  processed_files_days: 365
-  
-  # Keep error logs for this many days  
-  error_logs_days: 90
-  
-  # Archive old files instead of deleting
-  archive_old_files: true
-  
-  # Archive location
-  archive_path: "data/archive/10_minutes_air_temperature"
-
-# Integration settings
-integration:
-  # Database connection (if different from base config)
-  database:
-    # Use base config database settings
-    use_base_config: true
-  
-  # External APIs or services
-  external_services:
-    # DWD metadata service
-    dwd_metadata_api:
-      enabled: false
-      url: "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/air_temperature/"
-      timeout: 30
-  
-  # Export formats
-  export:
-    # Enable export to different formats
-    formats: ["csv", "parquet", "json"]
-    
-    # Export schedule (cron format)
-    schedule: "0 2 * * *"  # Daily at 2 AM
-
-

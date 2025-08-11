@@ -339,26 +339,46 @@ Architectural Constraints:
 ---------------------------------------- Last updated: 2025-08-10 --------------------------------------------
 
 
-## 🔧 Immediate Task — Fix dataset YAML ↔ crawler path mismatch
+## 🔧 Immediate Task — Downloader can’t find/read crawler URLs JSONL
 
-**Problem (symptom):** Crawler keeps retrying and failing; no URLs JSONL produced. Likely using **wrong DWD base/root paths** from `configs/datasets/10_minutes_air_temperature.yaml`.
+**Problem (symptom):** `download` mode logs “URLs file not found / No candidates to download” right after a successful crawl. Likely a **path/key mismatch** between YAML (`crawler.output_urls_jsonl`) and what `run_pipeline.py`/`downloader.py` read, or a **field-name mismatch** in the JSONL (expected: `url`, `relative_path`, `filename`).
 
-**Objective:** Make the crawler resolve a valid DWD listing URL and write a **non-empty, idempotent** URLs JSONL for a *small scope* (e.g., `recent/`).
+**Objective:** Make `download` mode load the **exact** JSONL written by the crawler and honor `--limit` to fetch a small, deterministic set.
 
 **What to do next (tomorrow):**
-1) **Audit key lookups** in `run_pipeline.py` and `crawler.py` (only the keys used for: base URL, dataset root path, subfolders, crawl output JSONL path).
-2) **Align the YAML** keys/values to those lookups (prefer YAML edits; avoid code changes unless an obvious typo).
-3) **Keep paths repo-relative**; ensure `base_url` + `root_path` (+ optional subfolder) join cleanly (trailing slashes).
-4) **Test small scope** (`recent/`) first; confirm the JSONL contains only `.zip` entries and re-runs don’t duplicate.
-5) **Improve error logs** if needed: include failing URL + HTTP status (no generic “Request failed”).
+1) **Trace path resolution** in `run_pipeline.py` and `downloader.py` (where the URLs file path comes from) and align with `crawler.output_urls_jsonl`.
+2) **Verify JSONL schema** used by `load_urls_from_jsonl` (must match `url`, `relative_path`, `filename`) and subfolder filtering behavior.
+3) **Tighten error messages**: when the URLs file is missing, log the **exact path** we tried to open.
 
 **Acceptance (quick):**
-- `crawl --dry-run` logs resolved root URL and output path, exits `0`.
-- `crawl` (small scope, limited) writes/merges a non-empty URLs JSONL and logs counts clearly.
+- After a crawl, `download --dry-run --limit 3` lists a plan with 1–3 items (no network), exits `0`.
+- `download --limit 1` actually downloads one file, exits `0`, logs clear counts (attempted/ok/skip/failed).
 
 **Deliverables:**
-- Updated `configs/datasets/10_minutes_air_temperature.yaml` with brief inline comments.
-- One-sentence changelog: which keys were aligned and where the URLs JSONL is written.
+- Minimal code patch (runner and/or downloader) and, if needed, a tiny YAML key correction.
+- One-sentence changelog: which path/key was aligned and where the URLs JSONL is read from.
+
+
+## 🔧 Immediate Task — Add persistent file logging (runner, crawler, downloader)
+
+**Problem (symptom):** No **log files** are created; only console output. Hard to debug and audit behavior over time.
+
+**Objective:** Enable rotating **file-based logs** for the runner and pipeline components, with structured summaries and error details.
+
+**What to do next (tomorrow):**
+1) **Choose a log root** (e.g., `logs/` or `data/logs/`) and add it to base/config; ensure directory creation.
+2) **Configure file handler(s)** in `enhanced_logger.py` (rotation, size, count); avoid duplicate handlers on repeated runs.
+3) **Ensure components use the logger**: `run_pipeline.py`, `crawler.py`, `downloader.py` call `get_logger(...)` and emit start/end summaries and per-error details (include URL + HTTP status where applicable).
+4) **Expose log level** via config (default `INFO`), and document Windows-safe paths.
+
+**Acceptance (quick):**
+- Running `crawl` and `download` produces non-empty files like `logs/pipeline.runner.log`, `logs/pipeline.crawler.log`, `logs/pipeline.downloader.log`.
+- No duplicate log lines; rotation settings in effect; summaries include counts and output paths.
+
+**Deliverables:**
+- Updated logger configuration/code and (if needed) base/config keys for `log_dir` and `log_level`.
+- Brief README note: where logs live and how to change level/rotation.
+
 
 ---
 
