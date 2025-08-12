@@ -1,15 +1,23 @@
 #!/usr/bin/env python3
 """
-ClimaStation Downloader Module (corrected)
+ClimaStation Downloader Module — JSONL → files (mirrored DWD tree)
 
-PUBLIC API (stable):
-- load_urls_from_jsonl(urls_file: Path, logger: ComponentLogger, limit: Optional[int] = None, filter_subfolder: Optional[str] = None) -> List[Dict[str, Any]]
-- run_downloader(config: Dict[str, Any], logger: ComponentLogger, max_downloads: Optional[int] = None, throttle: Optional[float] = None) -> ProcessingResult
+PUBLIC API (preserve):
+- load_urls_from_jsonl(urls_file: Path, logger, limit: Optional[int] = None, filter_subfolder: Optional[str] = None) -> List[Dict[str, Any]]
+- run_downloader(config: Dict[str, Any], logger, max_downloads: Optional[int] = None, throttle: Optional[float] = None) -> ProcessingResult
 
-Notes:
-- Uses absolute imports only. No third‑party deps.
-- Does not import runtime-only reference modules.
-- Graceful error handling; no unexpected raises.
+Contract highlights:
+- Resolve input JSONL via cfg["crawler"]["output_urls_jsonl"]. If missing/not found, log the absolute
+  path attempted and return an empty plan (no crash).
+- Destination path MUST mirror the DWD repository:
+    <downloader.root_dir> / <crawler.root_path> / <relative_path>
+  where `crawler.root_path` is treated as a posix-like relative path (leading "/" stripped).
+- JSONL schema: {"url": str, "relative_path": str, "filename": str}
+- Filtering: if `filter_subfolder` is provided, keep only entries whose `relative_path` startswith it.
+- Resume/skip: if destination exists AND size > 0 → log skip and continue.
+- Optional `throttle` seconds sleep between candidates.
+- Use pathlib.Path for all path joins and directory creation.
+- No new dependencies; absolute imports only.
 """
 from __future__ import annotations
 
@@ -19,22 +27,21 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from app.utils.http_headers import default_headers
+# Absolute, public utils
 from app.utils.file_operations import download_file
-
-# Use the current logger class name at runtime, but keep the public type alias
 from app.utils.enhanced_logger import ComponentLogger
-# ------------------------------
-# Result type (reference-compatible)
-# ------------------------------
 
+
+# ------------------------------
+# Result type (compatible with runner expectations)
+# ------------------------------
 @dataclass
 class ProcessingResult:
     success: bool
     files_processed: int
     files_failed: int
     output_files: List[Path]
-    errors: List[str]
+    errors: List[Dict[str, Any]]
     metadata: Dict[str, Any]
     warnings: Optional[List[str]] = None
 
@@ -43,26 +50,46 @@ class ProcessingResult:
 # Helpers
 # ------------------------------
 
-def _derive_crawl_urls_path(config: Dict[str, Any]) -> Path:
-    """Resolve crawler JSONL path the same way the runner expects.
+def _cfg_get(d: Dict[str, Any], *keys: str, default: Any = None) -> Any:
+    cur: Any = d
+    for k in keys:
+        if not isinstance(cur, dict) or k not in cur:
+            return default
+        cur = cur[k]
+    return cur
 
-    Prefers canonical `dwd_{dataset}_urls.jsonl` and falls back to legacy name.
+
+def _resolve_urls_file_from_cfg(cfg: Dict[str, Any]) -> Path:
+    path = _cfg_get(cfg, "crawler", "output_urls_jsonl")
+    if isinstance(path, str) and path:
+        return Path(path)
+    # Fall back to a sensible default location if key missing — but still try to be deterministic
+    # NOTE: This path may not exist; callers/logging must handle this gracefully.
+    dataset = str(cfg.get("name") or cfg.get("dataset") or "dataset")
+    return Path("data/dwd/1_crawl_dwd") / f"{dataset}_urls.jsonl"
+
+
+def _get_download_root(cfg: Dict[str, Any]) -> Path:
+    root = _cfg_get(cfg, "downloader", "root_dir")
+    if isinstance(root, str) and root:
+        return Path(root)
+    # Defensive fallback
+    return Path("data/dwd/2_downloaded_files/")
+
+
+def _get_dwd_root(cfg: Dict[str, Any]) -> Path:
+    """Return normalized DWD root path from cfg["crawler"]["root_path"].
+
+    Treat as posix-like relative; strip any leading '/'.
     """
-    dwd_paths = config.get("dwd_paths") or {}
-    crawl_root = Path(dwd_paths.get("crawl_data", "data/dwd/1_crawl_dwd"))
-    dataset = str(config.get("name") or config.get("dataset", "dataset"))
-    canonical = crawl_root / dataset / f"dwd_{dataset}_urls.jsonl"
-    legacy = crawl_root / dataset / "dwd_urls.jsonl"
-    return canonical if canonical.exists() else (legacy if legacy.exists() else canonical)
-
-
-def _get_download_root(config: Dict[str, Any]) -> Path:
-    dwd_paths = config.get("dwd_paths") or {}
-    return Path(dwd_paths.get("download_data", "data/dwd/2_downloaded_files"))
+    raw = _cfg_get(cfg, "crawler", "root_path")
+    if isinstance(raw, str) and raw:
+        return Path(str(raw).lstrip("/"))
+    return Path("")
 
 
 # ------------------------------
-# Public: planner
+# Public: JSONL loader / planner
 # ------------------------------
 
 def load_urls_from_jsonl(
@@ -71,32 +98,47 @@ def load_urls_from_jsonl(
     limit: Optional[int] = None,
     filter_subfolder: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
-    """Stream-read JSONL, optionally filter by leading subfolder, return dicts.
+    """Read URLs JSONL line-by-line with optional filtering.
 
-    - Skips malformed lines but continues.
-    - Filter includes only records whose `relative_path` **starts with** `filter_subfolder`.
-    - Truncates to `limit` after filtering.
+    - Skips malformed lines; logs how many were skipped.
+    - If `filter_subfolder` is set, include only entries where `relative_path` starts with it (case-sensitive).
+    - Apply `limit` *after* filtering.
     """
     total_lines = 0
-    kept = 0
     filtered_out = 0
+    malformed = 0
+    kept = 0
     records: List[Dict[str, Any]] = []
 
+    if not isinstance(urls_file, Path):
+        urls_file = Path(str(urls_file))
+
     if not urls_file.exists():
-        logger.error("URLs file not found", extra={
-            "component": "DOWNLOAD",
-            "structured_data": {"urls_file": str(urls_file)},
-        })
+        # Log absolute path per requirement and return empty plan
+        try:
+            abs_path = urls_file.resolve()
+        except Exception:
+            abs_path = urls_file
+        logger.error(
+            "URLs file not found; skipping download planning",
+            extra={
+                "component": "DOWNLOAD",
+                "structured_data": {"urls_file": str(abs_path)},
+            },
+        )
         return records
 
-    logger.info("Loading URLs from JSONL", extra={
-        "component": "DOWNLOAD",
-        "structured_data": {
-            "urls_file": str(urls_file),
-            "limit": limit,
-            "filter_subfolder": filter_subfolder,
+    logger.info(
+        "Loading URLs from JSONL",
+        extra={
+            "component": "DOWNLOAD",
+            "structured_data": {
+                "urls_file": str(urls_file.resolve()),
+                "limit": limit,
+                "filter_subfolder": filter_subfolder,
+            },
         },
-    })
+    )
 
     try:
         with urls_file.open("r", encoding="utf-8") as fh:
@@ -107,14 +149,10 @@ def load_urls_from_jsonl(
                     continue
                 try:
                     obj = json.loads(s)
-                except json.JSONDecodeError as e:
-                    logger.warning("Invalid JSONL line; skipping", extra={
-                        "component": "DOWNLOAD",
-                        "structured_data": {"line": idx, "error": str(e)},
-                    })
+                except json.JSONDecodeError:
+                    malformed += 1
                     continue
 
-                # Minimal validation
                 url = obj.get("url")
                 rel = obj.get("relative_path")
                 fn = obj.get("filename")
@@ -122,7 +160,7 @@ def load_urls_from_jsonl(
                     filtered_out += 1
                     continue
 
-                if filter_subfolder is not None and filter_subfolder != "":
+                if filter_subfolder:
                     if not rel.startswith(filter_subfolder):
                         filtered_out += 1
                         continue
@@ -132,70 +170,52 @@ def load_urls_from_jsonl(
                 if limit is not None and kept >= max(0, int(limit)):
                     break
     except Exception as e:
-        logger.error("Error reading URLs file", extra={
-            "component": "DOWNLOAD",
-            "structured_data": {"urls_file": str(urls_file), "error": str(e)},
-        })
-        # Return what we have so far
+        logger.error(
+            "Error reading URLs file",
+            extra={
+                "component": "DOWNLOAD",
+                "structured_data": {"urls_file": str(urls_file.resolve()), "error": str(e)},
+            },
+        )
+        # Return whatever we accumulated
 
-    logger.info("Planner summary", extra={
-        "component": "DOWNLOAD",
-        "structured_data": {
-            "lines_read": total_lines,
-            "kept": len(records),
-            "filtered_out": filtered_out,
-            "returned": len(records),
+    logger.info(
+        "Planner summary",
+        extra={
+            "component": "DOWNLOAD",
+            "structured_data": {
+                "lines_read": total_lines,
+                "malformed": malformed,
+                "filtered_out": filtered_out,
+                "returned": len(records),
+            },
         },
-    })
+    )
     return records
 
 
 # ------------------------------
-# Internal: per-file retries (delegates to utils.download_file)
+# Internal: single download with retry delegated to utils.download_file
 # ------------------------------
 
-def _download_with_retry(
-    url: str,
-    destination: Path,
-    config: Dict[str, Any],
-    logger: ComponentLogger,
-) -> bool:
-    max_retries = int((config.get("downloader") or {}).get("max_retries", 3))
-    base_delay = float((config.get("downloader") or {}).get("retry_delay_seconds", 1))
-
-    # Ensure parent exists
+def _attempt_download(url: str, destination: Path, config: Dict[str, Any], logger: ComponentLogger) -> bool:
+    # Ensure parent exists before handing off
     destination.parent.mkdir(parents=True, exist_ok=True)
-
-    for attempt in range(1, max_retries + 2):
-        try:
-            logger.info("Download attempt", extra={
+    try:
+        return download_file(url, destination, config, logger)
+    except Exception as e:
+        logger.error(
+            "Unexpected exception during download",
+            extra={
                 "component": "DOWNLOAD",
-                "structured_data": {"url": url, "destination": str(destination), "attempt": attempt},
-            })
-            ok = download_file(url, destination, config, logger)
-            if ok:
-                return True
-            # download_file returned False → retryable
-            logger.warning("Download failed; will retry if attempts remain", extra={
-                "component": "DOWNLOAD",
-                "structured_data": {"url": url, "attempt": attempt},
-            })
-        except Exception as e:
-            logger.warning("Exception during download attempt", extra={
-                "component": "DOWNLOAD",
-                "structured_data": {"url": url, "attempt": attempt, "error": str(e)},
-            })
-        if attempt <= max_retries:
-            time.sleep(base_delay * (2 ** (attempt - 1)))
-    logger.error("All retry attempts exhausted", extra={
-        "component": "DOWNLOAD",
-        "structured_data": {"url": url},
-    })
-    return False
+                "structured_data": {"url": url, "destination": str(destination), "error": str(e)},
+            },
+        )
+        return False
 
 
 # ------------------------------
-# Public: runner entry
+# Public: main entry
 # ------------------------------
 
 def run_downloader(
@@ -204,132 +224,151 @@ def run_downloader(
     max_downloads: Optional[int] = None,
     throttle: Optional[float] = None,
 ) -> ProcessingResult:
-    """Run filtered, resumable downloads; return a ProcessingResult.
+    start_ts = time.time()
 
-    - Resolves URLs JSONL path in the same way as the runner.
-    - Skips files that already exist (assumes complete when present).
-    - Respects optional throttle seconds between files.
-    - Never raises for expected failures.
-    """
-    start = time.time()
+    dataset = str(config.get("name") or config.get("dataset") or "")
+    root_dir = _get_download_root(config)
+    dwd_root = _get_dwd_root(config)
 
-    dataset = str(config.get("name") or config.get("dataset", ""))
-    if not dataset:
-        msg = "Missing dataset name in config"
-        logger.error(msg, extra={"component": "DOWNLOAD"})
-        return ProcessingResult(
-            success=False,
-            files_processed=0,
-            files_failed=0,
-            output_files=[],
-            errors=[msg],
-            metadata={"elapsed_time": 0.0},
-        )
+    logger.info(
+        "Downloader start",
+        extra={
+            "component": "DOWNLOAD",
+            "structured_data": {
+                "dataset": dataset or None,
+                "limit": max_downloads,
+                "throttle": throttle,
+                "root_dir": str(root_dir),
+                "dwd_root": str(dwd_root),
+            },
+        },
+    )
 
-    # Hint: propagate UA for transparency (downstream download_file already sets headers via default_headers)
-    ua = default_headers().get("User-Agent", "")
-    logger.info("Downloader starting", extra={
-        "component": "DOWNLOAD",
-        "structured_data": {"dataset": dataset, "user_agent": ua, "limit": max_downloads, "throttle": throttle},
-    })
+    urls_path = _resolve_urls_file_from_cfg(config)
+    # Accept optional subfolder directive injected by runner
+    subfolder = _cfg_get(config, "downloader", "subfolder")
 
-    urls_path = _derive_crawl_urls_path(config)
-    subfolder = (config.get("downloader") or {}).get("subfolder")
-
+    # Build candidate list (limit applies after filtering inside loader)
     candidates = load_urls_from_jsonl(urls_path, logger, limit=max_downloads, filter_subfolder=subfolder)
 
-    files_processed = 0
-    files_failed = 0
-    skipped_existing = 0
-    output_files: List[Path] = []
-    errors: List[str] = []
-
+    # Early exit if nothing to do
     if not candidates:
-        elapsed = time.time() - start
-        logger.info("No candidates to download", extra={
-            "component": "DOWNLOAD",
-            "structured_data": {"elapsed_time": round(elapsed, 2), "urls_file": str(urls_path)},
-        })
+        elapsed = time.time() - start_ts
+        logger.info(
+            "No candidates to download",
+            extra={
+                "component": "DOWNLOAD",
+                "structured_data": {"urls_file": str(urls_path.resolve()), "elapsed_seconds": round(elapsed, 2)},
+            },
+        )
         return ProcessingResult(
             success=False,
             files_processed=0,
             files_failed=0,
             output_files=[],
-            errors=["No files to download after filtering"],
-            metadata={"elapsed_time": elapsed, "files_skipped": 0},
+            errors=[{"reason": "no_candidates", "urls_file": str(urls_path.resolve())}],
+            metadata={"elapsed_time": elapsed, "files_skipped": 0, "attempted": 0},
         )
 
-    download_root = _get_download_root(config)
+    attempted = 0
+    downloaded_ok = 0
+    skipped_existing = 0
+    failed = 0
+    output_files: List[Path] = []
+    errors: List[Dict[str, Any]] = []
+
+    total_candidates = len(candidates)
 
     for idx, rec in enumerate(candidates, 1):
         url = rec["url"]
-        rel = rec["relative_path"]
-        fname = rec["filename"]
-        dest = download_root / Path(rel).parent / fname
+        rel = Path(rec["relative_path"])  # safe-join component
 
-        # Check existing
+        # Destination path mirrors DWD tree: <root_dir>/<dwd_root>/<relative_path>
+        dest = root_dir / dwd_root / rel
+
+        # Resume/skip: existing file with size > 0
         if dest.exists():
-            skipped_existing += 1
-            logger.info("Skipping existing file", extra={
-                "component": "DOWNLOAD",
-                "structured_data": {"url": url, "destination": str(dest)},
-            })
-        else:
-            logger.info("Downloading file", extra={
+            try:
+                if dest.stat().st_size > 0:
+                    skipped_existing += 1
+                    attempted += 1
+                    logger.info(
+                        "Skip existing file",
+                        extra={
+                            "component": "DOWNLOAD",
+                            "structured_data": {"url": url, "destination": str(dest)},
+                        },
+                    )
+                    if throttle and throttle > 0:
+                        time.sleep(throttle)
+                    continue
+            except Exception:
+                # If stat() fails, fall through to attempt download
+                pass
+
+        logger.info(
+            "Downloading",
+            extra={
                 "component": "DOWNLOAD",
                 "structured_data": {
                     "index": idx,
-                    "total": len(candidates),
+                    "total": total_candidates,
                     "url": url,
                     "destination": str(dest),
                 },
-            })
-            ok = _download_with_retry(url, dest, config, logger)
-            if ok:
-                files_processed += 1
-                output_files.append(dest)
-            else:
-                files_failed += 1
-                errors.append(url)
+            },
+        )
 
-            if throttle and throttle > 0:
-                time.sleep(throttle)
+        attempted += 1
+        ok = _attempt_download(url, dest, config, logger)
+        if ok:
+            downloaded_ok += 1
+            output_files.append(dest)
+        else:
+            failed += 1
+            errors.append({"url": url, "destination": str(dest), "reason": "download_failed"})
 
-    elapsed = time.time() - start
-    total = len(candidates)
-    success = files_failed == 0 and files_processed > 0
-    success_rate = round(100 * files_processed / max(total, 1), 1)
+        if throttle and throttle > 0:
+            time.sleep(throttle)
 
-    logger.info("Download summary", extra={
-        "component": "DOWNLOAD",
-        "structured_data": {
-            "total": total,
-            "processed": files_processed,
-            "failed": files_failed,
-            "skipped": skipped_existing,
-            "elapsed_seconds": round(elapsed, 2),
-            "download_root": str(download_root),
-            "success_rate": success_rate,
+    elapsed = time.time() - start_ts
+    success = failed == 0 and downloaded_ok > 0
+
+    logger.info(
+        "Download summary",
+        extra={
+            "component": "DOWNLOAD",
+            "structured_data": {
+                "urls_file": str(urls_path.resolve()),
+                "download_root": str((root_dir / dwd_root).resolve()),
+                "total_candidates": total_candidates,
+                "attempted": attempted,
+                "downloaded_ok": downloaded_ok,
+                "skipped_existing": skipped_existing,
+                "failed": failed,
+                "elapsed_seconds": round(elapsed, 2),
+            },
         },
-    })
+    )
 
     warnings: List[str] = []
     if skipped_existing:
-        warnings.append(f"{skipped_existing} files were skipped (already present)")
-    if files_failed:
-        warnings.append(f"{files_failed} files failed to download")
+        warnings.append(f"{skipped_existing} file(s) skipped (already present)")
+    if failed:
+        warnings.append(f"{failed} file(s) failed to download")
 
     return ProcessingResult(
         success=success,
-        files_processed=files_processed,
-        files_failed=files_failed,
+        files_processed=downloaded_ok,
+        files_failed=failed,
         output_files=output_files,
         errors=errors,
         metadata={
             "elapsed_time": elapsed,
             "files_skipped": skipped_existing,
-            "download_root": str(download_root),
-            "success_rate": success_rate,
+            "attempted": attempted,
+            "download_root": str((root_dir / dwd_root).resolve()),
+            "success_rate": round(100.0 * (downloaded_ok / max(total_candidates, 1)), 1),
         },
         warnings=warnings or None,
     )
