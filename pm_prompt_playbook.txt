@@ -1,0 +1,126 @@
+
+# Proposed PM context file
+
+**Path:** `context/pm_prompt_playbook.md`
+**Purpose:** A concise, versioned guide that standardizes how we write implementation prompts (role, canvas policy, required context, acceptance, etc.), aligned with your two-chat workflow and PM instructions. &#x20;
+**Audience:** Project Manager only.
+**Authority:** If this file is visible to an implementation agent, it is non-authoritative. The current implementation prompt and dataset YAMLs override anything here. Never change files outside the ROLE/CANVAS scope defined in the current prompt.
+---
+
+## 1) Why this file (one paragraph)
+
+We use a PM→Implementation split: PM plans and crafts prompts; Implementation writes code under strict constraints. This playbook documents the exact prompt anatomy and reusable blocks so prompts stay predictable, reviewable, and fast to act on.&#x20;
+
+---
+
+## 2) Golden rules (copy/paste bullets)
+
+* **Single-file focus:** change only the stated target file unless the prompt explicitly allows a tiny diff elsewhere (shown in chat only).
+* **No signature changes** unless explicitly granted.
+* **Idempotent & fail-fast** behavior is preferred.
+* **Config-driven** over hardcoding.
+* **Logs & summaries** must be actionable (counts, paths, errors).&#x20;
+
+---
+
+## 3) Prompt anatomy (authoritative sections)
+
+* **ROLE** — one sentence scope + files allowed to change.
+* **CANVAS (Important)** — exactly what to upload (usually a single full file), plus the “tiny diff in chat” rule.
+* **CONTEXT (read-only; do not upload)** — minimal files the model should read.
+* **NEW YAML KEYS (authoritative)** — only if we’re introducing/locking config keys.
+* **REQUIREMENTS** — functional rules, logging, limits, URL joins, idempotence, error messages.
+* **ACCEPTANCE (commands + expected results)** — copy-runnable CLI with success criteria.
+* **OUTPUT** — what to put in Canvas vs chat.
+
+(These mirror your last prompt structure and the README’s implementation template.)&#x20;
+
+---
+
+## 4) Reusable snippets (drop-ins)
+
+**A. Limit & idempotence block**
+“Honor `--limit` by capping before write; log `limit_applied`. Re-runs must not duplicate output.”
+
+**B. URL joining rule**
+“Join as `base_url + root_path + optional_subfolder`, normalize slashes (no `//`, no missing `/`).”
+
+**C. Logging block**
+“Use `enhanced_logger` via `get_logger/setup_logger`. Emit start/end summaries with counts and paths. Include URL + HTTP status on failures. Avoid duplicate handlers.” (Matches our logging utilities index.)&#x20;
+
+**D. Canvas policy**
+“Upload exactly one full file; show any cross-file mini-diff in chat only.”
+
+---
+
+## 5) Examples
+
+### Example 1 — Crawler single output + limit (from last session)
+
+(Include your proven prompt verbatim here to serve as a canonical sample.)
+
+### Example 2 — Logging system (skeleton only; the actual prompt will be written per-task)
+
+```
+ROLE
+You are GPT-5 Implementation Engineer for ClimaStation. Modify only:
+- app/utils/enhanced_logger.py
+- app/main/run_pipeline.py
+- app/pipeline/crawler.py
+- app/pipeline/downloader.py
+…to add persistent rotating file logs without breaking console logs.
+
+CANVAS (Important)
+Upload the full corrected enhanced_logger.py.
+Do not upload other files; for those, paste tiny diffs in chat if changes are minimal. If changes are larger, request permission in chat first.
+
+CONTEXT (read-only; do not upload)
+app/utils/enhanced_logger.py
+app/utils/config_manager.py
+app/main/run_pipeline.py
+app/pipeline/crawler.py
+app/pipeline/downloader.py
+app/config/base_config.yaml
+context/available_functions.md  # logger API surface
+
+NEW YAML KEYS (authoritative)
+logging:
+  log_dir: "logs"
+  level: "INFO"        # DEBUG/INFO/WARN/ERROR
+  rotation:
+    max_bytes: 5000000
+    backup_count: 5
+
+REQUIREMENTS
+- Add RotatingFileHandler per component: pipeline.runner.log, pipeline.crawler.log, pipeline.downloader.log.
+- Create log_dir if missing; Windows-safe.
+- Idempotent setup: no duplicate handlers on repeat runs.
+- Expose log level from config; default INFO.
+- Keep console logging behavior intact.
+- Summaries: runner (mode + counts + paths), crawler (found/written/skipped + output path), downloader (attempted/ok/skip/failed + target dir + elapsed).
+
+ACCEPTANCE (PowerShell)
+python -m app.main.run_pipeline --mode crawl --dataset 10_minutes_air_temperature --limit 2
+python -m app.main.run_pipeline --mode download --dataset 10_minutes_air_temperature --limit 1
+Expected:
+- logs/pipeline.runner.log, logs/pipeline.crawler.log, logs/pipeline.downloader.log exist and are non-empty.
+- No duplicate lines after a second run.
+- Rotation respected when max_bytes is set very small.
+
+OUTPUT
+Canvas: full enhanced_logger.py.
+Chat: list of changes + tiny diffs for runner/crawler/downloader edits.
+```
+
+(Backed by Immediate Task details and the utilities index.) &#x20;
+
+---
+
+## 6) Review checklist (for the PM)
+
+* Does the prompt restrict file changes tightly (ROLE + CANVAS)?
+* Are acceptance commands runnable verbatim?
+* Do requirements reflect current “Immediate Task” notes? &#x20;
+* Are config keys pinned under **NEW YAML KEYS** if added?
+* Is logging/limit/idempotence language included where relevant?
+

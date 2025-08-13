@@ -339,45 +339,25 @@ Architectural Constraints:
 ---------------------------------------- Last updated: 2025-08-10 --------------------------------------------
 
 
-## 🔧 Immediate Task — Downloader can’t find/read crawler URLs JSONL
+### Task List
 
-**Problem (symptom):** `download` mode logs “URLs file not found / No candidates to download” right after a successful crawl. Likely a **path/key mismatch** between YAML (`crawler.output_urls_jsonl`) and what `run_pipeline.py`/`downloader.py` read, or a **field-name mismatch** in the JSONL (expected: `url`, `relative_path`, `filename`).
+* [x] **Persistent file logging** — single `data/dwd/0_debug/pipeline.log`, millisecond timestamps, overwrite each run. *(Completed 2025-08-13)*
 
-**Objective:** Make `download` mode load the **exact** JSONL written by the crawler and honor `--limit` to fetch a small, deterministic set.
+* [ ] **Improve crawler logging**
 
-**What to do next (tomorrow):**
-1) **Trace path resolution** in `run_pipeline.py` and `downloader.py` (where the URLs file path comes from) and align with `crawler.output_urls_jsonl`.
-2) **Verify JSONL schema** used by `load_urls_from_jsonl` (must match `url`, `relative_path`, `filename`) and subfolder filtering behavior.
-3) **Tighten error messages**: when the URLs file is missing, log the **exact path** we tried to open.
+  * Log inputs/config (resolved URL, subfolder, throttle, **limit applied**) at **INFO**.
+  * Log discovered items (`filename`, `relative_path`) at **DEBUG**.
+  * Log per-subfolder write summary (found/new/duplicates) and output JSONL path at **INFO**.
+  * Log actionable errors with **status code + URL** (HTTP) or **absolute path** (I/O) at **WARNING/ERROR**.
+  * Final one-line **INFO** summary with elapsed time and totals.
 
-**Acceptance (quick):**
-- After a crawl, `download --dry-run --limit 3` lists a plan with 1–3 items (no network), exits `0`.
-- `download --limit 1` actually downloads one file, exits `0`, logs clear counts (attempted/ok/skip/failed).
+* [ ] **Parsing kickoff — 10-minute air temperature**
 
-**Deliverables:**
-- Minimal code patch (runner and/or downloader) and, if needed, a tiny YAML key correction.
-- One-sentence changelog: which path/key was aligned and where the URLs JSONL is read from.
-
-
-## 🔧 Immediate Task — Add persistent file logging (runner, crawler, downloader)
-
-**Problem (symptom):** No **log files** are created; only console output. Hard to debug and audit behavior over time.
-
-**Objective:** Enable rotating **file-based logs** for the runner and pipeline components, with structured summaries and error details.
-
-**What to do next (tomorrow):**
-1) **Choose a log root** (e.g., `logs/` or `data/logs/`) and add it to base/config; ensure directory creation.
-2) **Configure file handler(s)** in `enhanced_logger.py` (rotation, size, count); avoid duplicate handlers on repeated runs.
-3) **Ensure components use the logger**: `run_pipeline.py`, `crawler.py`, `downloader.py` call `get_logger(...)` and emit start/end summaries and per-error details (include URL + HTTP status where applicable).
-4) **Expose log level** via config (default `INFO`), and document Windows-safe paths.
-
-**Acceptance (quick):**
-- Running `crawl` and `download` produces non-empty files like `logs/pipeline.runner.log`, `logs/pipeline.crawler.log`, `logs/pipeline.downloader.log`.
-- No duplicate log lines; rotation settings in effect; summaries include counts and output paths.
-
-**Deliverables:**
-- Updated logger configuration/code and (if needed) base/config keys for `log_dir` and `log_level`.
-- Brief README note: where logs live and how to change level/rotation.
+  * Add `--mode parse` in `run_pipeline.py` for the dataset.
+  * Stream read from ZIP (no full-file loads).
+  * Emit URF v1 minimal records: `station_id`, `timestamp`, `parameters["air temperature 2 m above ground"]`, plus standard metadata.
+  * Write `.jsonl` to parsed output path (chunk \~50k lines per file).
+  * Add a lightweight validation/summary (counts, nulls/NaNs).
 
 
 ---
@@ -420,7 +400,6 @@ CLIMASTATIONz
 │   │   ├── enhanced_logger.py (finished and is working fine for crawling, needs validation for other tasks)
 │   │   ├── file_operations.py (finished, can't tell if it is working as intended or not)
 │   │   ├── http_headers.py
-│   │   ├── paths.py   (empty, do we still need this file?)
 │   │   └── progress_tracker.py (finished, but needs validation in practice)
 │   └── __init__.py
 ├── context/             (For AI implementation)
@@ -435,6 +414,7 @@ CLIMASTATIONz
 │       └── 3_parsed_files/
 ├── .gitignore
 ├── dev_log.md
+├── pm_prompt_playbook.txt
 ├── prompt_project_manager.txt
 ├── README.txt
 └── requirements.txt

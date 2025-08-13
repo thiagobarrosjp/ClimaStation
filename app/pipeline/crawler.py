@@ -4,12 +4,14 @@ ClimaStation DWD Repository Crawler (updated for NEW YAML contract)
 SCRIPT IDENTIFICATION: DWD10TAH3W (DWD Crawler)
 
 PUBLIC API (stable):
-- crawl_dwd_repository(config: Dict[str, Any], logger: StructuredLoggerAdapter, throttle: Optional[float] = None) -> CrawlResult
+- crawl_dwd_repository(config: Dict[str, Any],
+                       logger: logging.Logger | logging.LoggerAdapter,
+                       throttle: Optional[float] = None) -> CrawlResult
 
 Notes:
-- Parses simple directory listings without third‑party HTML parsers.
+- Parses simple directory listings without third-party HTML parsers.
 - **Single JSONL output** written/merged **only** to `crawler.output_urls_jsonl` when provided.
-- Idempotent behavior (de‑dupe by URL on re‑runs).
+- Idempotent behavior (de-dupe by URL on re-runs).
 - Honors an optional crawl limit provided via `crawler.max_items` or `runner_args.limit`.
 """
 from __future__ import annotations
@@ -23,15 +25,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 from urllib.parse import urljoin
 
 import requests
-
-# Logger compatibility: prefer StructuredLoggerAdapter; fall back to ComponentLogger
-try:  # pragma: no cover - compatibility import
-    from app.utils.enhanced_logger import StructuredLoggerAdapter  # type: ignore
-except Exception:  # pragma: no cover
-    try:
-        from app.utils.enhanced_logger import ComponentLogger as StructuredLoggerAdapter  # type: ignore
-    except Exception:  # pragma: no cover - last resort for type-checkers
-        from logging import Logger as StructuredLoggerAdapter  # type: ignore
+import logging
 
 from app.utils.http_headers import default_headers
 
@@ -61,7 +55,7 @@ def _get_cfg(cfg: Dict[str, Any], *keys: str, default: Any = None) -> Any:
     return cur
 
 
-def _ensure_jsonl_idempotent(target: Path, records: List[Dict[str, Any]], logger: StructuredLoggerAdapter) -> Tuple[int, int]:
+def _ensure_jsonl_idempotent(target: Path, records: List[Dict[str, Any]], logger: logging.Logger) -> Tuple[int, int]:
     """Merge with existing JSONL by URL, write atomically, return (written, skipped)."""
     existing_urls: Set[str] = set()
     if target.exists():
@@ -80,10 +74,10 @@ def _ensure_jsonl_idempotent(target: Path, records: List[Dict[str, Any]], logger
                         # ignore bad line but keep going
                         continue
         except Exception as e:
-            logger.warning("Failed reading existing JSONL; continuing fresh", extra={
-                "component": "CRAWLER",
-                "structured_data": {"jsonl_path": str(target), "error": str(e)},
-            })
+            logger.warning(
+                "Failed reading existing JSONL; continuing fresh",
+                extra={"component": "CRAWLER", "structured_data": {"jsonl_path": str(target), "error": str(e)}},
+            )
 
     unique: List[Dict[str, Any]] = []
     skipped = 0
@@ -123,17 +117,16 @@ def _ensure_jsonl_idempotent(target: Path, records: List[Dict[str, Any]], logger
 # ------------------------------
 
 class DWDRepositoryCrawler:
-    def __init__(self, config: Dict[str, Any], logger: StructuredLoggerAdapter, throttle: Optional[float] = None):
+    def __init__(self, config: Dict[str, Any], logger: logging.Logger, throttle: Optional[float] = None):
         self.config = config or {}
         self.logger = logger
 
         crawler_cfg = _get_cfg(self.config, "crawler", default={}) or {}
 
         # Base URL (NEW: crawler.base_url)
-        self.base_url: str = str(crawler_cfg.get(
-            "base_url",
-            "https://opendata.dwd.de/climate_environment/CDC/",
-        ))
+        self.base_url: str = str(
+            crawler_cfg.get("base_url", "https://opendata.dwd.de/climate_environment/CDC/")
+        )
 
         # Dataset root path (NEW: crawler.root_path). Fallbacks for legacy compat.
         root_path: Optional[str] = (
@@ -228,10 +221,7 @@ class DWDRepositoryCrawler:
                 # Explicit status + URL in logs
                 self.logger.error(
                     "HTTP request failed",
-                    extra={
-                        "component": "CRAWLER",
-                        "structured_data": {"url": url, "status": resp.status_code},
-                    },
+                    extra={"component": "CRAWLER", "structured_data": {"url": url, "status": resp.status_code}},
                 )
                 if attempt < self.max_retries:
                     time.sleep(min(2 ** attempt, 4))
@@ -256,7 +246,7 @@ class DWDRepositoryCrawler:
     @staticmethod
     def _parse_listing_html(html: str) -> Tuple[List[str], List[str]]:
         """Return (subdirs, zip_names) from a simple Apache-style listing."""
-        hrefs = re.findall(r'href=[\"\']([^\"\']+)', html, flags=re.IGNORECASE)
+        hrefs = re.findall(r'href=["\']([^"\']+)', html, flags=re.IGNORECASE)
         hrefs = [h for h in hrefs if h not in ("../", "/")]
         subdirs = [h for h in hrefs if h.endswith("/")]
         zips = [h for h in hrefs if h.lower().endswith(".zip")]
@@ -375,7 +365,7 @@ class DWDRepositoryCrawler:
 
 def crawl_dwd_repository(
     config: Dict[str, Any],
-    logger: StructuredLoggerAdapter,
+    logger: logging.Logger | logging.LoggerAdapter,
     throttle: Optional[float] = None,
 ) -> CrawlResult:
     """Discover per-file ZIP URLs under the dataset root and write a single JSONL.
@@ -383,5 +373,14 @@ def crawl_dwd_repository(
     The function **does not raise** on expected failures; it logs a summary and
     returns a CrawlResult with counts and the JSONL output path.
     """
-    crawler = DWDRepositoryCrawler(config=config, logger=logger, throttle=throttle)
+    # Normalize to a plain Logger (avoid adapter type issues)
+    base_logger = logging.getLogger("pipeline.crawler")
+    if isinstance(logger, logging.LoggerAdapter):
+        norm_logger = logger.logger
+    elif isinstance(logger, logging.Logger):
+        norm_logger = logger
+    else:
+        norm_logger = base_logger
+
+    crawler = DWDRepositoryCrawler(config=config, logger=norm_logger, throttle=throttle)
     return crawler.crawl_repository()

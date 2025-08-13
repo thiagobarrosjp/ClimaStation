@@ -22,6 +22,7 @@ import traceback
 import logging
 import json
 
+
 # ------------------------------
 # Imports
 # ------------------------------
@@ -41,7 +42,7 @@ except Exception:  # pragma: no cover
 
 from app.pipeline.crawler import crawl_dwd_repository
 from app.pipeline.downloader import run_downloader, load_urls_from_jsonl
-
+from app.utils.enhanced_logger import configure_session_file_logging
 
 # ------------------------------
 # Helpers
@@ -418,7 +419,8 @@ def _build_arg_parser() -> argparse.ArgumentParser:
 def main() -> int:
     parser = _build_arg_parser()
     args = parser.parse_args()
-
+    configure_session_file_logging("data/dwd/0_debug/pipeline.log")
+    
     # Per requirements: use component name "pipeline.runner"
     logger_opt = get_logger("pipeline.runner")
     if logger_opt is None:
