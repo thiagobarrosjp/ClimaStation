@@ -30,4 +30,4 @@ jobs:
 
       - name: Run tests
         run: |
-          python -m pytest -q tests/dwd/test_validate_crawler_urls.py
+          python -m pytest -q
