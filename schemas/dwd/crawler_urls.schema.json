@@ -1,0 +1,49 @@
+{
+    "$schema": "https://json-schema.org/draft-07/schema#",
+    "title": "crawler_urls v1",
+    "type": "object",
+    "required": [
+        "url",
+        "relative_path",
+        "filename"
+    ],
+    "properties": {
+        "url": {
+            "type": "string",
+            "format": "uri",
+            "pattern": "^https://"
+        },
+        "relative_path": {
+            "type": "string",
+            "pattern": "^(|(.*/))$"
+        },
+        "filename": {
+            "type": "string",
+            "pattern": "^[^/]+$"
+        },
+        "dataset_key": {
+            "type": "string"
+        },
+        "size_bytes": {
+            "type": [
+                "integer",
+                "null"
+            ],
+            "minimum": 0
+        },
+        "last_modified": {
+            "type": [
+                "string",
+                "null"
+            ],
+            "format": "date-time"
+        },
+        "checksum": {
+            "type": [
+                "string",
+                "null"
+            ]
+        }
+    },
+    "additionalProperties": true
+}

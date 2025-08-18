@@ -34,5 +34,19 @@
   "python.envFile": "${workspaceFolder}/.env",
   // Light type-checking
   "python.analysis.typeCheckingMode": "basic",
-  "python.defaultInterpreterPath": "${workspaceFolder}/.venv/Scripts/python.exe"
+  "python.defaultInterpreterPath": "${workspaceFolder}/.venv/Scripts/python.exe",
+  // Black
+  "black-formatter.args": [
+    "--line-length",
+    "100"
+  ],
+  // Ruff (lint + import sorting)
+  "ruff.lint.args": [],
+  "ruff.configuration": "${workspaceFolder}/pyproject.toml",
+  // MyPy (runs on save / on demand)
+  "mypy-type-checker.args": [
+    "--config-file",
+    "pyproject.toml"
+  ],
+  "mypy-type-checker.importStrategy": "fromEnvironment"
 }

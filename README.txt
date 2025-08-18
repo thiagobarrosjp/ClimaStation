@@ -234,6 +234,7 @@ This project uses a two-chat development strategy to split architectural plannin
 - **GPT-5 (Implementation Assistant)**:
   - Writes code based on context files and task prompts
   - Follows strict constraints with no architectural decisions
+  - Deliverables must include updated contract docs, schema changes, and passing property + golden tests
 
 This workflow allows clean separation of concerns and reproducibility between sessions. Context files used by GPT-5 are version-controlled and updated by the developer as needed.
 
@@ -272,6 +273,7 @@ Context Files to Attach:
 - context/processor_interface.py
 - context/available_functions.py
 - context/coding_patterns.py
+- context/quality_standard.md
 - [specific file being modified]
 
 
@@ -295,6 +297,41 @@ Architectural Constraints:
 - Must return ProcessingResult objects
 - Must use dependency injection pattern
 - Must follow established logging patterns
+
+### Stage Quality Standard
+
+Stage Quality Standard (applies to every pipeline stage)
+1. "Invariants defined (record/file/run-level)"
+2. "Schema provided (record-level, JSON Schema if JSONL)"
+3. "Property tests (file/run-level rules)"
+4. "Golden test (deterministic output for frozen inputs)"
+5. "CI gate blocks merge on any failure (format/lint/types/tests)"
+
+
+### Markdown Output Rules (PM AI — SHORT)
+
+**Goal:** always return **one single fenced markdown block** the user can copy/paste.
+
+## Do this
+1. **Wrap everything** in one outer fence: start with `\`\`\`\`markdown` and end with `\`\`\`\`` on its own line.
+2. Use **triple backticks** for inner examples (```json, ```bash, …).  
+   *Outer uses four backticks; inner uses three.*
+3. **Fence lines are clean:** no text or spaces on the same line as the fence.
+4. **Don’t use 4+ backticks inside** a 4-backtick block (it would close the outer).
+5. To show literal backticks, either **indent by 4 spaces** or **increase the outer fence length**.
+6. Prefer `markdown` as the outer language so the UI shows a “markdown” panel.
+
+## Minimal template (copy)
+````markdown
+# Title
+
+Intro.
+
+## Example
+```json
+{"ok": true}
+```
+
 
 --------------------------------------------------------------------------------------------------------------
 ---------------------------------------- PART 2: STRATEGIC GOALS ---------------------------------------------
@@ -336,12 +373,10 @@ Architectural Constraints:
 
 --------------------------------------------------------------------------------------------------------------
 ---------------------------------------- PART 3: DAILY STATUS ------------------------------------------------
----------------------------------------- Last updated: 2025-08-10 --------------------------------------------
+---------------------------------------- Last updated: 2025-08-17 --------------------------------------------
 
 
 ### Task List
-
-* [x] **Persistent file logging** — single `data/dwd/0_debug/pipeline.log`, millisecond timestamps, overwrite each run. *(Completed 2025-08-13)*
 
 * [ ] **Improve crawler logging**
 
@@ -360,15 +395,70 @@ Architectural Constraints:
   * Add a lightweight validation/summary (counts, nulls/NaNs).
 
 
+* [ ] **Enforce stage quality standard (Crawler and Downloader)**
+  Why: Make the 5 rules unskippable (invariants, schema, property tests, golden tests, CI gate).
+  * Schemas: schemas/crawler_urls.schema.json (and optional schemas/download_ledger.schema.json).
+  * Property tests:
+    - Crawler  -> files-only, sorted by relative_path, no duplicates, absolute HTTPS.
+    - Downloader -> correct pathing, idempotent skip, no partials (use local fixtures).
+  * Golden tests:
+    - Crawler  -> tiny cached index => exact urls.jsonl
+    - Downloader -> tiny files or small download ledger (byte-compare).
+  * CI gate: one job runs Black, Ruff, MyPy, Pytest; mark as required for main.
+  Done when: tests pass locally and in CI; branch protection is on; contracts reference their schema/test paths.
+
+
+  #### Next Steps — Quality Enforcement Focus
+
+> Goal: enforce the 5-point Stage Quality Standard for **Crawler** first, then **Downloader**. Parser is paused until both are green.
+
+* [ ] **Implement `urls.jsonl` Validator (Crawler)**
+  - CLI: `--input <urls.jsonl>`, `--schema schemas/crawler_urls.schema.json>`.
+  - Checks: record **schema**, **sorted** by `(relative_dir, filename)` (or your chosen key), **unique**, **HTTPS-only**.
+  - Output: atomic `<input>.validation.json` report + clear exit codes (`0` ok, `4` failed).
+  - Perf: stream line-by-line; no network; deterministic report.
+
+* [ ] **Crawler fixtures & golden**
+  - Add tiny offline fixtures (saved index/config) under `tests/data/`.
+  - Freeze expected `tests/expected/urls.jsonl` (stable fields only).
+  - Note in contract which keys define sortedness/uniqueness.
+
+* [ ] **CI gate (Crawler)**
+  - Workflow runs: Black · Ruff · MyPy · Pytest.
+  - Stage test: run crawler on fixtures → run **validator** → **golden compare** (byte-for-byte).
+  - Mark the CI job **required** for `main` (branch protection).
+
+* [ ] **`run_pipeline.py --validate` (convenience)**
+  - After crawl success, **optionally** call the same validator; fail pipeline if invalid.
+  - Keep always-on cheap guards in crawler (filter dirs, sort, dedupe, atomic write).
+
+* [ ] **Downloader enforcement plan**
+  - Decide golden style: **tiny files** (exact bytes) **or** **download ledger** JSON (recommended).
+  - Create local fixtures (no live DWD).
+  - Property tests: **idempotent skip**, **no partials**, **correct pathing**.
+  - Golden: tiny files or ledger (byte-compare).
+  - Add to CI job alongside crawler checks.
+
+* [ ] **Repo hygiene to lock it in**
+  - Enable **branch protection** on `main` (require CI).
+  - Add PR template checkboxes: Contract updated · Schema present · Property tests · Golden updated/passing · CI green.
+  - Link `docs/contracts/crawler.md` / `downloader.md` from README and ensure paths match.
+
+* [ ] **(Paused) Parsing kickoff**
+  - Start only after the Crawler + Downloader gates are green.
+
+
+
 ---
 
 ### Current Folder Structure
 
-CLIMASTATIONz
+CLIMASTATION
 ├── _legacy/
 ├── .venv/
 ├── vscode/
 │   ├── launch.json
+│   ├── pyproject.toml
 │   └── settings.json
 ├── app/
 │   ├── config/
@@ -384,6 +474,8 @@ CLIMASTATIONz
 │   │   ├── extractor.py  (empty, not started yet)
 │   │   ├── parser.py     (empty, not started yet)
 │   │   └── writer.py     (empty, not started yet)
+│   ├── tools/
+│   │   └── validate_crawler_urls.py
 │   ├── translations/
 │   │   ├── meteorological/
 │   │   │  ├── __init__.py
@@ -403,18 +495,30 @@ CLIMASTATIONz
 │   │   └── progress_tracker.py (finished, but needs validation in practice)
 │   └── __init__.py
 ├── context/             (For AI implementation)
-│   ├── available_functions.md (updated)
+│   ├── available_functions.md
 │   ├── coding_patterns.py
-│   └── processor_interface.py
+│   ├── pm_prompt_playbook.txt
+│   ├── processor_interface.py
+│   └── quality_standards.md (new file)
 ├── data/
 │   └── dwd/
 │       ├── 0_debug/
 │       ├── 1_crawl_dwd/
 │       ├── 2_downloaded_files/
 │       └── 3_parsed_files/
+├── docs/
+│   └── dwd/
+│       └── contracts/
+│           ├── crawler.md
+│           └── downloader.md
+├── schemas/
+│   └── dwd/
+│       └── crawler_urls.schema.json
+├── tests/
+│   └── dwd/
+│       └── test_validate_crawler_urls.py
 ├── .gitignore
 ├── dev_log.md
-├── pm_prompt_playbook.txt
 ├── prompt_project_manager.txt
 ├── README.txt
 └── requirements.txt

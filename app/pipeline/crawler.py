@@ -10,8 +10,8 @@ PUBLIC API (stable):
 
 Notes:
 - Parses simple directory listings without third-party HTML parsers.
-- **Single JSONL output** written/merged **only** to `crawler.output_urls_jsonl` when provided.
-- Idempotent behavior (de-dupe by URL on re-runs).
+- **Single JSONL output** written to `crawler.output_urls_jsonl` when provided.
+- Idempotent behavior (sorted + de-duped by (relative_path, filename)).
 - Honors an optional crawl limit provided via `crawler.max_items` or `runner_args.limit`.
 """
 from __future__ import annotations
@@ -22,7 +22,8 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
+import posixpath
 
 import requests
 import logging
@@ -55,57 +56,48 @@ def _get_cfg(cfg: Dict[str, Any], *keys: str, default: Any = None) -> Any:
     return cur
 
 
-def _ensure_jsonl_idempotent(target: Path, records: List[Dict[str, Any]], logger: logging.Logger) -> Tuple[int, int]:
-    """Merge with existing JSONL by URL, write atomically, return (written, skipped)."""
-    existing_urls: Set[str] = set()
-    if target.exists():
-        try:
-            with target.open("r", encoding="utf-8") as fh:
-                for line in fh:
-                    line = line.strip()
-                    if not line:
-                        continue
-                    try:
-                        obj = json.loads(line)
-                        url = obj.get("url")
-                        if isinstance(url, str):
-                            existing_urls.add(url)
-                    except json.JSONDecodeError:
-                        # ignore bad line but keep going
-                        continue
-        except Exception as e:
-            logger.warning(
-                "Failed reading existing JSONL; continuing fresh",
-                extra={"component": "CRAWLER", "structured_data": {"jsonl_path": str(target), "error": str(e)}},
-            )
+def _normalized_relpath_dir(rel_parts: List[str]) -> str:
+    """Return directory-only relative_path ("" or ends with "/")."""
+    # Join using POSIX semantics and enforce trailing slash when not empty
+    rel_parts_clean = [p.strip("/") for p in rel_parts if p and p.strip("/ ")]
+    rel_dir = "/".join(rel_parts_clean)
+    return (rel_dir + "/") if rel_dir else ""
 
+
+def _write_sorted_unique_jsonl(target: Path, records: List[Dict[str, Any]], logger: logging.Logger) -> Tuple[int, int]:
+    """Write JSONL atomically after sorting & de-duping by (relative_path, filename).
+
+    Returns (written_count, skipped_count_due_to_dupes).
+    """
+    # De-dupe by (relative_path, filename); keep first occurrence
+    seen_keys: Set[Tuple[str, str]] = set()
     unique: List[Dict[str, Any]] = []
     skipped = 0
     for rec in records:
-        url = rec.get("url")
-        if not isinstance(url, str):
-            continue
-        if url in existing_urls:
+        rp = str(rec.get("relative_path", ""))
+        fn = str(rec.get("filename", ""))
+        key = (rp, fn)
+        if key in seen_keys:
             skipped += 1
             continue
-        existing_urls.add(url)
+        seen_keys.add(key)
         unique.append(rec)
 
-    # Atomic write (append only new lines)
+    # Sort by (relative_path, filename)
+    unique.sort(key=lambda r: (str(r.get("relative_path", "")), str(r.get("filename", ""))))
+
+    # Atomic write
     target.parent.mkdir(parents=True, exist_ok=True)
     tmp = target.with_suffix(target.suffix + ".part")
     try:
-        # Strategy: copy existing file, then append unique; else create new
-        if target.exists():
-            tmp.write_bytes(target.read_bytes())
-        with tmp.open("a", encoding="utf-8") as fh:
+        with tmp.open("w", encoding="utf-8", newline="\n") as fh:
             for rec in unique:
                 fh.write(json.dumps(rec, ensure_ascii=False) + "\n")
         tmp.replace(target)
     finally:
         if tmp.exists() and tmp != target:
             try:
-                pass
+                tmp.unlink(missing_ok=True)  # type: ignore[arg-type]
             except Exception:
                 pass
 
@@ -143,6 +135,7 @@ class DWDRepositoryCrawler:
         root_path = str(root_path)
         if root_path and not root_path.endswith("/"):
             root_path += "/"
+        self.dataset_root_path = root_path  # keep for computing relative paths from URL if needed
         self.start_url = urljoin(self.base_url.rstrip("/") + "/", root_path.lstrip("/"))
 
         # Subfolders (NEW: crawler.subfolders as mapping) → allowed first-level subpaths list
@@ -235,6 +228,7 @@ class DWDRepositoryCrawler:
                     "Retrying request",
                     extra={"component": "CRAWLER", "structured_data": {"url": url, "attempt": attempt + 1}},
                 )
+            
                 time.sleep(min(2 ** attempt, 4))
                 return self._request(url, attempt + 1)
             self.logger.error(
@@ -256,18 +250,40 @@ class DWDRepositoryCrawler:
     # Crawl helpers
     # --------------------------
 
-    def _emit_zip(self, base_url: str, rel_parts: List[str], filename: str):
+    def _emit_zip(self, base_url: str, rel_parts: List[str], name_in_listing: str):
         if self._stop_flag:
             return
+        # Sanitize filename (basename only; no slashes)
+        filename = posixpath.basename(name_in_listing.strip())
+        # Build absolute URL and validate files-only (URL path must not end with "/")
         url = urljoin(base_url, filename)
+        parsed = urlparse(url)
+        if parsed.path.endswith("/"):
+            return  # directories are not allowed
+        # Compute directory-only relative_path from the crawled path parts
+        relative_path = _normalized_relpath_dir(rel_parts)
+        # Enforce schema rules: relative_path has no surrounding spaces and ends with "/" or is empty
+        relative_path = relative_path.strip()
+        if relative_path and not relative_path.endswith("/"):
+            relative_path += "/"
+        # Ensure basename of URL equals filename
+        if posixpath.basename(parsed.path) != filename:
+            # If mismatch (unexpected), derive filename from URL path
+            filename = posixpath.basename(parsed.path)
+        # De-dupe by URL early to avoid extra work
         if url in self._seen_urls:
             return
         self._seen_urls.add(url)
         rec = {
             "url": url,
-            "relative_path": "/".join(rel_parts + [filename]),
+            "relative_path": relative_path,
             "filename": filename,
+            # Optional context for downstream consumers
+            "dataset_key": str(self.config.get("name") or self.config.get("dataset", "")) or None,
         }
+        # Drop dataset_key if None to keep output clean
+        if rec["dataset_key"] is None:
+            del rec["dataset_key"]
         self.url_records.append(rec)
         # Respect limit eagerly
         if self.max_items is not None and len(self.url_records) >= self.max_items:
@@ -318,7 +334,7 @@ class DWDRepositoryCrawler:
                     extra={"component": "CRAWLER", "structured_data": {"root_url": root_url, "error": str(e)}},
                 )
 
-        # If a limit was set, ensure we hard-cap before writing
+        # If a limit was set, ensure we hard-cap before writing (keeps discovery order before sort)
         limit_applied = 0
         if self.max_items is not None and len(self.url_records) > self.max_items:
             limit_applied = self.max_items
@@ -326,8 +342,8 @@ class DWDRepositoryCrawler:
         elif self.max_items is not None:
             limit_applied = min(self.max_items, len(self.url_records))
 
-        # Write/merge JSONL idempotently to the **single required path**
-        written, skipped = _ensure_jsonl_idempotent(self.output_file_path, self.url_records, self.logger)
+        # Finalize: sorted & unique by (relative_path, filename); atomic write
+        written, skipped = _write_sorted_unique_jsonl(self.output_file_path, self.url_records, self.logger)
 
         elapsed = time.time() - start
         self.logger.info(
