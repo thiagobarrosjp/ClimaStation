@@ -13,10 +13,14 @@ Notes:
 - **Single JSONL output** written to `crawler.output_urls_jsonl` when provided.
 - Idempotent behavior (sorted + de-duped by (relative_path, filename)).
 - Honors an optional crawl limit provided via `crawler.max_items` or `runner_args.limit`.
+- NEW (2025-08-18): Also emits a deterministic *sample* JSONL with the first N
+  lines after final sort & de-dupe. N is controlled by env var
+  `CLIMASTATION_CRAWLER_SAMPLE_COUNT` (default 100, min 1).
 """
 from __future__ import annotations
 
 import json
+import os
 import re
 import time
 from dataclasses import dataclass
@@ -64,12 +68,12 @@ def _normalized_relpath_dir(rel_parts: List[str]) -> str:
     return (rel_dir + "/") if rel_dir else ""
 
 
-def _write_sorted_unique_jsonl(target: Path, records: List[Dict[str, Any]], logger: logging.Logger) -> Tuple[int, int]:
-    """Write JSONL atomically after sorting & de-duping by (relative_path, filename).
+def _sort_and_dedupe(records: List[Dict[str, Any]]) -> Tuple[List[Dict[str, Any]], int]:
+    """Return (unique_sorted_records, skipped_due_to_dupes).
 
-    Returns (written_count, skipped_count_due_to_dupes).
+    De-duplicates by (relative_path, filename) keeping the first occurrence,
+    then sorts by the same pair.
     """
-    # De-dupe by (relative_path, filename); keep first occurrence
     seen_keys: Set[Tuple[str, str]] = set()
     unique: List[Dict[str, Any]] = []
     skipped = 0
@@ -83,25 +87,41 @@ def _write_sorted_unique_jsonl(target: Path, records: List[Dict[str, Any]], logg
         seen_keys.add(key)
         unique.append(rec)
 
-    # Sort by (relative_path, filename)
     unique.sort(key=lambda r: (str(r.get("relative_path", "")), str(r.get("filename", ""))))
+    return unique, skipped
 
-    # Atomic write
+
+def _atomic_write_jsonl(target: Path, records: List[Dict[str, Any]], logger: logging.Logger) -> int:
+    """Write *records* to *target* as JSONL atomically. Returns lines written.
+
+    Uses UTF-8 with LF newlines and an atomic os.replace() from a .tmp path.
+    """
     target.parent.mkdir(parents=True, exist_ok=True)
-    tmp = target.with_suffix(target.suffix + ".part")
+    tmp = target.with_suffix(target.suffix + ".tmp")
     try:
         with tmp.open("w", encoding="utf-8", newline="\n") as fh:
-            for rec in unique:
+            for rec in records:
                 fh.write(json.dumps(rec, ensure_ascii=False) + "\n")
-        tmp.replace(target)
+        os.replace(tmp, target)
     finally:
-        if tmp.exists() and tmp != target:
+        if tmp.exists():
             try:
                 tmp.unlink(missing_ok=True)  # type: ignore[arg-type]
             except Exception:
                 pass
+    logger.debug("Wrote JSONL", extra={"component": "CRAWLER", "structured_data": {"path": str(target), "lines": len(records)}})
+    return len(records)
 
-    return len(unique), skipped
+
+def _get_sample_count_from_env(default: int = 100) -> int:
+    raw = os.getenv("CLIMASTATION_CRAWLER_SAMPLE_COUNT", "")
+    try:
+        n = int(raw)
+        if n >= 1:
+            return n
+    except Exception:
+        pass
+    return default
 
 
 # ------------------------------
@@ -177,6 +197,10 @@ class DWDRepositoryCrawler:
             base_output = Path(_get_cfg(self.config, "dwd_paths", "crawl_data", default="data/dwd/1_crawl_dwd"))
             self.output_file_path = base_output / f"{dataset_name}_urls.jsonl"
         self.output_file_path.parent.mkdir(parents=True, exist_ok=True)
+
+        # Sample path (computed at write time since N may vary)
+        self.dataset_name = str(self.config.get("name") or self.config.get("dataset", "dataset"))
+        self.crawl_output_dir = self.output_file_path.parent
 
         # State
         self._seen_urls: Set[str] = set()
@@ -342,8 +366,17 @@ class DWDRepositoryCrawler:
         elif self.max_items is not None:
             limit_applied = min(self.max_items, len(self.url_records))
 
-        # Finalize: sorted & unique by (relative_path, filename); atomic write
-        written, skipped = _write_sorted_unique_jsonl(self.output_file_path, self.url_records, self.logger)
+        # Finalize: sort & unique by (relative_path, filename)
+        unique_sorted, skipped = _sort_and_dedupe(self.url_records)
+
+        # Write full manifest atomically
+        written_full = _atomic_write_jsonl(self.output_file_path, unique_sorted, self.logger)
+
+        # Prepare and write deterministic sample (first N lines of final order)
+        sample_n = _get_sample_count_from_env(100)
+        sample_records = unique_sorted[:sample_n]
+        sample_path = self.crawl_output_dir / f"{self.dataset_name}_urls_sample{sample_n}.jsonl"
+        written_sample = _atomic_write_jsonl(sample_path, sample_records, self.logger)
 
         elapsed = time.time() - start
         self.logger.info(
@@ -352,26 +385,28 @@ class DWDRepositoryCrawler:
                 "component": "CRAWLER",
                 "structured_data": {
                     "files_found": len(self.url_records),
-                    "files_written": written,
+                    "files_written": written_full,
                     "files_skipped": skipped,
                     "limit_applied": limit_applied if self.max_items is not None else None,
                     "requests": self.crawled_count,
                     "elapsed_seconds": round(elapsed, 2),
                     "resolved_listing_url": self.start_url,
                     "output_file": str(self.output_file_path),
+                    "sample_file": str(sample_path),
+                    "sample_count": written_sample,
                 },
             },
         )
 
         return CrawlResult(
-            url_records=self.url_records,
+            url_records=unique_sorted,  # return final (sorted+unique) sequence
             files_found=len(self.url_records),
-            files_written=written,
+            files_written=written_full,
             files_skipped=skipped,
             errors=errors,
             crawled_count=self.crawled_count,
             elapsed_time=elapsed,
-            output_files={"urls": self.output_file_path},
+            output_files={"urls": self.output_file_path, "sample": sample_path},
         )
 
 
