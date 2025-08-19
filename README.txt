@@ -373,79 +373,44 @@ Intro.
 
 --------------------------------------------------------------------------------------------------------------
 ---------------------------------------- PART 3: DAILY STATUS ------------------------------------------------
----------------------------------------- Last updated: 2025-08-17 --------------------------------------------
+---------------------------------------- Last updated: 2025-08-19 --------------------------------------------
 
 
-### Task List
+# Task List
 
-* [ ] **Improve crawler logging**
+## ✅ Enforce Stage Quality Standard — Crawler (finish)
+- [ ] **Golden test (Crawler)**
+  - Freeze a tiny offline input → assert **byte-identical** `urls.jsonl` (sorted by `relative_path`, unique, HTTPS-only). :contentReference[oaicite:0]{index=0}
+- [ ] **CI gate (Crawler)**
+  - Extend workflow to run **Black · Ruff · MyPy · Pytest**.
+  - Stage test: run crawler on fixtures → **validator** → **golden compare**.
+  - Mark the CI job **required** for `main` (branch protection). :contentReference[oaicite:1]{index=1}
+- [ ] **`run_pipeline.py --validate` convenience**
+  - After crawl success, call the validator; **fail** pipeline if invalid (crawler keeps cheap guards: filter dirs, sort, dedupe, atomic write). :contentReference[oaicite:2]{index=2}
 
-  * Log inputs/config (resolved URL, subfolder, throttle, **limit applied**) at **INFO**.
-  * Log discovered items (`filename`, `relative_path`) at **DEBUG**.
-  * Log per-subfolder write summary (found/new/duplicates) and output JSONL path at **INFO**.
-  * Log actionable errors with **status code + URL** (HTTP) or **absolute path** (I/O) at **WARNING/ERROR**.
-  * Final one-line **INFO** summary with elapsed time and totals.
-
-* [ ] **Parsing kickoff — 10-minute air temperature**
-
-  * Add `--mode parse` in `run_pipeline.py` for the dataset.
-  * Stream read from ZIP (no full-file loads).
-  * Emit URF v1 minimal records: `station_id`, `timestamp`, `parameters["air temperature 2 m above ground"]`, plus standard metadata.
-  * Write `.jsonl` to parsed output path (chunk \~50k lines per file).
-  * Add a lightweight validation/summary (counts, nulls/NaNs).
-
-
-* [ ] **Enforce stage quality standard (Crawler and Downloader)**
-  Why: Make the 5 rules unskippable (invariants, schema, property tests, golden tests, CI gate).
-  * Schemas: schemas/crawler_urls.schema.json (and optional schemas/download_ledger.schema.json).
-  * Property tests:
-    - Crawler  -> files-only, sorted by relative_path, no duplicates, absolute HTTPS.
-    - Downloader -> correct pathing, idempotent skip, no partials (use local fixtures).
-  * Golden tests:
-    - Crawler  -> tiny cached index => exact urls.jsonl
-    - Downloader -> tiny files or small download ledger (byte-compare).
-  * CI gate: one job runs Black, Ruff, MyPy, Pytest; mark as required for main.
-  Done when: tests pass locally and in CI; branch protection is on; contracts reference their schema/test paths.
-
-
-  #### Next Steps — Quality Enforcement Focus
-
-> Goal: enforce the 5-point Stage Quality Standard for **Crawler** first, then **Downloader**. Parser is paused until both are green.
-
-* [ ] **Implement `urls.jsonl` Validator (Crawler)**
-  - CLI: `--input <urls.jsonl>`, `--schema schemas/crawler_urls.schema.json>`.
-  - Checks: record **schema**, **sorted** by `(relative_dir, filename)` (or your chosen key), **unique**, **HTTPS-only**.
-  - Output: atomic `<input>.validation.json` report + clear exit codes (`0` ok, `4` failed).
-  - Perf: stream line-by-line; no network; deterministic report.
-
-* [ ] **Crawler fixtures & golden**
-  - Add tiny offline fixtures (saved index/config) under `tests/data/`.
-  - Freeze expected `tests/expected/urls.jsonl` (stable fields only).
-  - Note in contract which keys define sortedness/uniqueness.
-
-* [ ] **CI gate (Crawler)**
-  - Workflow runs: Black · Ruff · MyPy · Pytest.
-  - Stage test: run crawler on fixtures → run **validator** → **golden compare** (byte-for-byte).
-  - Mark the CI job **required** for `main` (branch protection).
-
-* [ ] **`run_pipeline.py --validate` (convenience)**
-  - After crawl success, **optionally** call the same validator; fail pipeline if invalid.
-  - Keep always-on cheap guards in crawler (filter dirs, sort, dedupe, atomic write).
-
-* [ ] **Downloader enforcement plan**
-  - Decide golden style: **tiny files** (exact bytes) **or** **download ledger** JSON (recommended).
-  - Create local fixtures (no live DWD).
+## ✅ Enforce Stage Quality Standard — Downloader (plan & add)
+- [ ] **Downloader enforcement plan**
+  - Choose golden style: **tiny files** or **download ledger JSON** (recommended).
+  - Create local fixtures (offline).
   - Property tests: **idempotent skip**, **no partials**, **correct pathing**.
-  - Golden: tiny files or ledger (byte-compare).
-  - Add to CI job alongside crawler checks.
+  - Add golden compare + tests to CI. :contentReference[oaicite:3]{index=3}
 
-* [ ] **Repo hygiene to lock it in**
-  - Enable **branch protection** on `main` (require CI).
-  - Add PR template checkboxes: Contract updated · Schema present · Property tests · Golden updated/passing · CI green.
-  - Link `docs/contracts/crawler.md` / `downloader.md` from README and ensure paths match.
+## Repo hygiene (to lock enforcement in)
+- [ ] **Branch protection + PR template**
+  - Enable required status checks for `main`.
+  - PR checklist: Contract updated · Schema present · Property tests · Golden passing · CI green.
+  - Ensure README links to `docs/dwd/contracts/crawler.md` and `downloader.md`. :contentReference[oaicite:4]{index=4}
 
-* [ ] **(Paused) Parsing kickoff**
-  - Start only after the Crawler + Downloader gates are green.
+## Crawler logging
+- [ ] **Improve crawler logging**
+  - INFO: inputs/config (resolved URL, subfolder, throttle, **limit applied**), per-subfolder summaries, final one-line summary.
+  - DEBUG: discovered items.
+  - WARN/ERROR: actionable HTTP status / absolute paths. :contentReference[oaicite:5]{index=5}
+
+## Parsing (paused until both gates are green)
+- [ ] **Parsing kickoff — 10-minute air temperature**
+  - Add `--mode parse`, stream ZIP, emit URF v1 minimal records, chunked `.jsonl`, add light validation/summary. :contentReference[oaicite:6]{index=6}
+
 
 
 
@@ -454,6 +419,9 @@ Intro.
 ### Current Folder Structure
 
 CLIMASTATION
+├── .github/
+│   └── workflows/
+│       └── tests.yaml
 ├── .venv/
 ├── vscode/
 │   ├── launch.json
@@ -474,7 +442,8 @@ CLIMASTATION
 │   │   ├── parser.py     (empty, not started yet)
 │   │   └── writer.py     (empty, not started yet)
 │   ├── tools/
-│   │   └── validate_crawler_urls.py
+│   │   ├── refresh_fixture.py  (created to generate *_urls_sample100.jsonl from *_urls.jsonl files)
+│   │   └── validate_crawler_urls.py (validates *_urls.jsonl files against schemas and contracts)
 │   ├── translations/
 │   │   ├── meteorological/
 │   │   │  ├── __init__.py
@@ -515,10 +484,12 @@ CLIMASTATION
 │       └── crawler_urls.schema.json
 ├── tests/
 │   └── dwd/
-│       └── test_validate_crawler_urls.py
+│       ├── test_validate_crawler_urls.py
+│       └── test_validator_fixtures_smoketest.py
 ├── .gitignore
 ├── dev_log.md
 ├── prompt_project_manager.txt
+├── pytest.ini
 ├── README.txt
 └── requirements.txt
 
