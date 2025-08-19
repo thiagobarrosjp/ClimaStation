@@ -1,0 +1,16 @@
+{
+  "input_path": "C:\\Users\\thiag\\Dropbox\\ClimaStation\\climastation-backend\\tests\\dwd\\fixtures\\10_minutes_air_temperature_urls_sample100.jsonl",
+  "schema_path": "schemas\\dwd\\crawler_urls.schema.json",
+  "total_lines": 100,
+  "valid_lines": 100,
+  "invalid_lines": 0,
+  "duplicates": [],
+  "unsorted": {
+    "is_unsorted": false,
+    "first_bad_pair": null
+  },
+  "errors_sample": [],
+  "status": "ok",
+  "elapsed_seconds": 0.008371,
+  "generated_at": "2025-08-18T17:25:19+00:00"
+}
