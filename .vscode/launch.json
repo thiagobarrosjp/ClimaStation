@@ -1,0 +1,12 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Run parse_10_minutes_air_temperature_hist.py as module",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "app.main.parse_10_minutes_air_temperature_hist",
+            "justMyCode": false
+        }
+    ]
+}

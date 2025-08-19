@@ -1,0 +1,26 @@
+[tool.black]
+line-length = 100
+target-version = ["py311"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+# Let Black handle long lines; avoid duplicate warnings from Ruff
+ignore = ["E501"]
+# E,F: pycodestyle/pyflakes; I: import sort; B: bugbear; UP: pyupgrade
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.mypy]
+python_version = "3.11"
+warn_unused_ignores = true
+no_implicit_optional = true
+strict_optional = true
+# Start loose; tighten later:
+disallow_untyped_defs = false
+
+[tool.pytest.ini_options]
+markers = [
+  "smoke: quick end-to-end validation on committed dataset fixtures"
+]
+testpaths = ["tests"]
