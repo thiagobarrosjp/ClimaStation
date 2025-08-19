@@ -454,7 +454,6 @@ Intro.
 ### Current Folder Structure
 
 CLIMASTATION
-├── _legacy/
 ├── .venv/
 ├── vscode/
 │   ├── launch.json
