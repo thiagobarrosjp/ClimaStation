@@ -1,8 +1,8 @@
 """
-ClimaStation Pipeline Runner (updated for new YAML contract)
+ClimaStation Pipeline Runner (updated for new YAML contract + --outdir for crawl)
 
 PUBLIC ENTRY POINTS (stable):
-- run_crawl_mode(dataset_name: str, logger: ComponentLogger, dry_run: bool = False, subfolder: Optional[str] = None, throttle: Optional[float] = None) -> int
+- run_crawl_mode(dataset_name: str, logger: ComponentLogger, dry_run: bool = False, subfolder: Optional[str] = None, throttle: Optional[float] = None, outdir: Optional[str] = None) -> int
 - run_download_mode(dataset_name: str, logger: ComponentLogger, dry_run: bool = False, subfolder: Optional[str] = None, max_downloads: Optional[int] = None, throttle: Optional[float] = None) -> int
 - main() -> int
 
@@ -11,6 +11,9 @@ Notes:
 - Dry-run modes must not hit network or write files.
 - Uses absolute imports and is tolerant of logger/config API variations.
 - **Aligned to NEW YAML keys** (crawler.base_url, crawler.root_path, crawler.subfolders, crawler.output_urls_jsonl, downloader.root_dir).
+- NEW: Optional `--outdir` for **crawl** mode moves the crawler-native outputs
+  (`{dataset}_urls.jsonl` and `{dataset}_urls_sample<NN>.jsonl`) into the provided directory
+  via atomic `os.replace`. Crawler code is unchanged.
 """
 from __future__ import annotations
 
@@ -21,6 +24,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import traceback
 import logging
 import json
+import os
 
 
 # ------------------------------
@@ -205,6 +209,28 @@ def _translate_config_for_legacy_crawler(cfg: Dict[str, Any], dataset_name: str,
 
 
 # ------------------------------
+# File move helpers (for --outdir)
+# ------------------------------
+
+def _ensure_file_exists(p: Optional[Path], what: str, logger: ComponentLogger) -> Path:
+    if p is None:
+        logger.error(f"Missing path for {what} (None)", extra={"component": "PIPELINE"})
+        raise FileNotFoundError(f"Expected {what} path not provided")
+    if not p.exists():
+        logger.error(f"Expected {what} file not found: {p}", extra={"component": "PIPELINE"})
+        raise FileNotFoundError(f"Expected {what} file not found: {p}")
+    return p
+
+
+def _move_atomic(src: Path, dst_dir: Path) -> Path:
+    dst_dir.mkdir(parents=True, exist_ok=True)
+    dest = dst_dir / src.name
+    # os.replace is atomic on POSIX & Windows when same volume
+    os.replace(src, dest)
+    return dest
+
+
+# ------------------------------
 # Public entry points
 # ------------------------------
 
@@ -214,8 +240,9 @@ def run_crawl_mode(
     dry_run: bool = False,
     subfolder: Optional[str] = None,
     throttle: Optional[float] = None,
+    outdir: Optional[str] = None,
 ) -> int:
-    """Execute crawl mode (discover ZIP URLs and write JSONL)."""
+    """Execute crawl mode (discover URLs and write JSONL)."""
     try:
         logger.info("Runner: crawl mode start", extra={
             "component": "PIPELINE",
@@ -225,6 +252,7 @@ def run_crawl_mode(
                 "dry_run": dry_run,
                 "subfolder": subfolder,
                 "throttle": throttle,
+                "outdir": outdir or None,
             },
         })
 
@@ -259,7 +287,7 @@ def run_crawl_mode(
         if subfolder:
             subfolder_value = subfolders.get(subfolder, subfolder)
 
-        # Build root listing URL per requirements
+        # Build root listing URL per requirements (info only)
         root_listing_url = base_url.rstrip("/") + "/" + root_path.lstrip("/")
         if subfolder_value:
             root_listing_url = root_listing_url.rstrip("/") + "/" + subfolder_value.lstrip("/")
@@ -272,6 +300,7 @@ def run_crawl_mode(
                     "root_listing_url": root_listing_url,
                     "output_jsonl": str(output_jsonl),
                     "throttle": throttle,
+                    "outdir": outdir or None,
                 },
             })
             return 0
@@ -280,9 +309,37 @@ def run_crawl_mode(
         compat_cfg = _translate_config_for_legacy_crawler(cfg, dataset_name, subfolder=subfolder)
         result = crawl_dwd_repository(compat_cfg, logger, throttle=throttle)
 
-        # Merge/copy into required NEW output path
+        # Merge/copy into required NEW output path (kept for forward-compat)
         crawler_jsonl = Path(result.output_files.get("urls") or "")
         written, skipped = _merge_jsonl_append_unique(crawler_jsonl, output_jsonl, logger)
+
+        # If --outdir provided, move the two crawler-native files there (atomic)
+        if outdir:
+            try:
+                out_dir = Path(outdir)
+                src_urls = _ensure_file_exists(Path(result.output_files.get("urls") or ""), "crawler urls", logger)
+                src_sample = _ensure_file_exists(Path(result.output_files.get("sample") or ""), "crawler sample", logger)
+
+                dest_urls = _move_atomic(src_urls, out_dir)
+                dest_sample = _move_atomic(src_sample, out_dir)
+
+                logger.info("Moved crawler outputs to custom outdir", extra={
+                    "component": "PIPELINE",
+                    "structured_data": {
+                        "outdir": str(out_dir.resolve()),
+                        "urls": str(dest_urls.resolve()),
+                        "sample": str(dest_sample.resolve()),
+                    },
+                })
+            except Exception as move_err:
+                logger.error("Failed to place outputs into --outdir", extra={
+                    "component": "PIPELINE",
+                    "structured_data": {
+                        "outdir": outdir,
+                        "error": str(move_err),
+                    },
+                })
+                return 1
 
         logger.info("Crawl summary", extra={
             "component": "PIPELINE",
@@ -413,6 +470,8 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     p.add_argument("--subfolder", type=str, default=None)
     p.add_argument("--limit", type=int, default=None, help="Limit items (planning or max downloads)")
     p.add_argument("--throttle", type=float, default=None, help="Seconds to sleep between requests/downloads")
+    # NEW: optional outdir for crawl mode
+    p.add_argument("--outdir", type=str, default=None, help="If set (crawl mode only), move crawler outputs to this directory")
     return p
 
 
@@ -441,6 +500,7 @@ def main() -> int:
             dry_run=args.dry_run,
             subfolder=args.subfolder,
             throttle=args.throttle,
+            outdir=args.outdir,
         )
     elif args.mode == "download":
         return run_download_mode(

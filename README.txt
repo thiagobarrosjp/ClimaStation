@@ -484,6 +484,18 @@ CLIMASTATION
 │       └── crawler_urls.schema.json
 ├── tests/
 │   └── dwd/
+│       ├── fixtures/
+│       ├── golden/
+│       │   └── climate/
+│       │       ├── 10_minutes/
+│       │       │   ├── air_temperature/
+│       │       │   │   ├── historical/
+│       │       │   │   │   └── climate_10_minutes_airtemperature_historical.html
+│       │       │   │   ├── recent/
+│       │       │   │   │   └── climate_10_minutes_airtemperature_recent.html
+│       │       │   │   └── climate_10_minutes_airtemperature.html
+│       │       │   └── climate_10_minutes.html 
+│       │       └── climate.html
 │       ├── test_validate_crawler_urls.py
 │       └── test_validator_fixtures_smoketest.py
 ├── .gitignore
