@@ -38,6 +38,7 @@ from app.utils.http_headers import default_headers
 
 @dataclass
 class CrawlResult:
+    """Result of a crawl: counts, paths and status."""
     url_records: List[Dict[str, Any]]
     files_found: int
     files_written: int
@@ -127,7 +128,9 @@ def _get_sample_count_from_env(default: int = 100) -> int:
 # ------------------------------
 
 class DWDRepositoryCrawler:
+    """Crawl DWD directory pages and producte URL manifests."""
     def __init__(self, config: Dict[str, Any], logger: logging.Logger, throttle: Optional[float] = None):
+        
         self.config = config or {}
         self.logger = logger
 
@@ -353,6 +356,7 @@ class DWDRepositoryCrawler:
     # --------------------------
 
     def crawl_repository(self) -> CrawlResult:
+        """Ccrawl DWD listings and emit deterministic URL manifest(s)."""
         start = time.time()
         errors: List[str] = []
 

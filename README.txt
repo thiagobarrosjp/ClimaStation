@@ -373,7 +373,7 @@ Intro.
 
 --------------------------------------------------------------------------------------------------------------
 ---------------------------------------- PART 3: DAILY STATUS ------------------------------------------------
----------------------------------------- Last updated: 2025-08-19 --------------------------------------------
+---------------------------------------- Last updated: 2025-08-21 --------------------------------------------
 
 
 # Task List
@@ -418,7 +418,7 @@ Intro.
 
 ### Current Folder Structure
 
-CLIMASTATION
+CLIMASTATION-BACKEND/
 ├── .github/
 │   └── workflows/
 │       └── tests.yaml
@@ -442,6 +442,7 @@ CLIMASTATION
 │   │   ├── parser.py     (empty, not started yet)
 │   │   └── writer.py     (empty, not started yet)
 │   ├── tools/
+│   │   ├── gen_available_functions.py (scans codebase and regenerates available_functions.md)
 │   │   ├── refresh_fixture.py  (created to generate *_urls_sample100.jsonl from *_urls.jsonl files)
 │   │   └── validate_crawler_urls.py (validates *_urls.jsonl files against schemas and contracts)
 │   ├── translations/
@@ -467,7 +468,7 @@ CLIMASTATION
 │   ├── coding_patterns.py
 │   ├── pm_prompt_playbook.txt
 │   ├── processor_interface.py
-│   └── quality_standards.md (new file)
+│   └── quality_standards.md
 ├── data/
 │   └── dwd/
 │       ├── 0_debug/
@@ -490,15 +491,21 @@ CLIMASTATION
 │       │       ├── 10_minutes/
 │       │       │   ├── air_temperature/
 │       │       │   │   ├── historical/
-│       │       │   │   │   └── climate_10_minutes_airtemperature_historical.html
-│       │       │   │   ├── recent/
-│       │       │   │   │   └── climate_10_minutes_airtemperature_recent.html
-│       │       │   │   └── climate_10_minutes_airtemperature.html
-│       │       │   └── climate_10_minutes.html 
-│       │       └── climate.html
+│       │       │   │   │   └── index.html
+│       │       │   │   ├── meta_data/
+│       │       │   │   │   └── index.html
+│       │       │   │   ├── now/
+│       │       │   │   │   └── index.html
+│       │       │   │   └── recent/
+│       │       │   │       └── index.html
+│       │       │   │   └── index.html
+│       │       │   └── index.html 
+│       │       └── index.html
 │       ├── test_validate_crawler_urls.py
 │       └── test_validator_fixtures_smoketest.py
 ├── .gitignore
+├── .gitattributes
+├── .pre-commit-config.yaml
 ├── dev_log.md
 ├── prompt_project_manager.txt
 ├── pytest.ini

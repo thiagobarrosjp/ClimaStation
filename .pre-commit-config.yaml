@@ -1,8 +1,18 @@
 repos:
 - repo: local
   hooks:
-  - id: fixture-freshness-airtemp
+  - id: fixture_freshness_airtemp
     name: Ensure airtemp fixture is fresh
     entry: python app/tools/refresh_fixture.py --input data/dwd/1_crawl_dwd/10_minutes_air_temperature_urls_sample100.jsonl --output tests/dwd/fixtures/10_minutes_air_temperature_urls_sample100.jsonl
     language: system
     pass_filenames: false
+    files: ^app/|^tests/|^data/  # runs when relevant stuff changes
+
+- repo: local
+  hooks:
+  - id: gen_available_functions
+    name: Regenerate available_functions.md
+    entry: python app/tools/gen_available_functions.py --check
+    language: system
+    pass_filenames: false
+    files: ^app/.*\.py$|^app/tools/gen_available_functions\.py$

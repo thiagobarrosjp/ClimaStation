@@ -1,0 +1,16 @@
+* text=auto
+
+# Enforce LF for cross-platform text
+*.py    text eol=lf
+*.md    text eol=lf
+*.json  text eol=lf
+*.jsonl text eol=lf
+*.yml   text eol=lf
+*.yaml  text eol=lf
+*.toml  text eol=lf
+*.ini   text eol=lf
+
+# Keep Windows scripts CRLF (optional)
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf

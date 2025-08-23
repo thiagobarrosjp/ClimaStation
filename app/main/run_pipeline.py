@@ -242,7 +242,7 @@ def run_crawl_mode(
     throttle: Optional[float] = None,
     outdir: Optional[str] = None,
 ) -> int:
-    """Execute crawl mode (discover URLs and write JSONL)."""
+    """Execute crawl mode: discover URLs and write JSONL manifests."""
     try:
         logger.info("Runner: crawl mode start", extra={
             "component": "PIPELINE",
@@ -374,7 +374,7 @@ def run_download_mode(
     max_downloads: Optional[int] = None,
     throttle: Optional[float] = None,
 ) -> int:
-    """Execute download mode (plan or run downloads)."""
+    """Execute download mode: plan and download files."""
     try:
         logger.info("Runner: download mode start", extra={
             "component": "PIPELINE",
@@ -476,6 +476,9 @@ def _build_arg_parser() -> argparse.ArgumentParser:
 
 
 def main() -> int:
+    """
+    Pipeline CLI entry point.
+    """
     parser = _build_arg_parser()
     args = parser.parse_args()
     configure_session_file_logging("data/dwd/0_debug/pipeline.log")
