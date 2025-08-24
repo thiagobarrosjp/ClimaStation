@@ -1,13 +1,14 @@
 # scripts/run_all.ps1
 # One-shot runner:
-# Online crawl → validate (full+sample) → Offline crawl (golden HTML) → validate → ensure sample → pytest → commit & push
+# Online crawl -> validate (full+sample) -> Offline crawl (golden HTML) -> validate -> restore online fixtures -> pytest -> commit & push
 # - Works from repo root or any subfolder; auto cd to repo root (parent of this script).
-# - Prefers ACTIVE venv (VIRTUAL_ENV), then venv/, then .venv/, then system python.
-# - Array-based ExecPy (no string-splitting issues).
+# - Prefers ACTIVE venv (VIRTUAL_ENV), then venv/, then .venv/, then system python (or -PythonExe override).
+# - Array-based ExecPy (no quoting issues).
 # - Fail-fast on any non-zero exit.
 
 [CmdletBinding()]
 param(
+  # 1) Params / flags
   [string] $Dataset    = "10_minutes_air_temperature",
   [int]    $Limit      = 500,
   [switch] $SkipOnline,
@@ -18,9 +19,10 @@ param(
   [string] $PythonExe
 )
 
+# 2) Early script config (runs now)
 $ErrorActionPreference = "Stop"
 
-# ---------- Resolve repo root ----------
+# Resolve repo root and make paths relative to it
 if ($PSScriptRoot) {
   $repoRoot = Split-Path -Parent $PSScriptRoot
 } else {
@@ -28,7 +30,7 @@ if ($PSScriptRoot) {
 }
 Set-Location -Path $repoRoot
 
-# ---------- Paths ----------
+# Canonical paths used by steps
 $FullOut       = "data/dwd/1_crawl_dwd/${Dataset}_urls.jsonl"
 $SampleOut     = "data/dwd/1_crawl_dwd/${Dataset}_urls_sample100.jsonl"
 $SchemaPath    = "schemas/dwd/crawler_urls.schema.json"
@@ -36,7 +38,27 @@ $OfflineOutDir = ".tmp/golden_out"
 $OfflineFull   = Join-Path $OfflineOutDir "${Dataset}_urls.jsonl"
 $OfflineSample = Join-Path $OfflineOutDir "${Dataset}_urls_sample100.jsonl"
 
-# ---------- Python detection ----------
+# 3) Utility functions (definitions only)
+
+function Resolve-PythonPath {
+  param([string]$Override)
+
+  # If caller supplied an override, it must resolve to a file path.
+  if ($Override) {
+    $p = $Override.Trim('"').Trim()
+    try {
+      $abs = (Resolve-Path -LiteralPath $p -ErrorAction Stop).Path
+      return $abs
+    } catch {
+      throw "PythonExe override not found on disk: '$Override'"
+    }
+  }
+
+  # Otherwise, auto-detect (active venv > venv > .venv > python/py)
+  return Get-Python
+}
+
+
 function Get-Python {
   # 1) Prefer the currently activated venv if present
   if ($env:VIRTUAL_ENV) {
@@ -48,7 +70,7 @@ function Get-Python {
       } catch {}
     }
   }
-  # 2) Common local venv folders (prefer 'venv' over '.venv')
+  # 2) Common local venv folders (prefer 'venv' over '.venv'), then system
   $candidates = @(
     "venv\Scripts\python.exe",
     ".venv\Scripts\python.exe",
@@ -65,14 +87,6 @@ function Get-Python {
   throw "No Python interpreter found (looked for activated venv, then: venv, .venv, python, py)."
 }
 
-if ($PSBoundParameters.ContainsKey('PythonExe') -and $PythonExe) {
-  $PY = $PythonExe
-} else {
-  $PY = Get-Python
-}
-Write-Host "Using Python: $PY" -ForegroundColor DarkCyan
-
-# ---------- Exec helpers ----------
 function Exec {
   param([Parameter(Mandatory)][string]$CmdLine)
   Write-Host ">> $CmdLine" -ForegroundColor Cyan
@@ -83,10 +97,12 @@ function Exec {
 function ExecPy {
   param([Parameter(Mandatory)][object[]]$Args)
   $tokens = $Args | ForEach-Object { "$_" }
-  Write-Host ">> $PY $($tokens -join ' ')" -ForegroundColor Cyan
-  & $PY @tokens
+  $exe = $script:PY
+  Write-Host ">> $exe $($tokens -join ' ')" -ForegroundColor Cyan
+  & $exe @tokens
   if ($LASTEXITCODE -ne 0) { throw "Python failed: $($tokens -join ' ') (exit=$LASTEXITCODE)" }
 }
+
 
 function Ensure-File {
   param([string]$Path)
@@ -95,14 +111,14 @@ function Ensure-File {
   }
 }
 
-# ---------- Validators ----------
 function Validate-UrlsJsonl {
   param([Parameter(Mandatory)][string]$Path)
   Ensure-File -Path $Path
   ExecPy @("-m","app.tools.validate_crawler_urls","--input",$Path,"--schema",$SchemaPath)
 }
 
-# ---------- Steps ----------
+# 4) Step functions
+
 function Step-Online {
   if ($SkipOnline) { Write-Host "Skipping ONLINE crawl/validate." -ForegroundColor DarkYellow; return }
   Write-Host "`n=== ONLINE: crawl (limit=$Limit) ===" -ForegroundColor Green
@@ -113,9 +129,10 @@ function Step-Online {
 
   Write-Host "`n=== ONLINE: ensure SAMPLE exists ===" -ForegroundColor Green
   if (-not (Test-Path -LiteralPath $SampleOut)) {
-    Write-Host "Sample missing → generating first 100 entries…" -ForegroundColor DarkYellow
+    Write-Host "Sample missing -> generating first 100 entries..." -ForegroundColor DarkYellow
     ExecPy @("-m","app.tools.refresh_fixture","--input",$FullOut,"--output",$SampleOut,"--count","100")
   }
+
   Write-Host "`n=== ONLINE: validate SAMPLE ===" -ForegroundColor Green
   Validate-UrlsJsonl -Path $SampleOut
 }
@@ -134,10 +151,42 @@ function Step-Offline {
 
   Write-Host "`n=== OFFLINE: validate SAMPLE ===" -ForegroundColor Green
   if (-not (Test-Path -LiteralPath $OfflineSample)) {
-    Write-Host "Offline sample missing → generating first 100…" -ForegroundColor DarkYellow
+    Write-Host "Offline sample missing -> generating first 100..." -ForegroundColor DarkYellow
     ExecPy @("-m","app.tools.refresh_fixture","--input",$OfflineFull,"--output",$OfflineSample,"--count","100")
   }
   Validate-UrlsJsonl -Path $OfflineSample
+}
+
+function Ensure-Online-Fixtures {
+  Write-Host "`n=== POST: ensure ONLINE fixtures exist ===" -ForegroundColor Green
+
+  # Make sure ONLINE FULL exists
+  if (-not (Test-Path -LiteralPath $FullOut)) {
+    if (Test-Path -LiteralPath $OfflineFull) {
+      Write-Host "Online FULL missing -> copying from OFFLINE: $OfflineFull -> $FullOut" -ForegroundColor DarkYellow
+      New-Item -ItemType Directory -Force -Path (Split-Path $FullOut) | Out-Null
+      Copy-Item -LiteralPath $OfflineFull -Destination $FullOut -Force
+    } else {
+      throw "Missing FULL output for commit: $FullOut (and no offline fallback found)."
+    }
+  }
+
+  # Ensure ONLINE SAMPLE exists (prefer regenerating from ONLINE FULL)
+  if (-not (Test-Path -LiteralPath $SampleOut)) {
+    if (Test-Path -LiteralPath $FullOut) {
+      Write-Host "Sample missing -> generating from ONLINE FULL..." -ForegroundColor DarkYellow
+      ExecPy @("-m","app.tools.refresh_fixture","--input",$FullOut,"--output",$SampleOut,"--count","100")
+    } elseif (Test-Path -LiteralPath $OfflineSample) {
+      Write-Host "Online FULL unavailable -> copying OFFLINE SAMPLE: $OfflineSample -> $SampleOut" -ForegroundColor DarkYellow
+      New-Item -ItemType Directory -Force -Path (Split-Path $SampleOut) | Out-Null
+      Copy-Item -LiteralPath $OfflineSample -Destination $SampleOut -Force
+    } else {
+      throw "Missing SAMPLE output for commit: $SampleOut (no inputs to regenerate from)."
+    }
+  }
+
+  # Validate the sample we will commit
+  Validate-UrlsJsonl -Path $SampleOut
 }
 
 function Step-Tests {
@@ -150,7 +199,7 @@ function Step-Git {
   if ($NoPush) { Write-Host "Skipping git commit/push." -ForegroundColor DarkYellow; return }
   Write-Host "`n=== GIT: add/commit/push ===" -ForegroundColor Green
 
-  # 1) Stage everything
+  # Stage everything
   Exec "git add -A"
   $status = (git status --porcelain)
   if (-not $status) {
@@ -158,14 +207,13 @@ function Step-Git {
     return
   }
 
-  # 2) First commit attempt (may fail if hooks modify files)
+  # First commit attempt (hooks may modify files)
   $committed = $false
   try {
     Exec "git commit -m `"${Message}`""
     $committed = $true
   } catch {
-    Write-Host "Commit failed (likely a pre-commit hook modified files). Auto-staging refreshed files…" -ForegroundColor DarkYellow
-    # 2a) Stage hook changes and try again once
+    Write-Host "Commit failed (likely a pre-commit hook modified files). Auto-staging refreshed files..." -ForegroundColor DarkYellow
     Exec "git add -A"
     try {
       Exec "git commit -m `"${Message} (fixtures refreshed)`""
@@ -177,7 +225,7 @@ function Step-Git {
 
   if (-not $committed) { throw "Unknown error: commit did not complete." }
 
-  # 3) Push (with rebase fallback)
+  # Push (with rebase fallback)
   try {
     Exec "git push origin main"
   } catch {
@@ -187,50 +235,32 @@ function Step-Git {
   }
 }
 
+# 5) Main sequence (explicit entry point)
 
-function Ensure-Online-Fixtures {
-  Write-Host "`n=== POST: ensure ONLINE fixtures exist ===" -ForegroundColor Green
+function Main {
+  # Decide Python (override vs auto) — keep ONLY the path in $script:PY
+  $script:PY = Resolve-PythonPath -Override $PythonExe
 
-  # 1) Make sure FULL exists at the standard online path
-  if (-not (Test-Path -LiteralPath $FullOut)) {
-    if (Test-Path -LiteralPath $OfflineFull) {
-      Write-Host "Online FULL missing → copying from OFFLINE: $OfflineFull → $FullOut" -ForegroundColor DarkYellow
-      New-Item -ItemType Directory -Force -Path (Split-Path $FullOut) | Out-Null
-      Copy-Item -LiteralPath $OfflineFull -Destination $FullOut -Force
-    } else {
-      throw "Missing FULL output for commit: $FullOut (and no offline fallback found)."
-    }
-  }
+  # Print version separately (never store it in $script:PY)
+  $pyver = "unknown"
+  try { $pyver = (& $script:PY -c "import sys;print(sys.version.split()[0])").Trim() } catch {}
 
-  # 2) Ensure SAMPLE exists; prefer regenerating from the online FULL
-  if (-not (Test-Path -LiteralPath $SampleOut)) {
-    if (Test-Path -LiteralPath $FullOut) {
-      Write-Host "Sample missing → generating from ONLINE FULL…" -ForegroundColor DarkYellow
-      ExecPy @("-m","app.tools.refresh_fixture","--input",$FullOut,"--output",$SampleOut,"--count","100")
-    } elseif (Test-Path -LiteralPath $OfflineSample) {
-      Write-Host "Online FULL unavailable → copying OFFLINE SAMPLE: $OfflineSample → $SampleOut" -ForegroundColor DarkYellow
-      New-Item -ItemType Directory -Force -Path (Split-Path $SampleOut) | Out-Null
-      Copy-Item -LiteralPath $OfflineSample -Destination $SampleOut -Force
-    } else {
-      throw "Missing SAMPLE output for commit: $SampleOut (no inputs to regenerate from)."
-    }
-  }
+  Write-Host "Using Python: $pyver ($script:PY)" -ForegroundColor DarkCyan
+  Write-Host "Repo: $repoRoot" -ForegroundColor DarkCyan
+  Write-Host "Dataset: $Dataset | Limit: $Limit" -ForegroundColor DarkCyan
+  Write-Host "Flags: SkipOnline=$SkipOnline SkipOffline=$SkipOffline SkipTests=$SkipTests NoPush=$NoPush" -ForegroundColor DarkCyan
 
-  # 3) Validate the SAMPLE we’ll commit
-  Validate-UrlsJsonl -Path $SampleOut
+  Ensure-File -Path $SchemaPath
+
+  Step-Online
+  Step-Offline
+  Ensure-Online-Fixtures
+  Step-Tests
+  Step-Git
+
+  Write-Host "`nAll done" -ForegroundColor Green
 }
 
 
-# ---------- Run ----------
-Write-Host "Repo: $repoRoot" -ForegroundColor DarkCyan
-Write-Host "Dataset: $Dataset | Limit: $Limit" -ForegroundColor DarkCyan
-Write-Host "Flags: SkipOnline=$SkipOnline SkipOffline=$SkipOffline SkipTests=$SkipTests NoPush=$NoPush" -ForegroundColor DarkCyan
-Ensure-File -Path $SchemaPath
-
-Step-Online
-Step-Offline
-Ensure-Online-Fixtures
-Step-Tests
-Step-Git
-
-Write-Host "`nAll done ✅" -ForegroundColor Green
+# Start
+Main
