@@ -378,15 +378,21 @@ Intro.
 
 # Task List
 
-## ✅ Enforce Stage Quality Standard — Crawler (finish)
-- [ ] **Golden test (Crawler)**
-  - Freeze a tiny offline input → assert **byte-identical** `urls.jsonl` (sorted by `relative_path`, unique, HTTPS-only). :contentReference[oaicite:0]{index=0}
-- [ ] **CI gate (Crawler)**
-  - Extend workflow to run **Black · Ruff · MyPy · Pytest**.
-  - Stage test: run crawler on fixtures → **validator** → **golden compare**.
-  - Mark the CI job **required** for `main` (branch protection). :contentReference[oaicite:1]{index=1}
-- [ ] **`run_pipeline.py --validate` convenience**
-  - After crawl success, call the validator; **fail** pipeline if invalid (crawler keeps cheap guards: filter dirs, sort, dedupe, atomic write). :contentReference[oaicite:2]{index=2}
+## Finalize one-shot runner — `scripts/run_all.ps1`
+* [ ] **Fix invocation**: use venv autodetect (venv/.venv), array-based `ExecPy` (no string splitting), and pass `--schema` to validator.
+* [ ] **Stable flow**: Online crawl → validate (full+sample) → Offline (golden) crawl → validate → ensure online sample exists → refresh fixture → `pytest -q` → commit & push (handles non-fast-forward).
+* [ ] **Fail-fast & idempotent**: non-zero exit on any failed step; safe temp outdir; no env vars; works from repo root without activating venv.
+* [ ] **Housekeeping**: move script to `scripts/`, delete any copy under `.venv/`; document usage in README; optional `-NoPush`, `-SkipOnline`, `-SkipOffline`, `-SkipTests`.
+Acceptance:
+Running:
+ .\scripts\run_all.ps1 -Message "chore: run all checks"
+completes end-to-end with all validations/tests passing and either pushes successfully or cleanly skips when there’s nothing to commit.
+
+## Enforce Stage Quality Standard — Crawler (finish)
+* [ ] **Golden test (offline, no network):** add `tests/dwd/test_crawler_golden_offline.py` to crawl with `--source offline --outdir <tmp>` and assert **byte-identical** to `tests/dwd/golden/expected/10_minutes_air_temperature_urls.golden.jsonl` (and `_sample100.jsonl`).
+* [ ] **CI gate:** extend `.github/workflows/tests.yaml` to run `black --check .`, `ruff .`, `mypy .`, and `pytest -q` (incl. golden test). Enable branch protection to **require** this job on `main`.
+* [ ] **Pipeline flag:** add `--validate` to `run_pipeline.py` (crawl mode) to run the validator with the schema and **fail** on invalid outputs; integrate into `scripts/run_all.ps1`.
+*Notes: tests must be deterministic/offline; fixtures under `tests/dwd/golden/`; sample size fixed at 100.*
 
 ## ✅ Enforce Stage Quality Standard — Downloader (plan & add)
 - [ ] **Downloader enforcement plan**
@@ -410,8 +416,6 @@ Intro.
 ## Parsing (paused until both gates are green)
 - [ ] **Parsing kickoff — 10-minute air temperature**
   - Add `--mode parse`, stream ZIP, emit URF v1 minimal records, chunked `.jsonl`, add light validation/summary. :contentReference[oaicite:6]{index=6}
-
-
 
 
 ---
@@ -487,6 +491,8 @@ CLIMASTATION-BACKEND/
 ├── schemas/
 │   └── dwd/
 │       └── crawler_urls.schema.json
+├── scripts/
+│   └── run_all.ps1
 ├── tests/
 │   └── dwd/
 │       ├── fixtures/
@@ -515,6 +521,4 @@ CLIMASTATION-BACKEND/
 ├── pytest.ini
 ├── README.txt
 └── requirements.txt
-
-
 

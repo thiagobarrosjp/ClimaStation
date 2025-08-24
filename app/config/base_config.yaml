@@ -15,22 +15,6 @@ paths:
   # Base data directory (can be overridden by dataset configs)
   base_data_dir: "data"
 
-# DWD data pipeline paths
-dwd_paths:
-  downloaded_files: "data/dwd/2_downloaded_files"
-  parsed_files: "data/dwd/3_parsed_files"
-  debug: "data/dwd/0_debug"
-  crawl_data: "data/dwd/1_crawl_dwd"
-
-crawler:
-  # This is the root of the DWD repository
-  base_url: "https://opendata.dwd.de/climate_environment/CDC/observations_germany/"
-  max_depth: 10
-  request_timeout_seconds: 30
-  request_delay_seconds: 0.1
-  max_retries: 3
-
-
 # Logging configuration
 logging:
   # Log level: DEBUG, INFO, WARNING, ERROR, CRITICAL
@@ -64,12 +48,6 @@ processing:
   
   # Memory limit per worker process (MB)
   memory_limit_mb: 2048
-  
-  # Worker timeout in minutes
-  worker_timeout_minutes: 30
-  
-  # Checkpoint interval for progress saving
-  checkpoint_interval: 100
 
 # Database configuration
 database:
@@ -104,14 +82,3 @@ limits:
   
   # Disk space threshold (GB) - stop processing if less than this
   min_disk_space_gb: 10
-
-# Failure handling configuration
-failure_handling:
-  # Stop processing all datasets if one dataset fails
-  stop_on_dataset_failure: true
-  
-  # Maximum number of retries for failed files
-  max_retries: 3
-  
-  # Delay between retries (seconds)
-  retry_delay_seconds: 60
