@@ -2,24 +2,31 @@
 
 > Scope: This index lists **only the callable entry points other modules should use**.  
 > Keep it short and stable. Omit private helpers and internal class methods.  
-> **Last updated:** 2025-08-23 11:23 Mitteleuropäische Sommerzeit
+> **Last updated:** 2025-08-24 13:18 Mitteleuropäische Sommerzeit
 
 ---
 
 ## app/main/run_pipeline.py
 - `main() -> int` — Pipeline CLI entry point.
-- `run_crawl_mode(dataset_name: str, logger: ComponentLogger, dry_run: bool=…, subfolder: Optional[str]=…, throttle: Optional[float]=…, outdir: Optional[str]=…) -> int` — Execute crawl mode: discover URLs and write JSONL manifests.
+- `run_crawl_mode(dataset_name: str, logger: ComponentLogger, *, source: str=…, dry_run: bool=…, subfolder: Optional[str]=…, throttle: Optional[float]=…, limit: Optional[int]=…, outdir: Optional[str]=…) -> int` — Execute crawl mode: discover URLs and write JSONL manifests.
 - `run_download_mode(dataset_name: str, logger: ComponentLogger, dry_run: bool=…, subfolder: Optional[str]=…, max_downloads: Optional[int]=…, throttle: Optional[float]=…) -> int` — Execute download mode: plan and download files.
+- `serve_directory_http(root: Path) -> Iterator[tuple[str, int]]` — Context manager that serves *root* via a local HTTP server on 127.0.0.1:PORT.
 
 ## app/pipeline/crawler.py
-- `crawl_dwd_repository(config: Dict[str, Any], logger: logging.Logger | logging.LoggerAdapter, throttle: Optional[float]=…) -> CrawlResult` — Discover per-file URLs under the dataset root and write a single JSONL.
+- `crawl_dwd_repository(config: Dict[str, Any], logger: logging.Logger | logging.LoggerAdapter, *, base_url: str, canonical_base_url: str, include_extensions: List[str], sample_size: int=…, throttle: Optional[float]=…, limit: Optional[int]=…) -> CrawlResult` — Discover per-file URLs under the dataset root and write JSONL manifests.
 - `CrawlResult` — Result of a crawl: counts, paths and status.
-- `DWDRepositoryCrawler` — Crawl DWD directory pages and producte URL manifests.
+- `DWDRepositoryCrawler` — Crawl Apache-style directory listings and produce URL manifests.
 
 ## app/pipeline/downloader.py
 - `load_urls_from_jsonl(urls_file: Path, logger: logging.Logger | logging.LoggerAdapter, limit: Optional[int]=…, filter_subfolder: Optional[str]=…) -> List[Dict[str, Any]]` — Read URLs JSONL line-by-line with optional filtering.
 - `ProcessingResult` — Processing result.
 - `run_downloader(config: Dict[str, Any], logger: logging.Logger | logging.LoggerAdapter, max_downloads: Optional[int]=…, throttle: Optional[float]=…) -> ProcessingResult` — Run downloader.
+
+## app/processors/base_processor.py
+- `BaseProcessor` — Abstract base class for all dataset processors.
+- `ProcessingMode` — Processing mode enumeration.
+- `ProcessingResult` — Result of processing a single file.
+- `ProcessingStats` — Overall processing statistics.
 
 ## app/translations/meteorological/__init__.py
 - `load_all_meteorological_translations() -> Dict[str, Any]` — Load all meteorological translation files.

@@ -1,31 +1,32 @@
+# app/main/run_pipeline.py
 """
-ClimaStation Pipeline Runner (updated for new YAML contract + --outdir for crawl)
+ClimaStation Pipeline Runner — URL-agnostic crawl with online/offline switch
 
 PUBLIC ENTRY POINTS (stable):
-- run_crawl_mode(dataset_name: str, logger: ComponentLogger, dry_run: bool = False, subfolder: Optional[str] = None, throttle: Optional[float] = None, outdir: Optional[str] = None) -> int
+- run_crawl_mode(dataset_name: str, logger: ComponentLogger, *, source: str = "online", dry_run: bool = False, subfolder: Optional[str] = None, throttle: Optional[float] = None, limit: Optional[int] = None, outdir: Optional[str] = None) -> int
 - run_download_mode(dataset_name: str, logger: ComponentLogger, dry_run: bool = False, subfolder: Optional[str] = None, max_downloads: Optional[int] = None, throttle: Optional[float] = None) -> int
 - main() -> int
 
 Notes:
-- Wires CLI → crawler/downloader. No business logic here.
-- Dry-run modes must not hit network or write files.
-- Uses absolute imports and is tolerant of logger/config API variations.
-- **Aligned to NEW YAML keys** (crawler.base_url, crawler.root_path, crawler.subfolders, crawler.output_urls_jsonl, downloader.root_dir).
-- NEW: Optional `--outdir` for **crawl** mode moves the crawler-native outputs
-  (`{dataset}_urls.jsonl` and `{dataset}_urls_sample<NN>.jsonl`) into the provided directory
-  via atomic `os.replace`. Crawler code is unchanged.
+- Adds --source {online,offline} for crawl mode. Offline spins up a local HTTP server
+  that serves a golden directory and auto-shuts down after crawling.
+- Eliminates reliance on env vars for crawler URL selection.
+- Passes explicit parameters to crawler: base_url, canonical_base_url, include_extensions,
+  sample_size, throttle, and limit.
 """
 from __future__ import annotations
 
 import argparse
+import contextlib
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, TYPE_CHECKING, Iterator
 import traceback
 import logging
 import json
 import os
 
+from urllib.parse import urljoin
 
 # ------------------------------
 # Imports
@@ -45,6 +46,11 @@ except Exception:  # pragma: no cover
     ConfigManager = None  # type: ignore
 
 from app.pipeline.crawler import crawl_dwd_repository
+if TYPE_CHECKING:
+    from app.pipeline.crawler import CrawlResult as CrawlerCrawlResult
+else:
+    CrawlerCrawlResult = Any  # runtime-friendly
+
 from app.pipeline.downloader import run_downloader, load_urls_from_jsonl
 from app.utils.enhanced_logger import configure_session_file_logging
 
@@ -83,7 +89,7 @@ def _validate_new_contract(cfg: Dict[str, Any]) -> Tuple[bool, List[str]]:
 
 
 def _load_config(dataset_name: str, logger: ComponentLogger) -> Dict[str, Any]:
-    """Load dataset config using available API, with safe defaults, **without** inventing legacy keys."""
+    """Load dataset config using available API, with safe defaults."""
     try:
         if callable(load_config):  # type: ignore[arg-type]
             cfg = load_config(dataset_name, logger)  # type: ignore
@@ -105,7 +111,6 @@ def _load_config(dataset_name: str, logger: ComponentLogger) -> Dict[str, Any]:
             })
         cfg = {}
 
-    # Normalize structure and inject name
     if not isinstance(cfg, dict):
         try:
             cfg = dict(cfg)  # type: ignore[arg-type]
@@ -120,114 +125,49 @@ def _resolve_urls_file(cfg: Dict[str, Any]) -> Path:
     path = _get(cfg, "crawler.output_urls_jsonl")
     if isinstance(path, str) and path:
         return Path(path)
-    # Fallback: legacy location (kept only for robustness)
     dataset_name = str(cfg.get("name", cfg.get("dataset", "dataset")))
-    return Path("data/dwd/1_crawl_dwd") / dataset_name / f"dwd_{dataset_name}_urls.jsonl"
+    return Path("data/dwd/1_crawl_dwd") / f"{dataset_name}_urls.jsonl"
 
 
-def _merge_jsonl_append_unique(src: Path, dest: Path, logger: ComponentLogger) -> Tuple[int, int]:
-    """Append unique records from src into dest by URL; return (written, skipped)."""
-    if not src.exists():
-        return (0, 0)
+# ------------------------------
+# Local HTTP server for offline mode
+# ------------------------------
 
-    existing_urls: set[str] = set()
-    if dest.exists():
-        try:
-            with dest.open("r", encoding="utf-8") as fh:
-                for line in fh:
-                    try:
-                        u = json.loads(line.strip()).get("url")
-                        if isinstance(u, str):
-                            existing_urls.add(u)
-                    except Exception:
-                        continue
-        except Exception as e:
-            logger.warning("Could not read existing output JSONL; proceeding fresh", extra={
-                "component": "PIPELINE",
-                "structured_data": {"output": str(dest), "error": str(e)},
-            })
+@contextlib.contextmanager
+def serve_directory_http(root: Path) -> Iterator[tuple[str, int]]:
+    """Context manager that serves *root* via a local HTTP server on 127.0.0.1:PORT.
 
-    written = 0
-    skipped = 0
-    dest.parent.mkdir(parents=True, exist_ok=True)
-    with src.open("r", encoding="utf-8") as rfh, dest.open("a", encoding="utf-8") as wfh:
-        for line in rfh:
-            try:
-                obj = json.loads(line.strip())
-                url = obj.get("url")
-                if not isinstance(url, str):
-                    continue
-                if url in existing_urls:
-                    skipped += 1
-                    continue
-                existing_urls.add(url)
-                wfh.write(json.dumps(obj, ensure_ascii=False) + "\n")
-                written += 1
-            except Exception:
-                continue
-    return (written, skipped)
-
-
-def _translate_config_for_legacy_crawler(cfg: Dict[str, Any], dataset_name: str, subfolder: Optional[str]) -> Dict[str, Any]:
-    """Build a compatibility config for the existing crawler implementation.
-
-    - Maps NEW YAML keys to what the crawler expects today.
-    - We keep writes idempotent but later merge to the NEW `crawler.output_urls_jsonl` path.
+    Yields (host, port). Auto-shuts down afterwards.
     """
-    base_url = _get(cfg, "crawler.base_url") or "https://opendata.dwd.de/climate_environment/CDC/"
-    root_path = _get(cfg, "crawler.root_path") or ""
-    subfolders = _get(cfg, "crawler.subfolders") or {}
-    # Choose allowed first-level subpaths
-    subpaths_list: List[str] = []
-    if isinstance(subfolders, dict) and subfolders:
-        if subfolder:
-            # Allow both key or raw value; prefer mapping by key
-            if subfolder in subfolders:
-                subpaths_list = [str(subfolders[subfolder])]
-            else:
-                # If user provided actual folder name, use as-is
-                subpaths_list = [str(subfolder)]
-        else:
-            subpaths_list = [str(v) for v in subfolders.values()]
-    # Ensure trailing slashes
-    subpaths_list = [s if s.endswith("/") else s + "/" for s in subpaths_list]
+    import http.server
+    import socketserver
 
-    compat: Dict[str, Any] = {
-        "name": dataset_name,
-        # Old crawler reads these fields
-        "crawler": {
-            "base_url": base_url,
-            "dataset_path": str(root_path),
-            "subpaths": subpaths_list,
-        },
-        # Legacy output root where crawler will write; we'll merge into the new path afterwards
-        "dwd_paths": {
-            "crawl_data": str(Path(_resolve_urls_file(cfg)).parent),
-        },
-    }
-    return compat
+    # Find a free port
+    import socket as _socket
+    with _socket.socket(_socket.AF_INET, _socket.SOCK_STREAM) as s:
+        s.bind(("127.0.0.1", 0))
+        port = s.getsockname()[1]
 
+    class Handler(http.server.SimpleHTTPRequestHandler):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, directory=str(root), **kwargs)
 
-# ------------------------------
-# File move helpers (for --outdir)
-# ------------------------------
+    httpd = socketserver.TCPServer(("127.0.0.1", port), Handler)
 
-def _ensure_file_exists(p: Optional[Path], what: str, logger: ComponentLogger) -> Path:
-    if p is None:
-        logger.error(f"Missing path for {what} (None)", extra={"component": "PIPELINE"})
-        raise FileNotFoundError(f"Expected {what} path not provided")
-    if not p.exists():
-        logger.error(f"Expected {what} file not found: {p}", extra={"component": "PIPELINE"})
-        raise FileNotFoundError(f"Expected {what} file not found: {p}")
-    return p
-
-
-def _move_atomic(src: Path, dst_dir: Path) -> Path:
-    dst_dir.mkdir(parents=True, exist_ok=True)
-    dest = dst_dir / src.name
-    # os.replace is atomic on POSIX & Windows when same volume
-    os.replace(src, dest)
-    return dest
+    try:
+        import threading
+        t = threading.Thread(target=httpd.serve_forever, daemon=True)
+        t.start()
+        yield ("127.0.0.1", port)
+    finally:
+        try:
+            httpd.shutdown()
+        except Exception:
+            pass
+        try:
+            httpd.server_close()
+        except Exception:
+            pass
 
 
 # ------------------------------
@@ -237,9 +177,12 @@ def _move_atomic(src: Path, dst_dir: Path) -> Path:
 def run_crawl_mode(
     dataset_name: str,
     logger: ComponentLogger,
+    *,
+    source: str = "online",
     dry_run: bool = False,
     subfolder: Optional[str] = None,
     throttle: Optional[float] = None,
+    limit: Optional[int] = None,
     outdir: Optional[str] = None,
 ) -> int:
     """Execute crawl mode: discover URLs and write JSONL manifests."""
@@ -249,9 +192,11 @@ def run_crawl_mode(
             "structured_data": {
                 "mode": "crawl",
                 "dataset": dataset_name,
+                "source": source,
                 "dry_run": dry_run,
                 "subfolder": subfolder,
                 "throttle": throttle,
+                "limit": limit,
                 "outdir": outdir or None,
             },
         })
@@ -277,52 +222,124 @@ def run_crawl_mode(
             )
             return 1
 
-        base_url: str = _get(cfg, "crawler.base_url")  # type: ignore[assignment]
-        root_path: str = _get(cfg, "crawler.root_path")  # type: ignore[assignment]
-        subfolders: Dict[str, str] = _get(cfg, "crawler.subfolders") or {}
-        output_jsonl = _resolve_urls_file(cfg)
-
-        # Resolve subfolder value (if provided via CLI)
+        # Resolve subfolder mapping (first-level subpaths)
+        subfolders_map: Dict[str, str] = _get(cfg, "crawler.subfolders") or {}
         subfolder_value: Optional[str] = None
         if subfolder:
-            subfolder_value = subfolders.get(subfolder, subfolder)
+            subfolder_value = subfolders_map.get(subfolder, subfolder)
 
-        # Build root listing URL per requirements (info only)
-        root_listing_url = base_url.rstrip("/") + "/" + root_path.lstrip("/")
-        if subfolder_value:
-            root_listing_url = root_listing_url.rstrip("/") + "/" + subfolder_value.lstrip("/")
+        # ONLINE base url (joined): base_url + root_path
+        base_url_online = (
+            (_get(cfg, "crawler.base_url") or "").rstrip("/")
+            + "/"
+            + str(_get(cfg, "crawler.root_path") or "").lstrip("/")
+        )
+        if not base_url_online.endswith("/"):
+            base_url_online += "/"
 
-        if dry_run:
-            logger.info("Dry-run: would crawl dataset", extra={
-                "component": "PIPELINE",
-                "structured_data": {
-                    "dataset": dataset_name,
-                    "root_listing_url": root_listing_url,
-                    "output_jsonl": str(output_jsonl),
-                    "throttle": throttle,
-                    "outdir": outdir or None,
-                },
-            })
-            return 0
+        # Build per-source base_url for crawling
+        canonical_base_url: str = _get(cfg, "crawler.canonical_base_url") or "https://opendata.dwd.de/"
+        include_extensions: List[str] = list(_get(cfg, "crawler.include_extensions") or [".zip"])  # type: ignore[list-item]
+        include_extensions = [e.lower() for e in include_extensions]
+        sample_size: int = int(_get(cfg, "crawler.sample_size") or 100)
 
-        # Translate config for legacy crawler and run
-        compat_cfg = _translate_config_for_legacy_crawler(cfg, dataset_name, subfolder=subfolder)
-        result = crawl_dwd_repository(compat_cfg, logger, throttle=throttle)
+        output_jsonl = _resolve_urls_file(cfg)
 
-        # Merge/copy into required NEW output path (kept for forward-compat)
-        crawler_jsonl = Path(result.output_files.get("urls") or "")
-        written, skipped = _merge_jsonl_append_unique(crawler_jsonl, output_jsonl, logger)
+        # Determine base_url for crawler
+        if source == "online":
+            crawl_base_url = base_url_online
+            if subfolder_value:
+                crawl_base_url = urljoin(crawl_base_url, subfolder_value if subfolder_value.endswith("/") else subfolder_value + "/")
+        elif source == "offline":
+            offline_root = _get(cfg, "crawler.offline_server_root")
+            offline_relpath = _get(cfg, "crawler.offline_relpath")
+            if not offline_root or not offline_relpath:
+                logger.error("Offline source requested but 'offline_server_root' or 'offline_relpath' missing in YAML", extra={
+                    "component": "PIPELINE",
+                    "structured_data": {"offline_server_root": offline_root, "offline_relpath": offline_relpath},
+                })
+                return 1
+            root_path = Path(offline_root)
+            if not root_path.exists():
+                logger.error(f"Offline server root does not exist: {root_path}")
+                return 1
+
+            with serve_directory_http(root_path) as (host, port):
+                base = f"http://{host}:{port}/"
+                crawl_base_url = base + str(offline_relpath).lstrip("/")
+                if not crawl_base_url.endswith("/"):
+                    crawl_base_url += "/"
+                if subfolder_value:
+                    crawl_base_url = urljoin(crawl_base_url, subfolder_value if subfolder_value.endswith("/") else subfolder_value + "/")
+
+                if dry_run:
+                    logger.info("Dry-run (offline): would crawl dataset", extra={
+                        "component": "PIPELINE",
+                        "structured_data": {
+                            "dataset": dataset_name,
+                            "root_listing_url": crawl_base_url,
+                            "output_jsonl": str(output_jsonl),
+                            "throttle": throttle,
+                            "limit": limit,
+                            "outdir": outdir or None,
+                        },
+                    })
+                    return 0
+
+                result: CrawlerCrawlResult = crawl_dwd_repository(
+                    config=cfg,
+                    logger=logger,
+                    base_url=crawl_base_url,
+                    canonical_base_url=canonical_base_url,
+                    include_extensions=include_extensions,
+                    sample_size=sample_size,
+                    throttle=throttle,
+                    limit=limit,
+                )
+        else:
+            logger.error(f"Unknown source: {source}")
+            return 1
+
+        # ONLINE execution path (not inside context manager)
+        if source == "online":
+            if dry_run:
+                logger.info("Dry-run: would crawl dataset", extra={
+                    "component": "PIPELINE",
+                    "structured_data": {
+                        "dataset": dataset_name,
+                        "root_listing_url": crawl_base_url,
+                        "output_jsonl": str(output_jsonl),
+                        "throttle": throttle,
+                        "limit": limit,
+                        "outdir": outdir or None,
+                    },
+                })
+                return 0
+
+            result: CrawlerCrawlResult = crawl_dwd_repository(
+                config=cfg,
+                logger=logger,
+                base_url=crawl_base_url,
+                canonical_base_url=canonical_base_url,
+                include_extensions=include_extensions,
+                sample_size=sample_size,
+                throttle=throttle,
+                limit=limit,
+            )
 
         # If --outdir provided, move the two crawler-native files there (atomic)
         if outdir:
             try:
                 out_dir = Path(outdir)
-                src_urls = _ensure_file_exists(Path(result.output_files.get("urls") or ""), "crawler urls", logger)
-                src_sample = _ensure_file_exists(Path(result.output_files.get("sample") or ""), "crawler sample", logger)
-
-                dest_urls = _move_atomic(src_urls, out_dir)
-                dest_sample = _move_atomic(src_sample, out_dir)
-
+                src_urls = Path(result.output_files.get("urls") or "")
+                src_sample = Path(result.output_files.get("sample") or "")
+                if not src_urls.exists() or not src_sample.exists():
+                    raise FileNotFoundError("crawler outputs not found to move")
+                out_dir.mkdir(parents=True, exist_ok=True)
+                dest_urls = out_dir / src_urls.name
+                dest_sample = out_dir / src_sample.name
+                os.replace(src_urls, dest_urls)
+                os.replace(src_sample, dest_sample)
                 logger.info("Moved crawler outputs to custom outdir", extra={
                     "component": "PIPELINE",
                     "structured_data": {
@@ -348,10 +365,8 @@ def run_crawl_mode(
                 "files_written": result.files_written,
                 "files_skipped": result.files_skipped,
                 "requests": result.crawled_count,
-                "crawler_output": str(crawler_jsonl) if crawler_jsonl else None,
-                "merged_into": str(output_jsonl),
-                "merge_appended": written,
-                "merge_skipped": skipped,
+                "crawler_output": str(result.output_files.get("urls")),
+                "sample_output": str(result.output_files.get("sample")),
             },
         })
         return 0
@@ -468,10 +483,10 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     p.add_argument("--dataset", required=True)
     p.add_argument("--dry-run", action="store_true", dest="dry_run")
     p.add_argument("--subfolder", type=str, default=None)
-    p.add_argument("--limit", type=int, default=None, help="Limit items (planning or max downloads)")
+    p.add_argument("--limit", type=int, default=None, help="Limit items (crawl or max downloads)")
     p.add_argument("--throttle", type=float, default=None, help="Seconds to sleep between requests/downloads")
-    # NEW: optional outdir for crawl mode
     p.add_argument("--outdir", type=str, default=None, help="If set (crawl mode only), move crawler outputs to this directory")
+    p.add_argument("--source", choices=["online", "offline"], default="online", help="Crawl source: real DWD (online) or golden server (offline)")
     return p
 
 
@@ -482,7 +497,7 @@ def main() -> int:
     parser = _build_arg_parser()
     args = parser.parse_args()
     configure_session_file_logging("data/dwd/0_debug/pipeline.log")
-    
+
     # Per requirements: use component name "pipeline.runner"
     logger_opt = get_logger("pipeline.runner")
     if logger_opt is None:
@@ -500,9 +515,11 @@ def main() -> int:
         return run_crawl_mode(
             dataset_name=args.dataset,
             logger=logger,
+            source=args.source,
             dry_run=args.dry_run,
             subfolder=args.subfolder,
             throttle=args.throttle,
+            limit=args.limit,
             outdir=args.outdir,
         )
     elif args.mode == "download":
@@ -515,7 +532,6 @@ def main() -> int:
             throttle=args.throttle,
         )
     else:
-        # Should not happen due to choices enforcement
         logger.error("Unknown mode requested", extra={"component": "PIPELINE", "structured_data": {"mode": args.mode}})
         return 1
 

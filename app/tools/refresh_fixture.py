@@ -12,10 +12,10 @@ Exit codes:
   4 — validator failed (when --validate is used)
 
 Usage example:
-    python app/tools/refresh_fixture.py \
-      --input data/dwd/1_crawl_dwd/10_minutes_air_temperature_urls.jsonl \
-      --output tests/dwd/fixtures/10_minutes_air_temperature_urls_sample100.jsonl \
-      --count 100 \
+    python app/tools/refresh_fixture.py 
+      --input data/dwd/1_crawl_dwd/10_minutes_air_temperature_urls.jsonl 
+      --output tests/dwd/fixtures/10_minutes_air_temperature_urls_sample100.jsonl 
+      --count 100 
       --validate
 """
 from __future__ import annotations

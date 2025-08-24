@@ -219,3 +219,10 @@ Use checkboxes above. Add a simple progress table if helpful:
 
 * For **“Contract”**, use *Contract* for the concept and *API-Spezifikation / Schnittstellenbeschreibung* for the concrete artifact (e.g., OpenAPI, CLI spec).
 * Terms marked **EN üblich** are commonly kept in English by German-speaking teams; you can add the German in parentheses the first time for clarity.
+
+
+
+
+
+
+

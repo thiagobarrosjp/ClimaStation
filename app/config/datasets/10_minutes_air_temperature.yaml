@@ -1,3 +1,6 @@
+# ---------------------------------------------------------------------------
+# app/config/datasets/10_minutes_air_temperature.yaml
+# ---------------------------------------------------------------------------
 # Dataset metadata
 dataset:
   name: "10_minutes_air_temperature"
@@ -11,7 +14,7 @@ provider:
 
 # Crawler configuration (remote URLs + output)
 crawler:
-  # Join rule: base_url + root_path + optional subfolder
+  # Join rule (ONLINE): base_url + root_path [+ optional subfolder]
   base_url: "https://opendata.dwd.de/climate_environment/CDC/"
   root_path: "observations_germany/climate/10_minutes/air_temperature/"
   subfolders:
@@ -20,24 +23,32 @@ crawler:
     now: "now/"
     meta_data: "meta_data/"
 
-  # Where the crawler writes the URL list JSONL (repo-relative)
+  # Canonicalization and offline serving
+  canonical_base_url: "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/air_temperature/"
+  offline_server_root: "tests/dwd/golden"
+  offline_relpath: "climate/10_minutes/air_temperature/"
+
+  # File type filter & sample size
+  include_extensions: [".zip", ".txt", ".pdf"]
+  sample_size: 100
+
+  # Output locations
   output_urls_jsonl: "data/dwd/1_crawl_dwd/10_minutes_air_temperature_urls.jsonl"
 
-  # HTTP behavior
   request:
     timeout_seconds: 20
     max_retries: 3
-    request_delay_seconds: 0.5         # CLI --throttle overrides
+    request_delay_seconds: 0.5   # CLI --throttle can override
     user_agent: "ClimaStation/1.0"
 
-# Downloader destination (repo-relative)
+# Downloader configuration (kept as-is)
 downloader:
   root_dir: "data/dwd/2_downloaded_files/"
 
-# (Optional today, useful for the downloader/planner to filter quickly)
+  # (Optional today; useful for downstream steps)
 source:
   file_patterns:
     historical_zip: "10minutenwerte_TU_*_hist.zip"
-    recent_zip: "10minutenwerte_TU_*_akt.zip"
-    now_zip: "10minutenwerte_TU_*_now.zip"
-    metadata_zip: "Meta_Daten_zehn_min_tu_*.zip"
+    recent_zip:     "10minutenwerte_TU_*_akt.zip"
+    now_zip:        "10minutenwerte_TU_*_now.zip"
+    metadata_zip:   "Meta_Daten_zehn_min_tu_*.zip"

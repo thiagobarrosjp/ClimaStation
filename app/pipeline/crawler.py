@@ -1,22 +1,30 @@
+# ---------------------------------------------------------------------------
+# app/pipeline/crawler.py
+# ---------------------------------------------------------------------------
 """
-ClimaStation DWD Repository Crawler (canonicalize ONLY emitted file URLs)
-
-SCRIPT IDENTIFICATION: DWD10TAH3W (DWD Crawler)
+ClimaStation DWD Repository Crawler — URL-agnostic (no env vars)
 
 PUBLIC API (stable):
-- crawl_dwd_repository(config: Dict[str, Any],
-                       logger: logging.Logger | logging.LoggerAdapter,
-                       throttle: Optional[float] = None) -> CrawlResult
+- crawl_dwd_repository(
+      config: Dict[str, Any],
+      logger: logging.Logger | logging.LoggerAdapter,
+      *,
+      base_url: str,
+      canonical_base_url: str,
+      include_extensions: list[str],
+      sample_size: int = 100,
+      throttle: Optional[float] = None,
+      limit: Optional[int] = None,
+  ) -> CrawlResult
 
 Notes:
 - Parses simple directory listings without third-party HTML parsers.
-- Emits a single JSONL manifest to `crawler.output_urls_jsonl` when provided.
-- Idempotent behavior (sorted + de-duped by (relative_path, filename)).
-- Honors an optional crawl limit provided via `crawler.max_items` or `runner_args.limit`.
-- Emits a deterministic *sample* JSONL with the first N lines after final sort & de-dupe.
-- 2025-08-20 update: **Canonicalization is applied ONLY to emitted file URLs**.
-  Crawling/fetching uses the discovered URLs as-is (useful for offline tests on a local server).
-  Non-zip files are included as long as they are files (href not ending with '/').
+- Emits a single JSONL manifest and a deterministic sample JSONL.
+- Canonicalization applies ONLY to emitted file URLs: scheme+host taken from
+  canonical_base_url; path is the dataset-relative path discovered during crawl.
+- Relative paths are computed relative to the provided base_url path.
+- Includes only files whose filename ends with any of include_extensions.
+- Deterministic, atomic writes; sorted & de-duped by (relative_path, filename).
 """
 from __future__ import annotations
 
@@ -63,11 +71,7 @@ def _get_cfg(cfg: Dict[str, Any], *keys: str, default: Any = None) -> Any:
 
 
 def _sort_and_dedupe(records: List[Dict[str, Any]]) -> Tuple[List[Dict[str, Any]], int]:
-    """Return (unique_sorted_records, skipped_due_to_dupes).
-
-    De-duplicates by (relative_path, filename) keeping the first occurrence,
-    then sorts by the same pair.
-    """
+    """Return (unique_sorted_records, skipped_due_to_dupes)."""
     seen_keys: Set[Tuple[str, str]] = set()
     unique: List[Dict[str, Any]] = []
     skipped = 0
@@ -86,17 +90,11 @@ def _sort_and_dedupe(records: List[Dict[str, Any]]) -> Tuple[List[Dict[str, Any]
 
 
 def _atomic_write_jsonl(target: Path, records: List[Dict[str, Any]], logger: logging.Logger) -> int:
-    """Write *records* to *target* as JSONL atomically. Returns lines written.
-
-    Uses UTF-8 with LF newlines and an atomic os.replace() from a .tmp path.
-    Ensures deterministic key order (insertion order) and no extraneous spaces.
-    """
     target.parent.mkdir(parents=True, exist_ok=True)
     tmp = target.with_suffix(target.suffix + ".tmp")
     try:
         with tmp.open("w", encoding="utf-8", newline="\n") as fh:
             for rec in records:
-                # rec is constructed with fixed key order: url, relative_path, filename, (optional dataset_key)
                 fh.write(json.dumps(rec, ensure_ascii=False, separators=(",", ":")) + "\n")
         os.replace(tmp, target)
     finally:
@@ -112,94 +110,70 @@ def _atomic_write_jsonl(target: Path, records: List[Dict[str, Any]], logger: log
     return len(records)
 
 
-def _get_sample_count_from_env(default: int = 100) -> int:
-    raw = os.getenv("CLIMASTATION_CRAWLER_SAMPLE_COUNT", "")
-    try:
-        n = int(raw)
-        if n >= 1:
-            return n
-    except Exception:
-        pass
-    return default
-
-
 # ------------------------------
 # Core crawler
 # ------------------------------
 
 class DWDRepositoryCrawler:
-    """Crawl DWD directory pages and producte URL manifests."""
-    def __init__(self, config: Dict[str, Any], logger: logging.Logger, throttle: Optional[float] = None):
-        
+    """Crawl Apache-style directory listings and produce URL manifests."""
+
+    def __init__(
+        self,
+        *,
+        config: Dict[str, Any],
+        logger: logging.Logger,
+        base_url: str,
+        canonical_base_url: str,
+        include_extensions: List[str],
+        sample_size: int = 100,
+        throttle: Optional[float] = None,
+        limit: Optional[int] = None,
+    ) -> None:
         self.config = config or {}
         self.logger = logger
 
+        # Crawl roots
+        self.base_url = base_url if base_url.endswith("/") else base_url + "/"
+        self.base_path = urlparse(self.base_url).path
+        if not self.base_path.endswith("/"):
+            self.base_path += "/"
+
+        # Canonical (scheme+host and optional canonical root path)
+        self.canonical = urlparse(canonical_base_url)
+        if not self.canonical.scheme or not self.canonical.netloc:
+            raise ValueError("canonical_base_url must include scheme and host")
+        self.canonical_root = canonical_base_url if canonical_base_url.endswith("/") else canonical_base_url + "/"
+
+        # Filters & behavior
+        self.include_ext = [e.lower() for e in (include_extensions or [])]
+        self.sample_size = int(sample_size) if int(sample_size) > 0 else 100
+
         crawler_cfg = _get_cfg(self.config, "crawler", default={}) or {}
+        # Support nested crawler.request.* with fallback to legacy flat keys
+        req_cfg = crawler_cfg.get("request", {}) or {}
+        self.request_timeout = int(req_cfg.get("timeout_seconds", crawler_cfg.get("request_timeout_seconds", 30)))
+        cfg_delay = float(req_cfg.get("request_delay_seconds", crawler_cfg.get("request_delay_seconds", 0.0)))
+        self.request_delay = float(throttle) if throttle is not None else cfg_delay
+        self.max_retries = int(req_cfg.get("max_retries", crawler_cfg.get("max_retries", 2)))
+        # Depth limit
+        self.max_depth = int(crawler_cfg.get("max_depth", 8))
 
-        # Base URL (NEW: crawler.base_url) + optional env override for fixtures
-        default_base = str(crawler_cfg.get("base_url", "https://opendata.dwd.de/climate_environment/CDC/"))
-        env_start = os.getenv("CLIMASTATION_CRAWLER_BASE_URL")
-        self.base_url: str = env_start if env_start else default_base
-
-        # Dataset root path (NEW: crawler.root_path). Fallbacks for legacy compat.
-        root_path: Optional[str] = (
-            str(crawler_cfg.get("root_path")) if crawler_cfg.get("root_path") is not None else None
-        )
-        if root_path is None:
-            # Legacy fallbacks
-            root_path = (
-                self.config.get("base_path")
-                or _get_cfg(self.config, "source", "base_path")
-                or crawler_cfg.get("dataset_path")
-                or ""
-            )
-        root_path = str(root_path)
-        if root_path and not root_path.endswith("/"):
-            root_path += "/"
-        self.dataset_root_path = root_path
-
-        # Compute starting URL
-        # If an env override is provided, use it AS-IS (plus trailing slash) to support offline fixtures.
-        if env_start:
-            self.start_url = env_start if env_start.endswith("/") else env_start + "/"
+        # LIMIT: prefer explicit limit parameter, fallback to config
+        if limit is not None:
+            self.max_items: Optional[int] = int(limit)
         else:
-            self.start_url = urljoin(self.base_url.rstrip("/") + "/", root_path.lstrip("/"))
-            if not self.start_url.endswith("/"):
-                self.start_url += "/"
+            max_items_cfg = crawler_cfg.get("max_items")
+            self.max_items = int(max_items_cfg) if max_items_cfg is not None else None
 
-        # Optional canonical base (scheme+host), used ONLY when emitting file URLs
-        self.canonical_base: Optional[str] = os.getenv("CLIMASTATION_CANONICAL_BASE_URL") or None
-
-        # Subfolders (NEW: crawler.subfolders as mapping) → allowed first-level subpaths list
+        # Subfolders -> allowed first-level subpaths list
         subfolders = crawler_cfg.get("subfolders")
-        subpaths_cfg = crawler_cfg.get("subpaths")  # legacy list compat
         if isinstance(subfolders, dict) and subfolders:
             subpaths: List[str] = [str(v) for v in subfolders.values()]
-        elif isinstance(subpaths_cfg, list):
-            subpaths = [str(s) for s in subpaths_cfg]
         else:
             subpaths = []
         self.subpaths: List[str] = [s if s.endswith("/") else s + "/" for s in subpaths]
-        if not self.subpaths:
-            self.logger.warning(
-                "No crawler.subfolders configured; crawl will scan the dataset root",
-                extra={"component": "CRAWLER", "structured_data": {"start_url": self.start_url}},
-            )
 
-        # Crawl behavior
-        self.max_depth = int(crawler_cfg.get("max_depth", 8))
-        self.request_timeout = int(crawler_cfg.get("request_timeout_seconds", 30))
-        cfg_delay = float(crawler_cfg.get("request_delay_seconds", 0.0))
-        self.request_delay = float(throttle) if throttle is not None else cfg_delay
-        self.max_retries = int(crawler_cfg.get("max_retries", 2))
-
-        # LIMIT: prefer crawler.max_items; fallback to runner_args.limit if present
-        limit_cfg = crawler_cfg.get("max_items")
-        if limit_cfg is None:
-            limit_cfg = _get_cfg(self.config, "runner_args", "limit", default=None)
-        self.max_items: Optional[int] = int(limit_cfg) if limit_cfg is not None else None
-
-        # Output path (NEW: crawler.output_urls_jsonl)
+        # Output paths
         out_path_cfg = crawler_cfg.get("output_urls_jsonl")
         if isinstance(out_path_cfg, str) and out_path_cfg.strip():
             self.output_file_path = Path(out_path_cfg)
@@ -208,8 +182,6 @@ class DWDRepositoryCrawler:
             base_output = Path(_get_cfg(self.config, "dwd_paths", "crawl_data", default="data/dwd/1_crawl_dwd"))
             self.output_file_path = base_output / f"{dataset_name}_urls.jsonl"
         self.output_file_path.parent.mkdir(parents=True, exist_ok=True)
-
-        # Sample path (computed at write time since N may vary)
         self.dataset_name = str(self.config.get("name") or self.config.get("dataset", "dataset"))
         self.crawl_output_dir = self.output_file_path.parent
 
@@ -224,12 +196,12 @@ class DWDRepositoryCrawler:
             extra={
                 "component": "CRAWLER",
                 "structured_data": {
-                    "start_url": self.start_url,
-                    "subpaths": self.subpaths,
+                    "base_url": self.base_url,
+                    "subpaths": self.subpaths or ["<root>"] ,
                     "output_file": str(self.output_file_path),
                     "throttle": self.request_delay,
                     "limit": self.max_items,
-                    "canonical_base": self.canonical_base or "none",
+                    "canonical_base_url": urlunparse((self.canonical.scheme, self.canonical.netloc, "", "", "", "")),
                 },
             },
         )
@@ -273,11 +245,7 @@ class DWDRepositoryCrawler:
 
     @staticmethod
     def _parse_listing_html(html: str) -> Tuple[List[str], List[str]]:
-        """Return (subdirs, files) from a simple Apache-style listing.
-
-        subdirs: hrefs that end with '/'
-        files: every other href (not '../' or absolute '/')
-        """
+        """Return (subdirs, files) from a simple Apache-style listing."""
         hrefs = re.findall(r'href=["\']([^"\']+)', html, flags=re.IGNORECASE)
         hrefs = [h for h in hrefs if h not in ("../", "/")]
         subdirs = [h for h in hrefs if h.endswith("/")]
@@ -285,32 +253,40 @@ class DWDRepositoryCrawler:
         return subdirs, files
 
     # --------------------------
-    # Crawl helpers
+    # Helpers
     # --------------------------
 
-    def _emit_file(self, next_url: str) -> None:
-        """Emit a manifest record for a *file* discovered at `next_url`.
-
-        Canonicalization is applied ONLY here, never to fetch URLs.
-        """
+    def _emit_file(self, listing_url: str, href: str) -> None:
         if self._stop_flag:
             return
-
+        next_url = urljoin(listing_url, href)
         r = urlparse(next_url)
-        # Skip directories; only files
         if r.path.endswith("/"):
-            return
+            return  # directories only
 
-        # Compute fields from the resolved path
         filename = posixpath.basename(r.path)
-        rel_dir = posixpath.dirname(r.path)
+        if self.include_ext:
+            if not any(filename.lower().endswith(ext) for ext in self.include_ext):
+                return
+
+        # Dataset-relative path: strip the base_url path prefix
+        rel_path_full = r.path
+        base_path = self.base_path
+        if rel_path_full.startswith(base_path):
+            rel_rel = rel_path_full[len(base_path):]
+        else:
+            # Fallback: try to find the longest common prefix boundary at '/'
+            rel_rel = rel_path_full.lstrip("/")
+        rel_dir = posixpath.dirname(rel_rel)
         relative_path = (rel_dir + "/") if rel_dir else ""
 
-        # Rebase scheme+netloc if canonical base is provided, keep path
-        cr = urlparse(os.environ.get("CLIMASTATION_CANONICAL_BASE_URL", ""))
-        final_url = urlunparse((cr.scheme or "https", cr.netloc or r.netloc, r.path, "", "", ""))
+        # Canonical URL = canonical scheme+host + canonical_root path + rel_rel
+        canon_parsed = self.canonical
+        final_path = urljoin(self.canonical_root, rel_rel)
+        final_r = urlparse(final_path)
+        final_url = urlunparse((canon_parsed.scheme, canon_parsed.netloc, final_r.path, "", "", ""))
 
-        # De-dupe early by full URL to reduce downstream work
+        # Early de-dupe by final URL
         if final_url in self._seen_urls:
             return
         self._seen_urls.add(final_url)
@@ -323,78 +299,61 @@ class DWDRepositoryCrawler:
         dataset_key = str(self.config.get("name") or self.config.get("dataset", ""))
         if dataset_key:
             rec["dataset_key"] = dataset_key
-
         self.url_records.append(rec)
         if self.max_items is not None and len(self.url_records) >= self.max_items:
             self._stop_flag = True
 
-    def _crawl_dir(self, url: str, depth: int):
+    def _crawl_dir(self, url: str, depth: int) -> None:
         if self._stop_flag or depth > self.max_depth:
             return
         resp = self._request(url)
         if not resp:
             return
         subdirs, files = self._parse_listing_html(resp.text)
-        # Emit files using *as-discovered* absolute URL (do not canonicalize for fetch)
         for fn in files:
             if self._stop_flag:
                 break
-            next_url = urljoin(url, fn)
-            self._emit_file(next_url)
-        # Recurse into subdirectories using as-is URLs
+            self._emit_file(url, fn)
         for sd in subdirs:
             if self._stop_flag:
                 break
             if depth == 0 and self.subpaths and sd not in self.subpaths:
                 continue
-            next_url = urljoin(url, sd)
-            # Only enqueue (do not emit records for directories)
-            self._crawl_dir(next_url, depth + 1)
+            self._crawl_dir(urljoin(url, sd), depth + 1)
 
     # --------------------------
-    # Crawl entry
+    # Entry
     # --------------------------
 
     def crawl_repository(self) -> CrawlResult:
-        """Ccrawl DWD listings and emit deterministic URL manifest(s)."""
         start = time.time()
         errors: List[str] = []
 
-        # Start from each configured subpath, or root if none given
         roots = self.subpaths or [""]
         for sub in roots:
             if self._stop_flag:
                 break
-            root_url = urljoin(self.start_url, sub)
+            root_url = urljoin(self.base_url, sub)
             try:
                 self._crawl_dir(root_url, depth=0)
             except Exception as e:
-                msg = f"crawl_error:{root_url}:{e}"
-                errors.append(msg)
+                errors.append(f"crawl_error:{root_url}:{e}")
                 self.logger.error(
                     "Unhandled crawl exception",
                     extra={"component": "CRAWLER", "structured_data": {"root_url": root_url, "error": str(e)}},
                 )
 
-        # If a limit was set, ensure we hard-cap before writing (keeps discovery order before sort)
-        limit_applied = 0
         if self.max_items is not None and len(self.url_records) > self.max_items:
-            limit_applied = self.max_items
             self.url_records = self.url_records[: self.max_items]
-        elif self.max_items is not None:
-            limit_applied = min(self.max_items, len(self.url_records))
 
-        # Finalize: sort & unique by (relative_path, filename)
         unique_sorted, skipped = _sort_and_dedupe(self.url_records)
 
-        # Write full manifest atomically
         written_full = _atomic_write_jsonl(self.output_file_path, unique_sorted, self.logger)
 
-        # Prepare and write deterministic sample (first N lines of final order)
-        sample_n = _get_sample_count_from_env(100)
+        sample_n = int(self.sample_size)
         sample_records = unique_sorted[:sample_n]
         sample_path = self.crawl_output_dir / f"{self.dataset_name}_urls_sample{sample_n}.jsonl"
-        written_sample = _atomic_write_jsonl(sample_path, sample_records, self.logger)
+        _ = _atomic_write_jsonl(sample_path, sample_records, self.logger)
 
         elapsed = time.time() - start
         self.logger.info(
@@ -402,23 +361,22 @@ class DWDRepositoryCrawler:
             extra={
                 "component": "CRAWLER",
                 "structured_data": {
-                    "canonical_base": self.canonical_base or "none",
                     "files_found": len(self.url_records),
                     "files_written": written_full,
                     "files_skipped": skipped,
-                    "limit_applied": limit_applied if self.max_items is not None else None,
+                    "limit_applied": self.max_items,
                     "requests": self.crawled_count,
                     "elapsed_seconds": round(elapsed, 2),
-                    "resolved_listing_url": self.start_url,
+                    "resolved_listing_url": self.base_url,
                     "output_file": str(self.output_file_path),
                     "sample_file": str(sample_path),
-                    "sample_count": written_sample,
+                    "sample_count": sample_n,
                 },
             },
         )
 
         return CrawlResult(
-            url_records=unique_sorted,  # return final (sorted+unique) sequence
+            url_records=unique_sorted,
             files_found=len(self.url_records),
             files_written=written_full,
             files_skipped=skipped,
@@ -436,13 +394,15 @@ class DWDRepositoryCrawler:
 def crawl_dwd_repository(
     config: Dict[str, Any],
     logger: logging.Logger | logging.LoggerAdapter,
+    *,
+    base_url: str,
+    canonical_base_url: str,
+    include_extensions: List[str],
+    sample_size: int = 100,
     throttle: Optional[float] = None,
+    limit: Optional[int] = None,
 ) -> CrawlResult:
-    """Discover per-file URLs under the dataset root and write a single JSONL.
-
-    The function **does not raise** on expected failures; it logs a summary and
-    returns a CrawlResult with counts and the JSONL output path.
-    """
+    """Discover per-file URLs under the dataset root and write JSONL manifests."""
     base_logger = logging.getLogger("pipeline.crawler")
     if isinstance(logger, logging.LoggerAdapter):
         norm_logger = logger.logger
@@ -451,5 +411,14 @@ def crawl_dwd_repository(
     else:
         norm_logger = base_logger
 
-    crawler = DWDRepositoryCrawler(config=config, logger=norm_logger, throttle=throttle)
+    crawler = DWDRepositoryCrawler(
+        config=config,
+        logger=norm_logger,
+        base_url=base_url,
+        canonical_base_url=canonical_base_url,
+        include_extensions=include_extensions,
+        sample_size=sample_size,
+        throttle=throttle,
+        limit=limit,
+    )
     return crawler.crawl_repository()

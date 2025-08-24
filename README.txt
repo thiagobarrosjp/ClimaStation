@@ -422,6 +422,10 @@ CLIMASTATION-BACKEND/
 ├── .github/
 │   └── workflows/
 │       └── tests.yaml
+├── .tmp/
+│   └── golden_out/
+│       ├── 10_minutes_air_temperature_urls_sample100.jsonl
+│       └── 10_minutes_air_temperature_urls.jsonl
 ├── .venv/
 ├── vscode/
 │   ├── launch.json
