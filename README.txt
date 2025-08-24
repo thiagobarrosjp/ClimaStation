@@ -335,14 +335,10 @@ Intro.
 
 ### One-shot runner
 Run the full pipeline (online + offline + tests + push):
-# default (500)
-.\scripts\run_all.ps1
+# default
+.\scripts\run_all.ps1 -PythonExe ".\venv\Scripts\python.exe"
 
-# faster
-.\scripts\run_all.ps1 -SkipOffline -SkipTests -NoPush -Limit 50
 
-# larger crawl
-.\scripts\run_all.ps1 -Limit 5000
 
 
 

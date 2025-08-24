@@ -43,48 +43,46 @@ $OfflineSample = Join-Path $OfflineOutDir "${Dataset}_urls_sample100.jsonl"
 function Resolve-PythonPath {
   param([string]$Override)
 
-  # If caller supplied an override, it must resolve to a file path.
   if ($Override) {
     $p = $Override.Trim('"').Trim()
-    try {
-      $abs = (Resolve-Path -LiteralPath $p -ErrorAction Stop).Path
-      return $abs
-    } catch {
+    try { return (Resolve-Path -LiteralPath $p -ErrorAction Stop).Path } catch {
       throw "PythonExe override not found on disk: '$Override'"
     }
   }
 
-  # Otherwise, auto-detect (active venv > venv > .venv > python/py)
-  return Get-Python
+  # Auto-detect
+  $exe = Get-Python
+
+  # Defensive: if something accidentally returned "3.13.5 C:\...\python.exe", keep only the path
+  if ($exe -match '^\s*\d+(?:\.\d+)*\s+(.+python(?:\.exe)?)\s*$') {
+    $exe = $Matches[1]
+  }
+  return $exe
 }
 
-
 function Get-Python {
-  # 1) Prefer the currently activated venv if present
+  # 1) Prefer the currently activated venv
   if ($env:VIRTUAL_ENV) {
-    $active = Join-Path $env:VIRTUAL_ENV "Scripts\python.exe"
-    if (Test-Path $active) {
-      try {
-        & $active -c "import sys;print(sys.version.split()[0])" 2>$null
-        if ($LASTEXITCODE -eq 0) { return $active }
-      } catch {}
-    }
+    $cand = Join-Path $env:VIRTUAL_ENV "Scripts\python.exe"
+    if (Test-Path -LiteralPath $cand) { return (Resolve-Path -LiteralPath $cand).Path }
   }
-  # 2) Common local venv folders (prefer 'venv' over '.venv'), then system
+
+  # 2) Common local venvs (absolute path only)
   $candidates = @(
     "venv\Scripts\python.exe",
-    ".venv\Scripts\python.exe",
-    "python",
-    "py -3",
-    "py"
+    ".venv\Scripts\python.exe"
   )
   foreach ($c in $candidates) {
-    try {
-      & $c -c "import sys;print(sys.version.split()[0])" 2>$null
-      if ($LASTEXITCODE -eq 0) { return $c }
-    } catch {}
+    if (Test-Path -LiteralPath $c) { return (Resolve-Path -LiteralPath $c).Path }
   }
-  throw "No Python interpreter found (looked for activated venv, then: venv, .venv, python, py)."
+
+  # 3) Fallback to python on PATH (resolve to full path)
+  try {
+    $cmd = Get-Command -Name "python" -ErrorAction Stop
+    if ($cmd -and $cmd.Source) { return $cmd.Source }
+  } catch {}
+
+  throw "No Python interpreter found (active venv, then venv/.venv, then 'python' on PATH)."
 }
 
 function Exec {
@@ -114,8 +112,33 @@ function Ensure-File {
 function Validate-UrlsJsonl {
   param([Parameter(Mandatory)][string]$Path)
   Ensure-File -Path $Path
-  ExecPy @("-m","app.tools.validate_crawler_urls","--input",$Path,"--schema",$SchemaPath)
+
+  # Best-effort cleanup of previous report file to reduce Dropbox/AV contention
+  $report = "$Path.validation.json"
+  if (Test-Path -LiteralPath $report) {
+    try { Remove-Item -LiteralPath $report -Force -ErrorAction Stop } catch {
+      # Ignore; if it's locked we'll rely on the retry loop below
+    }
+  }
+
+  $attempt = 0
+  $max = 6
+  $delay = 0.3  # seconds
+
+  while ($true) {
+    try {
+      ExecPy @("-m","app.tools.validate_crawler_urls","--input",$Path,"--schema",$SchemaPath)
+      break
+    } catch {
+      $attempt++
+      if ($attempt -ge $max) { throw }  # bubble up after final attempt
+      Write-Host "Validation hit a transient lock on '$report'. Retrying in ${delay}s (attempt $attempt/$max)..." -ForegroundColor DarkYellow
+      Start-Sleep -Seconds $delay
+      $delay = [Math]::Min($delay * 2, 4)  # back off up to 4s
+    }
+  }
 }
+
 
 # 4) Step functions
 
