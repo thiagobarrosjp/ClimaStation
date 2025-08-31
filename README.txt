@@ -6,184 +6,210 @@
 
 ## Purpose
 
-ClimaStation is a processing platform designed to make climate and weather station data — starting with the DWD (Deutscher Wetterdienst) repository — clean, usable, and accessible. It extracts raw measurement files, enriches them with metadata, and transforms them into structured formats suitable for downstream use.
+ClimaStation makes climate and weather **station** data — starting with the DWD (Deutscher Wetterdienst) repository — clean, usable, and easy to download. It mirrors raw files, normalizes them, and provides structured outputs that are reliable, provenance-rich, and ready for analysis.
 
-This project does not aim to serve as a personal analysis tool, but rather to support external users who need high-quality, structured access to climate data.
+This project focuses on **serving external users** who need high-quality, structured access to climate data (not on bespoke one-off analyses).
 
 ---
 
 ## Intended Audience
 
-ClimaStation is built to support a range of data users, including:
+- Researchers and environmental analysts working with time-series station data  
+- Policy makers, planners, and NGOs interested in local observations and long-term trends  
+- Software engineers and climate-tech teams integrating climate data into apps  
+- Educators and journalists who need trustworthy, explainable datasets
 
-- Researchers and environmental analysts working with time-series climate data
-- Policy makers, planners, and NGOs interested in long-term trends and local observations
-- Software engineers and climate tech teams integrating climate data into applications
-- Educators and journalists looking to explore and explain key environmental patterns
-
-The platform’s design is shaped by the expectations and workflows of these user groups.
-
+The architecture prioritizes data reliability, reproducibility, and ease of use for these groups.
 
 ---
 
 ## Motivation
 
-The DWD provides one of the most extensive public climate datasets in the world. However, the raw data is highly fragmented, sparsely documented, and difficult to work with at scale. ClimaStation aims to reduce this friction by building an end-to-end ingestion and standardization pipeline.
+DWD’s open data is extensive but **fragmented**: many folders, many ZIPs, multiple formats, and varying metadata quality. ClimaStation reduces this friction with an end-to-end pipeline that:
 
-The ultimate goal is to create a robust and extensible system that can:
-
-- Ingest and validate large volumes of raw measurement data
-- Enrich records with consistent metadata (stations, sensors, etc.)
-- Output structured data in a way that is useful for both humans and machines
-
+- Crawls and mirrors raw files (independence from upstream availability)
+- Normalizes units/timestamps and preserves **provenance per row**
+- Outputs compact, typed, columnar files suitable for fast filters/joins
 
 ---
 
 ## The Challenge in Numbers
 
-```
+```text
 https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/
 ├── 10_minutes/
-│   ├── air_temperature/ (~1,600 files per folder)
+│   ├── air_temperature/
 │   ├── precipitation/
 │   ├── wind/
-├── hourly/ (15+ parameters)
-├── daily/
-├── monthly/
-├── annual/
-└── 1_minute/, 5_minutes/
+├── hourly/ ...
+├── daily/ ...
+└── monthly/, annual/, 1_minute/, 5_minutes/ ...
 ```
 
-Rough estimate:
+Rough scale (order of magnitude):
 
-* 500,000+ ZIP files
-* Potentially multiple terabytes
+- Hundreds of thousands of ZIP files across products  
+- Hundreds of millions of rows for long time spans and many stations
 
 ---
 
 ## Architecture at a Glance
 
-ClimaStation is built as a modular, configuration-driven platform for transforming raw measurement data from the DWD (Deutscher Wetterdienst) into structured, timestamp-centric JSONL records.
+ClimaStation separates **data semantics** from **on-disk storage**:
 
-The current focus is on building the **bulk historical ingestion pipeline**. This pipeline is optimized to process large volumes of ZIP files from the DWD archive and convert them into clean, enriched output. Other pipelines, such as incremental daily updates, will be implemented later using similar architectural principles.
+- **Semantic record model (for queries & APIs):**  
+  **timestamp-centric per station** → each record = one `(station_id, timestamp)` with all variables available at that moment.
+
+- **On-disk storage (for performance & ops):**  
+  **Partitioned Parquet** files, one row per `(station_id, timestamp_utc)`, partitioned by `station_id` and `year`.  
+  Query engine: **DuckDB** reads Parquet directly (no DB server needed).
+
+Current focus: the **10_minutes/air_temperature** dataset (subset: **historical**, plus **meta_data**). Other datasets are added using the same pattern.
 
 ---
 
-### Bulk Ingestion Pipeline Structure
+### Ingestion & Cache Structure
 
-The bulk pipeline is organized into two layers:
+Two cooperating layers:
 
-1. **Preprocessing Stages** (batch-oriented)
-2. **File Processing Flow** (orchestrated per ZIP file)
+1) **Preprocessing (batch)**  
+   - Discover URLs and **mirror raw ZIPs** locally for independence and reproducibility.
+
+2) **Parsed Cache (on-demand + background warm-up)**  
+   - On first request for a `(station_id, year)`, parse the raw TXT into a **Parquet partition** and cache it.  
+   - A low-priority background job gradually pre-parses recent/hot partitions.
+
+This hybrid approach keeps costs low while delivering fast responses.
 
 ---
 
 ### 1. Preprocessing Stages
 
-These stages operate in batch mode and prepare the list of files to download and process.
+- **Crawler (`crawler.py`)**  
+  **Input:** Dataset root (e.g., `10_minutes/air_temperature`)  
+  **Output:** `urls.jsonl` with one entry per downloadable ZIP (with canonical URLs)
 
-- **Crawler (`crawler.py`)**
-  - **Input**: Dataset root path (e.g., `10_minutes/air_temperature`)
-  - **Output**: A `urls.jsonl` file containing one entry per downloadable ZIP file
-
-- **Downloader (`downloader.py`)**
-  - **Input**: `urls.jsonl` or a filtered subset
-  - **Output**: Saves ZIP files to `data/dwd/2_downloaded_files/`
+- **Downloader (`downloader.py`)**  
+  **Input:** `urls.jsonl` (or filtered subset)  
+  **Output:** Mirrors ZIPs under `raw/dwd/10_minutes/air_temperature/{historical,meta_data}/`
 
 ---
 
-### 2. File Processing Flow
+### 2. File Processing Flow (Parsed Cache)
 
-This stage is run file-by-file and is orchestrated by `run_pipeline.py`. It avoids unnecessary disk usage by extracting and deleting raw text files on the fly.
+Orchestrated by the backend when needed (no permanent intermediate TXT on disk):
 
-Each ZIP file is processed in the following sequence:
+1. **Extractor (in-memory)**  
+   - Open ZIP, stream the single TXT member; skip comment/header lines.
 
-1. **Extractor (`extractor.py`)**
-   - **Input**: A single ZIP file
-   - **Output**: A temporary `.txt` file extracted from the archive
+2. **Parser (dataset-specific, v0: air temperature)**  
+   - Normalize timestamp to **UTC** (see Data Quality notes).  
+   - Convert units (e.g., 0.1 °C → °C).  
+   - Map DWD quality level (QN) to `quality_level`.
 
-2. **Parser (`parser.py`)**
-   - **Input**: The raw `.txt` file, dataset config, and metadata
-   - **Output**: Generator of timestamp-centric records (as Python dictionaries)
+3. **Provenance & Lineage**  
+   - Annotate every row with:  
+     `source_url`, `source_filename`, **`source_row`** (line number), `file_sha256`, `ingested_at`.
 
-3. **Enricher (`enricher.py`)**
-   - **Input**: Each parsed record
-   - **Output**: An enriched record with human-readable names, quality codes, station/sensor info, etc.
+4. **Writer (Parquet)**  
+   - Enforce uniqueness on `(station_id, timestamp_utc)`, sort by time.  
+   - Write to `parsed/dwd/10_minutes_air_temperature/station_id=<id>/year=<YYYY>/<id>_<YYYY>.parquet`.
 
-4. **Writer (`writer.py`)**
-   - **Input**: Enriched records (streamed/generator)
-   - **Output**: One or more `.jsonl` output files (e.g., 50,000 records per file)
+5. **Background Warmer (optional service)**  
+   - Parses recent years for all stations during idle time.
 
-5. **Cleanup**
-   - The temporary `.txt` file is deleted to conserve disk space
+> We no longer write bulk JSONL outputs; Parquet is the ground truth for normalized values. JSON/CSV are **export formats** produced on demand.
 
 ---
 
 ### Supporting Modules
 
-All pipeline components can import helper logic from:
+- **`app/utils/`** — logging, config, hashing, file ops, progress  
+- **`app/tools/`** — validators, golden refreshers, small CLIs  
+- **`app/translations/`** — quality code explanations, parameter mappings  
+- **`app/pipeline/`** — crawler, downloader, parser(s), and helpers
 
-- **`app/utils/`** — for logging, config loading, file operations, and progress tracking
-- **`app/translations/`** — for quality code explanations, parameter mappings, and metadata enrichment
-
-Each module is implemented as a standalone Python script that exposes one or more reusable functions. These are not intended to be executed directly — they are used by the main controller script.
+Modules expose functions used by orchestration; they are not meant to be executed directly.
 
 ---
 
 ### Central Orchestration
 
-The main script `run_pipeline.py` ties everything together:
-python app/main/run_pipeline.py --dataset 10_minutes_air_temperature --file-id 00003_19930428_19991231
+Primary entry point: `run_pipeline.py`.
+
+Examples (from repo root):
+
+```bash
+# Crawl online (with schema validation)
+python -m app.main.run_pipeline --mode crawl --dataset 10_minutes_air_temperature --validate
+
+# Crawl from golden HTML (offline, for tests/CI)
+python -m app.main.run_pipeline --mode crawl --dataset 10_minutes_air_temperature --source offline --outdir .tmp/golden_out --validate
+```
+
+The **parsed cache** is invoked by the export/query service: when an export needs a `(station_id, year)` not yet cached, it parses it once and reuses it thereafter.
 
 ---
 
 ## Data Architecture Decisions
 
-### Record Format: Timestamp-Centric Design
+### Semantic Record Model (used by queries & API)
+- **One record per `(station_id, timestamp_utc)`** holding all available variables for that instant.  
+- This is the shape exposed to users (e.g., JSON response), and the mental model for analytics.
 
-ClimaStation uses a **timestamp-centric record format** where each record represents one timestamp at one station, containing all measured parameters for that time.
-
-**Why Timestamp-Centric:**
-
-- Serves 80% of user needs (researchers, developers, planners) optimally  
-- Follows industry standards (Meteostat, Open-Meteo, NOAA patterns)  
-- Enables easy multi-variable analysis and visualization  
-- Optimized for TimescaleDB's columnar compression  
-- Excel-friendly for non-technical users
-
-**Example Record:**
+**Example API record (per station):**
+```json
 {
   "station_id": "00003",
-  "timestamp": "2023-01-15T12:00:00Z",
-  "temperature": 15.2,
-  "humidity": 78.5,
-  "pressure": 1013.2,
-  "precipitation": 0.0,
-  "quality_codes": {
-    "temperature": 1,
-    "humidity": 1,
-    "pressure": 1
-  }
+  "timestamp_utc": "1993-06-10T04:30:00Z",
+  "temperature_2m_c": 20.1,
+  "quality_level": 1
 }
+```
 
+### On-Disk Storage (used by the engine)
+- **Parquet** files, partitioned by `station_id` and `year`.
+- Stable v0 schema (air temperature):
+  - `station_id` (string, 5-digit, zero-padded)
+  - `timestamp_utc` (timestamp, UTC)
+  - `temperature_2m_c` (float64, NaN for missing)
+  - `quality_level` (int32)
+  - `source_filename` (string)
+  - `source_url` (string)
+  - `file_sha256` (string)
+  - `source_row` (int32, line number inside TXT)
+  - `ingested_at` (timestamp, UTC)
+  - `raw_columns` (struct; optional, for extras we parse but don’t normalize yet)
+
+### Query Engine
+- **DuckDB** reads Parquet directly (fast filters/joins, no DB server).  
+- Exports: **Parquet** (default) or **CSV (zip)** on demand, plus a **manifest.json** describing sources, checksums, and query parameters.
 
 ---
 
 ## Parsing Strategy
 
-* **Input**: Raw DWD station files (various formats, encodings, quality issues)
-* **Processing**: Universal parser handling metadata alignment, quality codes, unit conversions
-* **Output**: Clean JSONL files with timestamp-centric records
-* **Storage**: TimescaleDB for optimal time-series performance
+- **Input:** mirrored DWD ZIPs (`historical` for values; `meta_data` for stations)  
+- **Processing:**
+  - Stream TXT, skip comments; robust parsing (`utf-8` with `latin-1` fallback)
+  - Normalize **timezone** to UTC (see below)
+  - Convert units (e.g., tenths of °C → °C)
+  - Map DWD quality level to `quality_level`
+  - Remove sentinels (`-999`, `-9999`, empty) → null/NaN
+  - Enforce uniqueness `(station_id, timestamp_utc)` and sort
+- **Output:** Parquet partition(s) per `(station_id, year)` with provenance columns populated
+- **Access:** On-demand parsing with cached results; background warmer for recent years
 
 ---
 
 ## Data Quality Handling
 
-* Preserve original quality codes from DWD
-* Handle missing values explicitly (null vs 0 distinction)
-* Maintain data integrity without assumptions
-* Support error correction workflows
+- Preserve and expose original **quality levels** (QN) as `quality_level`
+- Explicitly encode missing values as **null/NaN** (never as 0)
+- Normalize timestamps to **UTC**; for legacy files that use local time references, convert during parsing and document rules in code/comments
+- Maintain **provenance per row**: `source_url`, `source_filename`, `source_row`, `file_sha256`, `ingested_at`
+- Ensure **uniqueness** of `(station_id, timestamp_utc)`; drop exact duplicates deterministically and log counts
+
 
 ---
 
