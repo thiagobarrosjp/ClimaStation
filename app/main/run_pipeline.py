@@ -3,7 +3,7 @@
 ClimaStation Pipeline Runner — URL-agnostic crawl with online/offline switch
 
 PUBLIC ENTRY POINTS (stable):
-- run_crawl_mode(dataset_name: str, logger: ComponentLogger, *, source: str = "online", dry_run: bool = False, subfolder: Optional[str] = None, throttle: Optional[float] = None, limit: Optional[int] = None, outdir: Optional[str] = None) -> int
+- run_crawl_mode(dataset_name: str, logger: ComponentLogger, *, source: str = "online", dry_run: bool = False, subfolder: Optional[str] = None, throttle: Optional[float] = None, limit: Optional[int] = None, outdir: Optional[str] = None, validate: bool = False) -> int
 - run_download_mode(dataset_name: str, logger: ComponentLogger, dry_run: bool = False, subfolder: Optional[str] = None, max_downloads: Optional[int] = None, throttle: Optional[float] = None) -> int
 - main() -> int
 
@@ -25,6 +25,7 @@ import traceback
 import logging
 import json
 import os
+import subprocess  # NEW
 
 from urllib.parse import urljoin
 
@@ -184,6 +185,7 @@ def run_crawl_mode(
     throttle: Optional[float] = None,
     limit: Optional[int] = None,
     outdir: Optional[str] = None,
+    validate: bool = False,  # NEW
 ) -> int:
     """Execute crawl mode: discover URLs and write JSONL manifests."""
     try:
@@ -251,7 +253,7 @@ def run_crawl_mode(
             # If a subfolder was requested, narrow the crawler's subpaths to that one
             if subfolder_value:
                 crawler_cfg = cfg.setdefault("crawler", {})
-                crawler_cfg["subfolders"] = {str(subfolder): str(subfolder_value)}                
+                crawler_cfg["subfolders"] = {str(subfolder): str(subfolder_value)}
         elif source == "offline":
             offline_root = _get(cfg, "crawler.offline_server_root")
             offline_relpath = _get(cfg, "crawler.offline_relpath")
@@ -271,10 +273,10 @@ def run_crawl_mode(
                 crawl_base_url = base + str(offline_relpath).lstrip("/")
                 if not crawl_base_url.endswith("/"):
                     crawl_base_url += "/"
-                # If a subfolder was requested, narrow the crawler's subpaths (do NOT append to URL here)                
+                # If a subfolder was requested, narrow the crawler's subpaths (do NOT append to URL here)
                 if subfolder_value:
                     crawler_cfg = cfg.setdefault("crawler", {})
-                    crawler_cfg["subfolders"] = {str(subfolder): str(subfolder_value)}                   
+                    crawler_cfg["subfolders"] = {str(subfolder): str(subfolder_value)}
 
                 if dry_run:
                     logger.info("Dry-run (offline): would crawl dataset", extra={
@@ -373,6 +375,39 @@ def run_crawl_mode(
                 "sample_output": str(result.output_files.get("sample")),
             },
         })
+
+        # --- Optional validation (schema + contract) ---
+        if validate:
+            try:
+                target_dir = Path(outdir) if outdir else Path("data/dwd/1_crawl_dwd")
+                schema_path = Path("schemas/dwd/crawler_urls.schema.json")
+                full_file = target_dir / f"{dataset_name}_urls.jsonl"
+                sample_file = target_dir / f"{dataset_name}_urls_sample100.jsonl"
+
+                def _run_validator(path: Path) -> None:
+                    if not path.exists():
+                        logger.error("Validation target missing: %s", path)
+                        raise FileNotFoundError(str(path))
+                    cmd = [
+                        sys.executable, "-m", "app.tools.validate_crawler_urls",
+                        "--input", str(path), "--schema", str(schema_path)
+                    ]
+                    logger.info("Validating: %s", path)
+                    subprocess.run(cmd, check=True)
+
+                _run_validator(full_file)
+                if sample_file.exists():
+                    _run_validator(sample_file)
+                else:
+                    logger.warning("Sample file not found (skipping): %s", sample_file)
+
+            except subprocess.CalledProcessError as e:
+                logger.exception("Validation failed with non-zero exit (cmd): %s", getattr(e, 'cmd', e))
+                return 2
+            except Exception as e:
+                logger.exception("Validation failed: %s", e)
+                return 2
+
         return 0
 
     except Exception as e:
@@ -491,6 +526,8 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     p.add_argument("--throttle", type=float, default=None, help="Seconds to sleep between requests/downloads")
     p.add_argument("--outdir", type=str, default=None, help="If set (crawl mode only), move crawler outputs to this directory")
     p.add_argument("--source", choices=["online", "offline"], default="online", help="Crawl source: real DWD (online) or golden server (offline)")
+    p.add_argument("--validate", action="store_true",
+                   help="After crawling, validate outputs against schemas and fail on errors")  # NEW
     return p
 
 
@@ -525,6 +562,7 @@ def main() -> int:
             throttle=args.throttle,
             limit=args.limit,
             outdir=args.outdir,
+            validate=getattr(args, "validate", False),  # NEW
         )
     elif args.mode == "download":
         return run_download_mode(

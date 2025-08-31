@@ -8,7 +8,7 @@
 
 ## app/main/run_pipeline.py
 - `main() -> int` — Pipeline CLI entry point.
-- `run_crawl_mode(dataset_name: str, logger: ComponentLogger, *, source: str=…, dry_run: bool=…, subfolder: Optional[str]=…, throttle: Optional[float]=…, limit: Optional[int]=…, outdir: Optional[str]=…) -> int` — Execute crawl mode: discover URLs and write JSONL manifests.
+- `run_crawl_mode(dataset_name: str, logger: ComponentLogger, *, source: str=…, dry_run: bool=…, subfolder: Optional[str]=…, throttle: Optional[float]=…, limit: Optional[int]=…, outdir: Optional[str]=…, validate: bool=…) -> int` — Execute crawl mode: discover URLs and write JSONL manifests.
 - `run_download_mode(dataset_name: str, logger: ComponentLogger, dry_run: bool=…, subfolder: Optional[str]=…, max_downloads: Optional[int]=…, throttle: Optional[float]=…) -> int` — Execute download mode: plan and download files.
 - `serve_directory_http(root: Path) -> Iterator[tuple[str, int]]` — Context manager that serves *root* via a local HTTP server on 127.0.0.1:PORT.
 
