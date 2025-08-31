@@ -228,7 +228,7 @@ def run_crawl_mode(
         if subfolder:
             subfolder_value = subfolders_map.get(subfolder, subfolder)
 
-        # ONLINE base url (joined): base_url + root_path
+        # ONLINE base url (joined): base_url + root_path (dataset root, no subfolders)
         base_url_online = (
             (_get(cfg, "crawler.base_url") or "").rstrip("/")
             + "/"
@@ -245,11 +245,13 @@ def run_crawl_mode(
 
         output_jsonl = _resolve_urls_file(cfg)
 
-        # Determine base_url for crawler
+        # Determine base_url for crawler (keep at dataset root)
         if source == "online":
             crawl_base_url = base_url_online
+            # If a subfolder was requested, narrow the crawler's subpaths to that one
             if subfolder_value:
-                crawl_base_url = urljoin(crawl_base_url, subfolder_value if subfolder_value.endswith("/") else subfolder_value + "/")
+                crawler_cfg = cfg.setdefault("crawler", {})
+                crawler_cfg["subfolders"] = {str(subfolder): str(subfolder_value)}                
         elif source == "offline":
             offline_root = _get(cfg, "crawler.offline_server_root")
             offline_relpath = _get(cfg, "crawler.offline_relpath")
@@ -269,8 +271,10 @@ def run_crawl_mode(
                 crawl_base_url = base + str(offline_relpath).lstrip("/")
                 if not crawl_base_url.endswith("/"):
                     crawl_base_url += "/"
+                # If a subfolder was requested, narrow the crawler's subpaths (do NOT append to URL here)                
                 if subfolder_value:
-                    crawl_base_url = urljoin(crawl_base_url, subfolder_value if subfolder_value.endswith("/") else subfolder_value + "/")
+                    crawler_cfg = cfg.setdefault("crawler", {})
+                    crawler_cfg["subfolders"] = {str(subfolder): str(subfolder_value)}                   
 
                 if dry_run:
                     logger.info("Dry-run (offline): would crawl dataset", extra={

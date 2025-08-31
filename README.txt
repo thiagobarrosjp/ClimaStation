@@ -335,8 +335,8 @@ Intro.
 
 ### One-shot runner
 Run the full pipeline (online + offline + tests + push):
-# default
-.\scripts\run_all.ps1 -PythonExe ".\venv\Scripts\python.exe"
+# default (Limit=500, includes offline/tests/push)
+.\scripts\run_all.ps1
 
 
 
@@ -382,49 +382,57 @@ Run the full pipeline (online + offline + tests + push):
 
 --------------------------------------------------------------------------------------------------------------
 ---------------------------------------- PART 3: DAILY STATUS ------------------------------------------------
----------------------------------------- Last updated: 2025-08-21 --------------------------------------------
+---------------------------------------- Last updated: 2025-08-31 --------------------------------------------
 
 
 # Task List
 
-## Finalize one-shot runner — `scripts/run_all.ps1`
-* [ ] **Fix invocation**: use venv autodetect (venv/.venv), array-based `ExecPy` (no string splitting), and pass `--schema` to validator.
-* [ ] **Stable flow**: Online crawl → validate (full+sample) → Offline (golden) crawl → validate → ensure online sample exists → refresh fixture → `pytest -q` → commit & push (handles non-fast-forward).
-* [ ] **Fail-fast & idempotent**: non-zero exit on any failed step; safe temp outdir; no env vars; works from repo root without activating venv.
-* [ ] **Housekeeping**: move script to `scripts/`, delete any copy under `.venv/`; document usage in README; optional `-NoPush`, `-SkipOnline`, `-SkipOffline`, `-SkipTests`.
-Acceptance:
-Running:
- .\scripts\run_all.ps1 -Message "chore: run all checks"
-completes end-to-end with all validations/tests passing and either pushes successfully or cleanly skips when there’s nothing to commit.
+## ✅ Enforce Stage Quality Standard — Crawler (finish)
+- [ ] **Golden test (offline, no network):** `tests/dwd/test_crawler_golden_offline.py` runs the crawler via `run_pipeline.py --mode crawl --source offline --outdir <tmp>` and asserts **byte-identical** outputs to:
+  - `tests/dwd/golden/expected/10_minutes_air_temperature_urls.golden.jsonl`
+  - `tests/dwd/golden/expected/10_minutes_air_temperature_urls_sample100.golden.jsonl`
+- [ ] **CI gate (lean):** `.github/workflows/tests.yaml` runs `black --check .`, `ruff .`, `mypy .`, `pytest -q` (incl. golden). Mark this job **required** for `main`.
+- [ ] **Pipeline flag:** add `--validate` to `run_pipeline.py` (crawl mode) to invoke the validator; integrate into `scripts/run_all.ps1`.
 
-## Enforce Stage Quality Standard — Crawler (finish)
-* [ ] **Golden test (offline, no network):** add `tests/dwd/test_crawler_golden_offline.py` to crawl with `--source offline --outdir <tmp>` and assert **byte-identical** to `tests/dwd/golden/expected/10_minutes_air_temperature_urls.golden.jsonl` (and `_sample100.jsonl`).
-* [ ] **CI gate:** extend `.github/workflows/tests.yaml` to run `black --check .`, `ruff .`, `mypy .`, and `pytest -q` (incl. golden test). Enable branch protection to **require** this job on `main`.
-* [ ] **Pipeline flag:** add `--validate` to `run_pipeline.py` (crawl mode) to run the validator with the schema and **fail** on invalid outputs; integrate into `scripts/run_all.ps1`.
-*Notes: tests must be deterministic/offline; fixtures under `tests/dwd/golden/`; sample size fixed at 100.*
+---
 
-## ✅ Enforce Stage Quality Standard — Downloader (plan & add)
-- [ ] **Downloader enforcement plan**
-  - Choose golden style: **tiny files** or **download ledger JSON** (recommended).
-  - Create local fixtures (offline).
-  - Property tests: **idempotent skip**, **no partials**, **correct pathing**.
-  - Add golden compare + tests to CI. :contentReference[oaicite:3]{index=3}
+## Parser v0 — Historical ZIP → Parquet (lazy, all stations)
+- [ ] Parse one ZIP (historical) → normalize timestamps (UTC), preserve DWD quality codes, write **Parquet** partitioned as `dataset/station_id/year/`.
+- [ ] **Property test:** for 2–3 frozen files: required columns present, ≥1 row, timestamps parse, no duplicate `(station_id, timestamp)`.
+- [ ] **Smoke test:** parse a single known ZIP end-to-end into Parquet (temp dir).
 
-## Repo hygiene (to lock enforcement in)
-- [ ] **Branch protection + PR template**
-  - Enable required status checks for `main`.
-  - PR checklist: Contract updated · Schema present · Property tests · Golden passing · CI green.
-  - Ensure README links to `docs/dwd/contracts/crawler.md` and `downloader.md`. :contentReference[oaicite:4]{index=4}
+---
 
-## Crawler logging
-- [ ] **Improve crawler logging**
-  - INFO: inputs/config (resolved URL, subfolder, throttle, **limit applied**), per-subfolder summaries, final one-line summary.
-  - DEBUG: discovered items.
-  - WARN/ERROR: actionable HTTP status / absolute paths. :contentReference[oaicite:5]{index=5}
+## Station Metadata Ingest — `meta_data` → Registry
+- [ ] Parse station list TXT → structured table with active periods, elevation, lat/lon, name; write Parquet/CSV.
+- [ ] Expose simple lookup API/helper; include **change log** info for plotting markers.
+- [ ] **Test:** deterministic parse on fixture; assert a few known rows/fields.
 
-## Parsing (paused until both gates are green)
-- [ ] **Parsing kickoff — 10-minute air temperature**
-  - Add `--mode parse`, stream ZIP, emit URF v1 minimal records, chunked `.jsonl`, add light validation/summary. :contentReference[oaicite:6]{index=6}
+---
+
+## API v0 — Timeseries + HDD/CDD
+- [ ] `GET /stations/{id}/timeseries?from=&to=&format=json|csv|parquet` (reads Parquet).
+- [ ] `GET /stations/{id}/metrics/hdd_cdd?from=&to=&base_heat=18&base_cool=22&agg=daily|monthly` (lazy compute → cache derived Parquet under `/derived/`).
+- [ ] **Tests:** API smoke (returns data from cache); micro-fixture correctness for HDD/CDD on a tiny range.
+
+---
+
+## Web UI v0 — Minimal, Useful
+- [ ] Station search + line chart (temperature).  
+- [ ] Toggles: HDD/CDD overlay; **station metadata change markers**.  
+- [ ] **Export** button (CSV/Parquet for current view).
+
+---
+
+## Ops (minimal, solo-friendly)
+- [ ] Nightly **pre-warm** job for top station/year pairs.  
+- [ ] Single session **log file**; `.env` config; attribution note for DWD (CC-BY-4.0).  
+- [ ] README quickstart updated (run crawl offline test, parse one file, start API/UI).
+
+---
+
+### Deferred (explicitly *not* now)
+- Downloader golden tests, extended crawler logging, additional datasets, parallelism, heavy infra.
 
 
 ---
@@ -520,6 +528,7 @@ CLIMASTATION-BACKEND/
 │       │       │   │   └── index.html
 │       │       │   └── index.html 
 │       │       └── index.html
+│       ├── test_crawler_golden_offline.py
 │       ├── test_validate_crawler_urls.py
 │       └── test_validator_fixtures_smoketest.py
 ├── .gitignore

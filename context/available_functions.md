@@ -2,7 +2,7 @@
 
 > Scope: This index lists **only the callable entry points other modules should use**.  
 > Keep it short and stable. Omit private helpers and internal class methods.  
-> **Last updated:** 2025-08-24 15:46 Mitteleuropäische Sommerzeit
+> **Last updated:** 2025-08-31
 
 ---
 

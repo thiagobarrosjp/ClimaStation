@@ -23,6 +23,7 @@ from pathlib import Path
 import sys
 from typing import Dict, List, Optional, Tuple, Union
 import re
+from datetime import datetime, timezone
 
 # ------------------------------- CLI & Constants -------------------------------
 REPO_ROOT = Path(__file__).resolve().parents[2]  # repo/
@@ -36,6 +37,16 @@ ACRONYM_MAP = {
     "cdc": "CDC",
     "urf": "URF",
 }
+
+# --- Deterministic header helpers (avoid timestamp churn in pre-commit) ---
+LAST_UPDATED_RE = re.compile(r"^> \*\*Last updated:\*\* .+$", re.M)
+def _stable_last_updated() -> str:
+    """Date-only (UTC) to avoid minute-by-minute churn and locale-dependent strings."""
+    return datetime.now(timezone.utc).date().isoformat()  # e.g., 2025-08-31
+
+def _normalize_for_compare(text: str) -> str:
+    """Ignore the 'Last updated' header when comparing current vs generated."""
+    return LAST_UPDATED_RE.sub("> **Last updated:** <DATE>", text)
 
 # ------------------------------- Utilities ------------------------------------
 
@@ -220,10 +231,9 @@ def format_signature(fn: Union[ast.FunctionDef, ast.AsyncFunctionDef], src: str)
 # ----------------------------- Rendering ---------------------------------------
 
 def render_markdown(index: Dict[Path, List[Tuple[str, str]]]) -> str:
-    lines: List[str] = []
-    from datetime import datetime, timezone
-
-    ts = datetime.now(timezone.utc).astimezone().strftime("%Y-%m-%d %H:%M %Z")
+    lines: List[str] = []  
+    # Stable, locale-free date to keep file identical across quick reruns  
+    ts = _stable_last_updated()
     lines.append("# Available Functions (Reference Index)")
     lines.append("")
     lines.append(
@@ -324,7 +334,8 @@ def run(paths: List[str], check: bool) -> int:
 
         if check and DEFAULT_OUT.exists():
             current = read_text(DEFAULT_OUT)
-            if current != out:
+            # Compare ignoring the 'Last updated' header to prevent false diffs
+            if _normalize_for_compare(current) != _normalize_for_compare(out):
                 diff = difflib.unified_diff(
                     current.splitlines(), out.splitlines(),
                     fromfile=str(DEFAULT_OUT), tofile=str(DEFAULT_OUT), lineterm=""

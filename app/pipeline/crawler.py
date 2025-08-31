@@ -172,6 +172,17 @@ class DWDRepositoryCrawler:
         else:
             subpaths = []
         self.subpaths: List[str] = [s if s.endswith("/") else s + "/" for s in subpaths]
+        # If base already ends with a known subpath, disable subpath iteration to avoid duplicates.
+        if self.subpaths:
+            for sp in list(self.subpaths):
+                if self.base_path.endswith(sp):
+                    self.logger.debug(
+                        "Base includes subpath; disabling subpath iteration",
+                        extra={"component": "CRAWLER", "structured_data": {"base_path": self.base_path, "subpath": sp}},
+                    )
+                    self.subpaths = []
+                    break   
+                    
 
         # Output paths
         out_path_cfg = crawler_cfg.get("output_urls_jsonl")
@@ -220,7 +231,9 @@ class DWDRepositoryCrawler:
             self.crawled_count += 1
             if resp.status_code != 200:
                 self.logger.error(
-                    "HTTP request failed",
+                    "HTTP request failed: %s %s",
+                    resp.status_code,
+                    url,
                     extra={"component": "CRAWLER", "structured_data": {"url": url, "status": resp.status_code}},
                 )
                 if attempt < self.max_retries:
