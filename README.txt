@@ -154,36 +154,101 @@ The **parsed cache** is invoked by the export/query service: when an export need
 ## Data Architecture Decisions
 
 ### Semantic Record Model (used by queries & API)
-- **One record per `(station_id, timestamp_utc)`** holding all available variables for that instant.  
-- This is the shape exposed to users (e.g., JSON response), and the mental model for analytics.
 
-**Example API record (per station):**
+- **One record per station + instant.**  
+  Primary time is `timestamp_utc` **when a parameter window defines the time reference**; otherwise we keep the raw local time as `timestamp_local` and set `time_ref="unknown"` (no guessing).  
+- **Everything normalized at the top level** (friendly to read & filter). Field names are stable across stations.
+
+**Normalized fields (v0, air temperature 10-min):**
+- `station_id` (5-digit string)
+- `timestamp_utc` (nullable ISO-8601, UTC)  
+- `timestamp_local` (raw `YYYYMMDDHHMM` string from DWD)
+- `time_ref` (`"UTC" | "MEZ" | "unknown"`)
+- `quality_level` (int)
+- `pressure_station_hpa` (float)
+- `temperature_2m_c` (float)
+- `temperature_0p05m_c` (float)
+- `humidity_rel_pct` (float)
+- `dewpoint_2m_c` (float)
+- `parameter_window_found` (bool)
+
+**Precision rule:** values are parsed as numbers but **exported/rendered with one decimal place** (as published by DWD). We never invent extra significant digits.
+
+**Example (inside a parameter window → UTC known):**
 ```json
 {
   "station_id": "00003",
-  "timestamp_utc": "1993-06-10T04:30:00Z",
-  "temperature_2m_c": 20.1,
-  "quality_level": 1
+  "timestamp_local": "199304291230",
+  "time_ref": "MEZ",
+  "timestamp_utc": "1993-04-29T11:30:00Z",
+  "quality_level": 1,
+  "pressure_station_hpa": 987.3,
+  "temperature_2m_c": 24.9,
+  "temperature_0p05m_c": 28.4,
+  "humidity_rel_pct": 23.0,
+  "dewpoint_2m_c": 2.4,
+  "parameter_window_found": true
 }
 ```
 
+**Example (metadata gap → UTC unknown, keep raw time):**
+```json
+{
+  "station_id": "00003",
+  "timestamp_local": "199304281230",
+  "time_ref": "unknown",
+  "timestamp_utc": null,
+  "quality_level": 1,
+  "pressure_station_hpa": 987.3,
+  "temperature_2m_c": 24.9,
+  "temperature_0p05m_c": 28.4,
+  "humidity_rel_pct": 23.0,
+  "dewpoint_2m_c": 2.4,
+  "parameter_window_found": false
+}
+```
+
+---
+
 ### On-Disk Storage (used by the engine)
-- **Parquet** files, partitioned by `station_id` and `year`.
-- Stable v0 schema (air temperature):
-  - `station_id` (string, 5-digit, zero-padded)
-  - `timestamp_utc` (timestamp, UTC)
-  - `temperature_2m_c` (float64, NaN for missing)
+
+- **Parquet** files, partitioned by `station_id` and `year`.  
+  - `year` = year of `timestamp_utc` **if present**, otherwise the year derived from `timestamp_local` (ensures gap rows are still partitioned deterministically).
+- **v0 Parquet schema (columns):**
+  - `station_id` (string, zero-padded 5)
+  - `timestamp_utc` (timestamp, nullable)
+  - `timestamp_local` (string, `YYYYMMDDHHMM`)
+  - `time_ref` (string enum: `"UTC" | "MEZ" | "unknown"`)
   - `quality_level` (int32)
-  - `source_filename` (string)
-  - `source_url` (string)
-  - `file_sha256` (string)
-  - `source_row` (int32, line number inside TXT)
-  - `ingested_at` (timestamp, UTC)
-  - `raw_columns` (struct; optional, for extras we parse but don’t normalize yet)
+  - `pressure_station_hpa` (float64, NaN for missing)
+  - `temperature_2m_c` (float64)
+  - `temperature_0p05m_c` (float64)
+  - `humidity_rel_pct` (float64)
+  - `dewpoint_2m_c` (float64)
+  - `parameter_window_found` (bool)
+  - **Provenance:** `source_filename` (string), `source_url` (string), `source_row` (int32), `file_sha256` (string), `ingested_at` (timestamp, UTC)
+
+- **No duplication of station metadata per row.**  
+  Instead we maintain small, joinable registries:
+  - **Station Registry** (time-segmented geography & naming):  
+    `station_id, name, operator, latitude, longitude, elevation_m, valid_from, valid_to`
+  - **Station-Parameter Registry** (drives parsing rules & i18n):  
+    `station_id, parameter_code, unit, time_ref_enum, valid_from, valid_to, parameter_description_{de,en}, data_source_note_{de,en}, time_ref_note_{de,en}`
+
+> Files may span site moves. If a TXT overlaps multiple geo segments, we **split once at segment boundaries** (not per row) when writing Parquet.
+
+---
 
 ### Query Engine
-- **DuckDB** reads Parquet directly (fast filters/joins, no DB server).  
-- Exports: **Parquet** (default) or **CSV (zip)** on demand, plus a **manifest.json** describing sources, checksums, and query parameters.
+
+- **DuckDB** reads the Parquet partitions directly (no DB server).  
+  - Column pruning and predicate pushdown on `station_id`/`timestamp_*` provide fast filters.
+- **Exports:** **Parquet** (default) or **CSV (zip)** plus a `manifest.json` containing:
+  - dataset + query parameters,
+  - list of source ZIP/TXT files with `sha256`,
+  - row counts and any **metadata gaps** encountered,
+  - optional parameter catalog (`{code, unit, description {en,de}}`).
+- **Precision on export:** numeric fields are rendered with **exactly one decimal** (CSV) or as plain JSON numbers that reflect one decimal (no padded zeros).
 
 ---
 
