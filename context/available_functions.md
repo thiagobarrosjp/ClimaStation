@@ -2,7 +2,7 @@
 
 > Scope: This index lists **only the callable entry points other modules should use**.  
 > Keep it short and stable. Omit private helpers and internal class methods.  
-> **Last updated:** 2025-08-31
+> **Last updated:** 2025-09-14
 
 ---
 
@@ -21,6 +21,20 @@
 - `load_urls_from_jsonl(urls_file: Path, logger: logging.Logger | logging.LoggerAdapter, limit: Optional[int]=…, filter_subfolder: Optional[str]=…) -> List[Dict[str, Any]]` — Read URLs JSONL line-by-line with optional filtering.
 - `ProcessingResult` — Processing result.
 - `run_downloader(config: Dict[str, Any], logger: logging.Logger | logging.LoggerAdapter, max_downloads: Optional[int]=…, throttle: Optional[float]=…) -> ProcessingResult` — Run downloader.
+
+## app/pipeline/extractor.py
+- `extract_lines(zip_path: Path) -> tuple[SourceMeta, Iterable[tuple[int, str]]]` — Contract v1 — see docs/contracts/extractor.md.
+
+## app/pipeline/parser.py
+- `parse_air_temperature_10min(lines: Iterable[tuple[int, str]], meta: SourceMeta, *, now_utc: datetime) -> Iterable[ParsedRow]` — Contract v1 — see docs/contracts/parser.md.
+
+## app/pipeline/types.py
+- `ParsedRow` — Parsed row.
+- `SourceMeta` — Source meta.
+
+## app/pipeline/writer.py
+- `write_parquet(rows: Iterable[ParsedRow], out_root: Path) -> WriterReport` — Contract v1 — see docs/contracts/writer.md.
+- `WriterReport` — Writer report.
 
 ## app/processors/base_processor.py
 - `BaseProcessor` — Abstract base class for all dataset processors.

@@ -556,6 +556,7 @@ CLIMASTATION-BACKEND/
 │   │   ├── enricher.py   (empty, not started yet)
 │   │   ├── extractor.py  (empty, not started yet)
 │   │   ├── parser.py     (empty, not started yet)
+│   │   ├── types.py      (empty, not started yet)
 │   │   └── writer.py     (empty, not started yet)
 │   ├── tools/
 │   │   ├── gen_available_functions.py (scans codebase and regenerates available_functions.md)
@@ -595,10 +596,14 @@ CLIMASTATION-BACKEND/
 │   └── dwd/
 │       └── contracts/
 │           ├── crawler.md
-│           └── downloader.md
+│           ├── downloader.md
+│           ├── extractor.md
+│           ├── parser.md
+│           └── writer.md
 ├── schemas/
 │   └── dwd/
-│       └── crawler_urls.schema.json
+│       ├── crawler_urls.schema.json
+│       └── record_10_minutes_air_temperature.py
 ├── scripts/
 │   └── run_all.ps1
 ├── tests/
@@ -619,6 +624,8 @@ CLIMASTATION-BACKEND/
 │       │       │   │   └── index.html
 │       │       │   └── index.html 
 │       │       └── index.html
+│       ├── pipeline/
+│       │   └── test_public_interface.py
 │       ├── test_crawler_golden_offline.py
 │       ├── test_validate_crawler_urls.py
 │       └── test_validator_fixtures_smoketest.py
