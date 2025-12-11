@@ -1,0 +1,21 @@
+# Data files (too large)
+data/downloads/
+data/temp/
+data/output/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env

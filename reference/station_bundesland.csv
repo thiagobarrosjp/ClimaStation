@@ -1,0 +1,539 @@
+stations_id,station_name,bundesland,bundesland_en
+3,Aachen,Nordrhein-Westfalen,North Rhine-Westphalia
+44,Großenkneten,Niedersachsen,Lower Saxony
+71,Albstadt-Badkap,Baden-Württemberg,Baden-Württemberg
+73,Aldersbach-Kramersepp,Bayern,Bavaria
+78,Alfhausen,Niedersachsen,Lower Saxony
+91,Alsfeld-Eifa,Hessen,Hesse
+96,Neuruppin-Alt Ruppin,Brandenburg,Brandenburg
+102,Leuchtturm Alte Weser,Niedersachsen,Lower Saxony
+131,Geringswalde-Altgeringswalde,Sachsen,Saxony
+142,Altomünster-Maisbrunn,Bayern,Bavaria
+150,Alzey,Rheinland-Pfalz,Rhineland-Palatinate
+151,Amberg-Unterammersricht,Bayern,Bavaria
+154,Amerang-Pfaffing,Bayern,Bavaria
+161,Andernach,Rheinland-Pfalz,Rhineland-Palatinate
+164,Angermünde,Brandenburg,Brandenburg
+167,Anklam,Mecklenburg-Vorpommern,Mecklenburg-Western Pomerania
+183,Arkona,Mecklenburg-Vorpommern,Mecklenburg-Western Pomerania
+191,Arnstein-Müdesheim,Bayern,Bavaria
+198,Artern,Thüringen,Thuringia
+217,Attenkam,Bayern,Bavaria
+222,Aue,Sachsen,Saxony
+232,Augsburg,Bayern,Bavaria
+257,Baden-Baden-Geroldsau,Baden-Württemberg,Baden-Württemberg
+259,Müllheim,Baden-Württemberg,Baden-Württemberg
+268,Baiersbronn-Obertal,Baden-Württemberg,Baden-Württemberg
+282,Bamberg,Bayern,Bavaria
+294,Barsinghausen-Hohenbostel,Niedersachsen,Lower Saxony
+298,Barth,Mecklenburg-Vorpommern,Mecklenburg-Western Pomerania
+303,Baruth,Brandenburg,Brandenburg
+314,Kubschütz, Kr. Bautzen,Sachsen,Saxony
+320,Heinersreuth-Vollhof,Bayern,Bavaria
+326,Beckum-Unterberg,Nordrhein-Westfalen,North Rhine-Westphalia
+330,Oberzent-Beerfelden,Hessen,Hesse
+342,Belm,Niedersachsen,Lower Saxony
+348,Bendorf,Rheinland-Pfalz,Rhineland-Palatinate
+377,Bergzabern, Bad,Rheinland-Pfalz,Rhineland-Palatinate
+379,Berka, Bad (Flugplatz),Thüringen,Thuringia
+390,Berleburg, Bad-Stünzel,Nordrhein-Westfalen,North Rhine-Westphalia
+399,Berlin-Alexanderplatz,Berlin,Berlin
+400,Berlin-Buch,Berlin,Berlin
+410,Berlin-Kaniswall,Berlin,Berlin
+420,Berlin-Marzahn,Berlin,Berlin
+427,Berlin Brandenburg,Brandenburg,Brandenburg
+430,Berlin-Tegel,Berlin,Berlin
+433,Berlin-Tempelhof,Berlin,Berlin
+445,Bernburg/Saale (Nord),Sachsen-Anhalt,Saxony-Anhalt
+450,Bernkastel-Kues,Rheinland-Pfalz,Rhineland-Palatinate
+460,Berus,Saarland,Saarland
+535,Blankenrath,Rheinland-Pfalz,Rhineland-Palatinate
+554,Bocholt-Liedern (Wasserwerk),Nordrhein-Westfalen,North Rhine-Westphalia
+555,Bochum,Nordrhein-Westfalen,North Rhine-Westphalia
+591,Boizenburg,Mecklenburg-Vorpommern,Mecklenburg-Western Pomerania
+596,Boltenhagen,Mecklenburg-Vorpommern,Mecklenburg-Western Pomerania
+603,Königswinter-Heiderhof,Nordrhein-Westfalen,North Rhine-Westphalia
+617,Borken in Westfalen,Nordrhein-Westfalen,North Rhine-Westphalia
+656,Braunlage,Niedersachsen,Lower Saxony
+662,Braunschweig,Niedersachsen,Lower Saxony
+691,Bremen,Bremen,Bremen
+701,Bremerhaven,Bremen,Bremen
+704,Bremervörde,Niedersachsen,Lower Saxony
+722,Brocken,Sachsen-Anhalt,Saxony-Anhalt
+755,Buchen, Kr. Neckar-Odenwald,Baden-Württemberg,Baden-Württemberg
+757,Buchenbach,Baden-Württemberg,Baden-Württemberg
+760,Rosengarten-Klecken,Niedersachsen,Lower Saxony
+817,Burgwald-Bottendorf,Hessen,Hesse
+840,Carlsfeld,Sachsen,Saxony
+850,Celle,Niedersachsen,Lower Saxony
+853,Chemnitz,Sachsen,Saxony
+856,Chieming,Bayern,Bavaria
+860,Algermissen-Groß Lobke,Niedersachsen,Lower Saxony
+863,Clausthal-Zellerfeld,Niedersachsen,Lower Saxony
+867,Lautertal-Oberlauter,Bayern,Bavaria
+880,Cottbus,Brandenburg,Brandenburg
+891,Cuxhaven,Niedersachsen,Lower Saxony
+896,Dachwig,Thüringen,Thuringia
+917,Darmstadt,Hessen,Hesse
+953,Deuselbach,Rheinland-Pfalz,Rhineland-Palatinate
+963,Diepholz,Niedersachsen,Lower Saxony
+979,Dillenburg,Hessen,Hesse
+983,Dillingen/Donau-Fristingen,Bayern,Bavaria
+991,Dippoldiswalde-Reinberg,Sachsen,Saxony
+998,Dobel,Baden-Württemberg,Baden-Württemberg
+1001,Doberlug-Kirchhain,Brandenburg,Brandenburg
+1048,Dresden-Klotzsche,Sachsen,Saxony
+1050,Dresden-Hosterwitz,Sachsen,Saxony
+1051,Dresden-Strehlen,Sachsen,Saxony
+1052,Möckern-Drewitz,Sachsen-Anhalt,Saxony-Anhalt
+1072,Dürkheim, Bad,Rheinland-Pfalz,Rhineland-Palatinate
+1076,Dürrheim, Bad,Baden-Württemberg,Baden-Württemberg
+1078,Düsseldorf,Nordrhein-Westfalen,North Rhine-Westphalia
+1103,Ebersberg-Halbing,Bayern,Bavaria
+1107,Ebrach,Bayern,Bavaria
+1161,Eichstätt-Landershofen,Bayern,Bavaria
+1197,Ellwangen-Rindelbach,Baden-Württemberg,Baden-Württemberg
+1200,Elpersbüttel,Schleswig-Holstein,Schleswig-Holstein
+1207,Elster, Bad-Sohl,Sachsen,Saxony
+1214,Elzach-Fisnacht,Baden-Württemberg,Baden-Württemberg
+1219,Emden-Nesserland,Niedersachsen,Lower Saxony
+1224,Emmendingen-Mundingen,Baden-Württemberg,Baden-Württemberg
+1239,Engen/Hegau,Baden-Württemberg,Baden-Württemberg
+1246,Ennigerloh-Ostenfelde,Nordrhein-Westfalen,North Rhine-Westphalia
+1255,Eppingen-Elsenz,Baden-Württemberg,Baden-Württemberg
+1262,München-Flughafen,Bayern,Bavaria
+1266,Erfde,Schleswig-Holstein,Schleswig-Holstein
+1270,Erfurt-Weimar,Thüringen,Thuringia
+1279,Möhrendorf-Kleinseebach,Bayern,Bavaria
+1297,Eschwege,Hessen,Hesse
+1300,Eslohe,Nordrhein-Westfalen,North Rhine-Westphalia
+1303,Essen-Bredeney,Nordrhein-Westfalen,North Rhine-Westphalia
+1327,Weilerswist-Lommersum,Nordrhein-Westfalen,North Rhine-Westphalia
+1332,Falkenberg,Kr.Rottal-Inn,Bayern,Bavaria
+1346,Feldberg/Schwarzwald,Baden-Württemberg,Baden-Württemberg
+1357,Fichtelberg/Oberfranken-Hüttstadl,Bayern,Bavaria
+1358,Fichtelberg,Sachsen,Saxony
+1411,Birx/Rhön,Thüringen,Thuringia
+1420,Frankfurt/Main,Hessen,Hesse
+1424,Frankfurt/Main-Westend,Hessen,Hesse
+1443,Freiburg,Baden-Württemberg,Baden-Württemberg
+1451,Freiburg/Elbe,Niedersachsen,Lower Saxony
+1467,Freudenstadt-Kurgarten,Baden-Württemberg,Baden-Württemberg
+1468,Freudenstadt,Baden-Württemberg,Baden-Württemberg
+1473,Freystadt-Michelbach,Bayern,Bavaria
+1503,Friesoythe-Altenoythe,Niedersachsen,Lower Saxony
+1526,Fulda-Horas,Hessen,Hesse
+1544,Gardelegen,Sachsen-Anhalt,Saxony-Anhalt
+1550,Garmisch-Partenkirchen,Bayern,Bavaria
+1580,Geisenheim,Hessen,Hesse
+1584,Geisingen,Baden-Württemberg,Baden-Württemberg
+1587,Gelbelsee,Bayern,Bavaria
+1590,Geldern-Walbeck,Nordrhein-Westfalen,North Rhine-Westphalia
+1602,Ohlsbach,Baden-Württemberg,Baden-Württemberg
+1605,Genthin,Sachsen-Anhalt,Saxony-Anhalt
+1612,Gera-Leumnitz,Thüringen,Thuringia
+1639,Gießen/Wettenberg,Hessen,Hesse
+1645,Gilserberg-Moischeid,Hessen,Hesse
+1684,Görlitz,Sachsen,Saxony
+1691,Göttingen,Niedersachsen,Lower Saxony
+1694,Goldberg,Mecklenburg-Vorpommern,Mecklenburg-Western Pomerania
+1721,Gräfenberg-Kasberg,Bayern,Bavaria
+1735,Grainet-Rehberg,Bayern,Bavaria
+1736,Grambek,Schleswig-Holstein,Schleswig-Holstein
+1757,Greifswald,Mecklenburg-Vorpommern,Mecklenburg-Western Pomerania
+1759,Greifswalder Oie,Mecklenburg-Vorpommern,Mecklenburg-Western Pomerania
+1766,Münster/Osnabrück,Nordrhein-Westfalen,North Rhine-Westphalia
+1792,Groß Berßen,Niedersachsen,Lower Saxony
+1803,Sanitz-Groß Lüsewitz,Mecklenburg-Vorpommern,Mecklenburg-Western Pomerania
+1832,Großer Arber,Bayern,Bavaria
+1863,Gründau-Breitenborn,Hessen,Hesse
+1869,Grünow,Brandenburg,Brandenburg
+1886,Günzburg,Bayern,Bavaria
+1957,Halle-Kröllwitz,Sachsen-Anhalt,Saxony-Anhalt
+1964,Olsdorf,Rheinland-Pfalz,Rhineland-Palatinate
+1975,Hamburg-Fuhlsbüttel,Hamburg,Hamburg
+1981,Hamburg-Neuwiedenthal,Hamburg,Hamburg
+2014,Hannover,Niedersachsen,Lower Saxony
+2023,Harburg,Bayern,Bavaria
+2039,Harzburg, Bad,Niedersachsen,Lower Saxony
+2044,Harzgerode,Sachsen-Anhalt,Saxony-Anhalt
+2074,Hechingen,Baden-Württemberg,Baden-Württemberg
+2080,Heidelberg,Baden-Württemberg,Baden-Württemberg
+2088,Heidenheim/Brenz,Baden-Württemberg,Baden-Württemberg
+2110,Heinsberg-Schleiden,Nordrhein-Westfalen,North Rhine-Westphalia
+2115,Helgoland,Schleswig-Holstein,Schleswig-Holstein
+2158,Herrenalb, Bad,Baden-Württemberg,Baden-Württemberg
+2167,Niederwörresbach,Rheinland-Pfalz,Rhineland-Palatinate
+2171,Hersfeld, Bad,Hessen,Hesse
+2174,Herzberg,Niedersachsen,Lower Saxony
+2201,Hiddensee-Vitte,Mecklenburg-Vorpommern,Mecklenburg-Western Pomerania
+2211,Hilgenroth,Rheinland-Pfalz,Rhineland-Palatinate
+2244,Höchenschwand,Baden-Württemberg,Baden-Württemberg
+2252,Bertsdorf-Hörnitz,Sachsen,Saxony
+2261,Hof,Bayern,Bavaria
+2290,Hohenpeißenberg,Bayern,Bavaria
+2306,Hohwacht,Schleswig-Holstein,Schleswig-Holstein
+2319,Holzkirchen,Bayern,Bavaria
+2323,Bevern, Kr. Holzminden,Niedersachsen,Lower Saxony
+2362,Hümmerich,Rheinland-Pfalz,Rhineland-Palatinate
+2423,Isny,Baden-Württemberg,Baden-Württemberg
+2429,Itzehoe,Schleswig-Holstein,Schleswig-Holstein
+2444,Jena (Sternwarte),Thüringen,Thuringia
+2480,Kahl/Main,Bayern,Bavaria
+2483,Kahler Asten,Nordrhein-Westfalen,North Rhine-Westphalia
+2485,Kaisersbach-Cronhütte,Baden-Württemberg,Baden-Württemberg
+2486,Kaiserslautern,Rheinland-Pfalz,Rhineland-Palatinate
+2497,Kall-Sistig,Nordrhein-Westfalen,North Rhine-Westphalia
+2503,Kaltennordheim,Thüringen,Thuringia
+2522,Karlsruhe,Baden-Württemberg,Baden-Württemberg
+2532,Kassel,Hessen,Hesse
+2542,Kaufbeuren,Bayern,Bavaria
+2559,Kempten,Bayern,Bavaria
+2564,Kiel-Holtenau,Schleswig-Holstein,Schleswig-Holstein
+2575,Kirchberg/Jagst-Herboldshausen,Baden-Württemberg,Baden-Württemberg
+2578,Kirchdorf/Poel,Mecklenburg-Vorpommern,Mecklenburg-Western Pomerania
+2597,Kissingen, Bad,Bayern,Bavaria
+2600,Kitzingen,Bayern,Bavaria
+2601,Kleiner Feldberg/Taunus,Hessen,Hesse
+2618,Kleiner Inselsberg,Thüringen,Thuringia
+2627,Schipkau-Klettwitz,Brandenburg,Brandenburg
+2629,Kleve,Nordrhein-Westfalen,North Rhine-Westphalia
+2638,Klippeneck,Baden-Württemberg,Baden-Württemberg
+2641,Klitzschen bei Torgau,Sachsen,Saxony
+2667,Köln/Bonn,Nordrhein-Westfalen,North Rhine-Westphalia
+2680,Königshofen, Bad,Bayern,Bavaria
+2700,Kösching,Bayern,Bavaria
+2704,Köthen (Anhalt),Sachsen-Anhalt,Saxony-Anhalt
+2708,Kohlgrub, Bad (Rosshof),Bayern,Bavaria
+2712,Konstanz,Baden-Württemberg,Baden-Württemberg
+2738,Kreuth,Bayern,Bavaria
+2750,Kronach,Bayern,Bavaria
+2794,Kyritz,Brandenburg,Brandenburg
+2812,Lahr,Baden-Württemberg,Baden-Württemberg
+2814,Merklingen,Baden-Württemberg,Baden-Württemberg
+2856,Langenlipsdorf,Brandenburg,Brandenburg
+2878,Lauchstädt, Bad,Sachsen-Anhalt,Saxony-Anhalt
+2907,Leck,Schleswig-Holstein,Schleswig-Holstein
+2925,Leinefelde,Thüringen,Thuringia
+2928,Leipzig-Holzhausen,Sachsen,Saxony
+2932,Leipzig/Halle,Sachsen,Saxony
+2947,Lennestadt-Theten,Nordrhein-Westfalen,North Rhine-Westphalia
+2951,Lenzen/Elbe,Brandenburg,Brandenburg
+2953,Lenzkirch-Ruhbühl,Baden-Württemberg,Baden-Württemberg
+2961,Leuchtturm Kiel,Schleswig-Holstein,Schleswig-Holstein
+2968,Köln-Stammheim,Nordrhein-Westfalen,North Rhine-Westphalia
+2985,Lichtenhain-Mittelndorf,Sachsen,Saxony
+3015,Lindenberg,Brandenburg,Brandenburg
+3023,Lingen,Niedersachsen,Lower Saxony
+3028,Lippspringe, Bad,Nordrhein-Westfalen,North Rhine-Westphalia
+3031,Lippstadt-Bökenförde,Nordrhein-Westfalen,North Rhine-Westphalia
+3032,List auf Sylt,Schleswig-Holstein,Schleswig-Holstein
+3034,Lobenstein, Bad,Thüringen,Thuringia
+3042,Löhnberg-Obershausen,Hessen,Hesse
+3044,Löningen,Niedersachsen,Lower Saxony
+3083,Lübben-Blumenfelde,Brandenburg,Brandenburg
+3086,Lübeck-Blankensee,Schleswig-Holstein,Schleswig-Holstein
+3093,Lüchow,Niedersachsen,Lower Saxony
+3098,Lüdenscheid,Nordrhein-Westfalen,North Rhine-Westphalia
+3126,Magdeburg,Sachsen-Anhalt,Saxony-Anhalt
+3137,Mainz-Lerchenberg (ZDF),Rheinland-Pfalz,Rhineland-Palatinate
+3147,Mallersdorf-Pfaffenberg-Oberlindhart,Bayern,Bavaria
+3155,Manderscheid-Sonnenhof,Rheinland-Pfalz,Rhineland-Palatinate
+3158,Manschnow,Brandenburg,Brandenburg
+3164,Cölbe, Kr. Marburg-Biedenkopf,Hessen,Hesse
+3166,Marienberg,Sachsen,Saxony
+3167,Marienberg, Bad,Rheinland-Pfalz,Rhineland-Palatinate
+3181,Markt Erlbach-Hagenhofen,Bayern,Bavaria
+3196,Marnitz,Mecklenburg-Vorpommern,Mecklenburg-Western Pomerania
+3204,Martinroda,Thüringen,Thuringia
+3226,Aschersleben-Mehringen,Sachsen-Anhalt,Saxony-Anhalt
+3231,Meiningen,Thüringen,Thuringia
+3234,Klipphausen-Garsebach,Sachsen,Saxony
+3244,Memmingen,Bayern,Bavaria
+3257,Mergentheim, Bad,Baden-Württemberg,Baden-Württemberg
+3268,Meßstetten-Appental,Baden-Württemberg,Baden-Württemberg
+3271,Metten,Bayern,Bavaria
+3278,Metzingen,Baden-Württemberg,Baden-Württemberg
+3284,Michelstadt,Hessen,Hesse
+3287,Michelstadt-Vielbrunn,Hessen,Hesse
+3289,Schmieritz-Weltwitz,Thüringen,Thuringia
+3307,Mittenwald-Buckelwiesen,Bayern,Bavaria
+3319,Röllbach,Bayern,Bavaria
+3321,Mönchengladbach-Hilderath,Nordrhein-Westfalen,North Rhine-Westphalia
+3340,Montabaur,Rheinland-Pfalz,Rhineland-Palatinate
+3348,Moringen-Lutterbeck,Niedersachsen,Lower Saxony
+3362,Mühlacker,Baden-Württemberg,Baden-Württemberg
+3366,Mühldorf,Bayern,Bavaria
+3376,Müncheberg,Brandenburg,Brandenburg
+3379,München-Stadt,Bayern,Bavaria
+3402,Münsingen-Apfelstetten,Baden-Württemberg,Baden-Württemberg
+3426,Muskau, Bad,Sachsen,Saxony
+3442,Nauheim, Bad,Hessen,Hesse
+3478,Neubrandenburg,Mecklenburg-Vorpommern,Mecklenburg-Western Pomerania
+3485,Neuburg/Kammel-Langenhaslach,Bayern,Bavaria
+3490,Neuenahr, Bad-Ahrweiler,Rheinland-Pfalz,Rhineland-Palatinate
+3509,Stechlin-Menz,Brandenburg,Brandenburg
+3513,Neuhaus am Rennweg,Thüringen,Thuringia
+3527,Neukirchen-Hauptschwenda,Hessen,Hesse
+3540,Neunkirchen-Seelscheid-Krawinkel,Nordrhein-Westfalen,North Rhine-Westphalia
+3545,Neunkirchen-Wellesweiler,Saarland,Saarland
+3552,Neuruppin,Brandenburg,Brandenburg
+3571,Neustadt am Kulm-Filchendorf,Bayern,Bavaria
+3591,Nideggen-Schmidt,Nordrhein-Westfalen,North Rhine-Westphalia
+3612,Nienburg,Niedersachsen,Lower Saxony
+3621,Reimlingen,Bayern,Bavaria
+3631,Norderney,Niedersachsen,Lower Saxony
+3660,Nürburg-Barweiler,Rheinland-Pfalz,Rhineland-Palatinate
+3667,Nürnberg-Netzstall,Bayern,Bavaria
+3668,Nürnberg,Bayern,Bavaria
+3679,Kiefersfelden-Gach,Bayern,Bavaria
+3730,Oberstdorf,Bayern,Bavaria
+3734,Obersulm-Willsbach,Baden-Württemberg,Baden-Württemberg
+3739,Oberviechtach,Bayern,Bavaria
+3761,Öhringen,Baden-Württemberg,Baden-Württemberg
+3791,Oldenburg,Niedersachsen,Lower Saxony
+3811,Oschatz,Sachsen,Saxony
+3815,Osnabrück,Niedersachsen,Lower Saxony
+3821,Osterfeld,Sachsen-Anhalt,Saxony-Anhalt
+3836,Ostheim v.d. Rhön,Bayern,Bavaria
+3857,Oy-Mittelberg-Petersthal,Bayern,Bavaria
+3875,Parsberg/Oberpfalz-Eglwang,Bayern,Bavaria
+3897,Pelzerhaken,Schleswig-Holstein,Schleswig-Holstein
+3904,Perl-Nennig,Saarland,Saarland
+3925,Pforzheim-Ispringen,Baden-Württemberg,Baden-Württemberg
+3927,Pfullendorf,Baden-Württemberg,Baden-Württemberg
+3939,Pirmasens,Rheinland-Pfalz,Rhineland-Palatinate
+3946,Plauen,Sachsen,Saxony
+3975,Pommelsbrunn-Mittelburg,Bayern,Bavaria
+3987,Potsdam,Brandenburg,Brandenburg
+4024,Putbus,Mecklenburg-Vorpommern,Mecklenburg-Western Pomerania
+4032,Quedlinburg,Sachsen-Anhalt,Saxony-Anhalt
+4036,Querfurt-Mühle Lodersleben,Sachsen-Anhalt,Saxony-Anhalt
+4039,Quickborn,Schleswig-Holstein,Schleswig-Holstein
+4063,Rahden-Kleinendorf,Nordrhein-Westfalen,North Rhine-Westphalia
+4094,Weingarten, Kr. Ravensburg,Baden-Württemberg,Baden-Württemberg
+4104,Regensburg,Bayern,Bavaria
+4127,Reichshof-Eckenhagen,Nordrhein-Westfalen,North Rhine-Westphalia
+4154,Remscheid-Lennep,Nordrhein-Westfalen,North Rhine-Westphalia
+4160,Renningen-Ihinger Hof,Baden-Württemberg,Baden-Württemberg
+4169,Rheinau-Memprechtshofen,Baden-Württemberg,Baden-Württemberg
+4175,Rheinfelden,Baden-Württemberg,Baden-Württemberg
+4177,Rheinstetten,Baden-Württemberg,Baden-Württemberg
+4189,Altheim, Kreis Biberach,Baden-Württemberg,Baden-Württemberg
+4261,Rosenheim,Bayern,Bavaria
+4271,Rostock-Warnemünde,Mecklenburg-Vorpommern,Mecklenburg-Western Pomerania
+4275,Rotenburg (Wümme),Niedersachsen,Lower Saxony
+4280,Roth,Bayern,Bavaria
+4287,Rothenburg ob der Tauber,Bayern,Bavaria
+4300,Rottweil,Baden-Württemberg,Baden-Württemberg
+4301,Kreuznach, Bad,Rheinland-Pfalz,Rhineland-Palatinate
+4323,Ruppertsecken,Rheinland-Pfalz,Rhineland-Palatinate
+4336,Saarbrücken-Ensheim,Saarland,Saarland
+4347,Sachsa, Bad,Niedersachsen,Lower Saxony
+4349,Sachsenheim,Baden-Württemberg,Baden-Württemberg
+4354,Saldenburg-Entschenreuth,Bayern,Bavaria
+4371,Salzuflen, Bad,Nordrhein-Westfalen,North Rhine-Westphalia
+4377,Sandberg,Bayern,Bavaria
+4393,Sankt Peter-Ording,Schleswig-Holstein,Schleswig-Holstein
+4411,Schaafheim-Schlierbach,Hessen,Hesse
+4445,Wernigerode-Schierke,Sachsen-Anhalt,Saxony-Anhalt
+4464,Schleiz,Thüringen,Thuringia
+4466,Schleswig,Schleswig-Holstein,Schleswig-Holstein
+4477,Schluchsee,Baden-Württemberg,Baden-Württemberg
+4480,Schlüchtern-Herolz,Hessen,Hesse
+4485,Schmalkalden, Kurort,Thüringen,Thuringia
+4501,Schmücke,Thüringen,Thuringia
+4508,Schneifelforsthaus,Rheinland-Pfalz,Rhineland-Palatinate
+4517,Schömberg, Kr. Calw,Baden-Württemberg,Baden-Württemberg
+4548,Schönwald/Ofr.-Brunn,Bayern,Bavaria
+4559,Schorndorf-Knöbling,Bayern,Bavaria
+4560,Schotten,Hessen,Hesse
+4592,Schwandorf,Bayern,Bavaria
+4605,Schwarzburg,Thüringen,Thuringia
+4625,Schwerin,Mecklenburg-Vorpommern,Mecklenburg-Western Pomerania
+4642,Seehausen,Sachsen-Anhalt,Saxony-Anhalt
+4651,Seesen,Niedersachsen,Lower Saxony
+4692,Siegen (Kläranlage),Nordrhein-Westfalen,North Rhine-Westphalia
+4703,Sigmaringen-Laiz,Baden-Württemberg,Baden-Württemberg
+4704,Sigmarszell-Zeisertsweiler,Bayern,Bavaria
+4706,Simbach/Inn,Bayern,Bavaria
+4709,Simmern-Wahlbach,Rheinland-Pfalz,Rhineland-Palatinate
+4745,Soltau,Niedersachsen,Lower Saxony
+4748,Sondershausen,Thüringen,Thuringia
+4752,Sonneberg-Neufang,Thüringen,Thuringia
+4763,Sontra,Hessen,Hesse
+4813,Staffelstein, Bad-Stublang,Bayern,Bavaria
+4841,Steinau, Kr. Cuxhaven,Niedersachsen,Lower Saxony
+4857,Mittelnkirchen-Hohenfelde,Niedersachsen,Lower Saxony
+4878,Oberharz am Brocken-Stiege,Sachsen-Anhalt,Saxony-Anhalt
+4887,Stötten,Baden-Württemberg,Baden-Württemberg
+4896,Wagersrott,Schleswig-Holstein,Schleswig-Holstein
+4911,Straubing,Bayern,Bavaria
+4926,Stuttgart (Neckartal),Baden-Württemberg,Baden-Württemberg
+4928,Stuttgart (Schnarrenberg),Baden-Württemberg,Baden-Württemberg
+4931,Stuttgart-Echterdingen,Baden-Württemberg,Baden-Württemberg
+4978,Tann/Rhön,Hessen,Hesse
+4997,Starkenberg-Tegkwitz,Thüringen,Thuringia
+5009,Teterow,Mecklenburg-Vorpommern,Mecklenburg-Western Pomerania
+5014,Worpswede-Hüttenbusch,Niedersachsen,Lower Saxony
+5017,Teuschnitz,Bayern,Bavaria
+5029,Tholey,Saarland,Saarland
+5046,Tirschenreuth-Lodermühl,Bayern,Bavaria
+5049,Titisee-Neustadt-Titisee,Baden-Württemberg,Baden-Württemberg
+5064,Tönisvorst,Nordrhein-Westfalen,North Rhine-Westphalia
+5097,Tribsees,Mecklenburg-Vorpommern,Mecklenburg-Western Pomerania
+5099,Trier-Zewen,Rheinland-Pfalz,Rhineland-Palatinate
+5100,Trier-Petrisberg,Rheinland-Pfalz,Rhineland-Palatinate
+5109,Trollenhagen,Mecklenburg-Vorpommern,Mecklenburg-Western Pomerania
+5111,Trostberg,Bayern,Bavaria
+5133,Twistetal-Mühlhausen,Hessen,Hesse
+5142,Ueckermünde,Mecklenburg-Vorpommern,Mecklenburg-Western Pomerania
+5146,Uelzen,Niedersachsen,Lower Saxony
+5149,Gollhofen,Bayern,Bavaria
+5155,Ulm,Baden-Württemberg,Baden-Württemberg
+5158,Ummendorf,Sachsen-Anhalt,Saxony-Anhalt
+5229,Villingen-Schwenningen,Baden-Württemberg,Baden-Württemberg
+5275,Waghäusel-Kirrlach,Baden-Württemberg,Baden-Württemberg
+5279,Wesertal-Lippoldsberg,Hessen,Hesse
+5280,Wittenborn,Schleswig-Holstein,Schleswig-Holstein
+5300,Waldems-Reinborn,Hessen,Hesse
+5335,Waltershausen,Thüringen,Thuringia
+5347,Warburg,Nordrhein-Westfalen,North Rhine-Westphalia
+5349,Waren (Müritz),Mecklenburg-Vorpommern,Mecklenburg-Western Pomerania
+5371,Wasserkuppe,Hessen,Hesse
+5397,Weiden,Bayern,Bavaria
+5404,Weihenstephan-Dürnast,Bayern,Bavaria
+5419,Weimar,Thüringen,Thuringia
+5424,Weimar-Schöndorf,Thüringen,Thuringia
+5426,Weinbiet,Rheinland-Pfalz,Rhineland-Palatinate
+5433,Weiskirchen/Saar,Saarland,Saarland
+5440,Weißenburg-Emetzheim,Bayern,Bavaria
+5467,Wendelstein,Bayern,Bavaria
+5480,Werl,Nordrhein-Westfalen,North Rhine-Westphalia
+5490,Wernigerode,Sachsen-Anhalt,Saxony-Anhalt
+5516,Fehmarn,Schleswig-Holstein,Schleswig-Holstein
+5538,Wielenbach (Demollstr.),Bayern,Bavaria
+5541,Wiesbaden-Auringen,Hessen,Hesse
+5546,Wiesenburg,Brandenburg,Brandenburg
+5562,Neubulach-Oberhaugstett,Baden-Württemberg,Baden-Württemberg
+5629,Wittenberg,Sachsen-Anhalt,Saxony-Anhalt
+5643,Wittstock-Rote Mühle,Brandenburg,Brandenburg
+5663,Woldegk,Mecklenburg-Vorpommern,Mecklenburg-Western Pomerania
+5664,Wolfach,Baden-Württemberg,Baden-Württemberg
+5665,Wolfegg,Baden-Württemberg,Baden-Württemberg
+5676,Wolfsburg (Südwest),Niedersachsen,Lower Saxony
+5688,Dachsberg-Wolpadingen,Baden-Württemberg,Baden-Württemberg
+5692,Worms,Rheinland-Pfalz,Rhineland-Palatinate
+5705,Würzburg,Bayern,Bavaria
+5717,Wuppertal-Buchenhofen,Nordrhein-Westfalen,North Rhine-Westphalia
+5719,Remscheid,Nordrhein-Westfalen,North Rhine-Westphalia
+5731,Wutöschingen-Ofteringen,Baden-Württemberg,Baden-Württemberg
+5745,Zehdenick,Brandenburg,Brandenburg
+5750,Zeitz,Sachsen-Anhalt,Saxony-Anhalt
+5779,Zinnwald-Georgenfeld,Sachsen,Saxony
+5792,Zugspitze,Bayern,Bavaria
+5797,Lichtentanne,Sachsen,Saxony
+5800,Zwiesel,Bayern,Bavaria
+5822,Bassum,Niedersachsen,Lower Saxony
+5825,Berge,Brandenburg,Brandenburg
+5839,Emden,Niedersachsen,Lower Saxony
+5856,Fürstenzell,Bayern,Bavaria
+5871,Hahn,Rheinland-Pfalz,Rhineland-Palatinate
+5906,Mannheim,Baden-Württemberg,Baden-Württemberg
+5930,Schönhagen (Ostseebad),Schleswig-Holstein,Schleswig-Holstein
+5941,Reit im Winkl,Bayern,Bavaria
+6093,Wendisch Evern,Niedersachsen,Lower Saxony
+6105,Ostenfeld (Rendsburg),Schleswig-Holstein,Schleswig-Holstein
+6109,Grambow-Schwennenz,Mecklenburg-Vorpommern,Mecklenburg-Western Pomerania
+6129,Sohland/Spree,Sachsen,Saxony
+6157,Wangerland-Hooksiel,Niedersachsen,Lower Saxony
+6158,Weidenbach-Weiherschneidbach,Bayern,Bavaria
+6159,Dörpen,Niedersachsen,Lower Saxony
+6163,Dörnick,Schleswig-Holstein,Schleswig-Holstein
+6170,Coschen,Brandenburg,Brandenburg
+6182,Mallersdorf-Pfaffenberg,Bayern,Bavaria
+6186,Nastätten,Rheinland-Pfalz,Rhineland-Palatinate
+6197,Lügde-Paenbruch,Nordrhein-Westfalen,North Rhine-Westphalia
+6199,Steinhagen-Negast,Mecklenburg-Vorpommern,Mecklenburg-Western Pomerania
+6217,Saarbrücken-Burbach,Saarland,Saarland
+6258,Friedrichshafen-Unterraderach,Baden-Württemberg,Baden-Württemberg
+6259,Großerlach-Mannenweiler,Baden-Württemberg,Baden-Württemberg
+6260,Ingelfingen-Stachenhausen,Baden-Württemberg,Baden-Württemberg
+6262,Schwäbisch Gmünd-Weiler,Baden-Württemberg,Baden-Württemberg
+6263,Singen,Baden-Württemberg,Baden-Württemberg
+6264,Brilon-Thülen,Nordrhein-Westfalen,North Rhine-Westphalia
+6265,Wusterwitz,Brandenburg,Brandenburg
+6266,Huy-Pabstorf,Sachsen-Anhalt,Saxony-Anhalt
+6272,Salzungen, Bad-Gräfen-Nitzendorf,Thüringen,Thuringia
+6273,Demker,Sachsen-Anhalt,Saxony-Anhalt
+6275,Notzingen,Baden-Württemberg,Baden-Württemberg
+6305,Mühlhausen/Thüringen-Görmar,Thüringen,Thuringia
+6310,Karlshagen,Mecklenburg-Vorpommern,Mecklenburg-Western Pomerania
+6312,Markt Erlbach-Mosbach,Bayern,Bavaria
+6314,Nossen,Sachsen,Saxony
+6336,Lohr/Main-Halsbach,Bayern,Bavaria
+6337,Lüdinghausen-Brochtrup,Nordrhein-Westfalen,North Rhine-Westphalia
+6344,Runkel-Ennerich,Hessen,Hesse
+6346,Maisach-Galgen,Bayern,Bavaria
+6347,Schonungen-Mainberg,Bayern,Bavaria
+7075,Elsendorf-Horneck,Bayern,Bavaria
+7099,Liebenburg-Othfresen,Niedersachsen,Lower Saxony
+7105,Siegsdorf-Höll,Bayern,Bavaria
+7106,Bielefeld-Deppendorf,Nordrhein-Westfalen,North Rhine-Westphalia
+7187,Freudenberg/Main-Boxtal,Baden-Württemberg,Baden-Württemberg
+7244,Neuglobsow (HM),Brandenburg,Brandenburg
+7298,Hattstedt,Schleswig-Holstein,Schleswig-Holstein
+7319,Donauwörth-Osterweiler,Bayern,Bavaria
+7321,Olbersleben,Thüringen,Thuringia
+7325,Schneefernerhaus,Bayern,Bavaria
+7329,Treuen,Sachsen,Saxony
+7330,Arnsberg-Neheim,Nordrhein-Westfalen,North Rhine-Westphalia
+7331,Hermaringen-Allewind,Baden-Württemberg,Baden-Württemberg
+7341,Offenbach-Wetterpark,Hessen,Hesse
+7343,Deutschneudorf-Brüderwiese,Sachsen,Saxony
+7350,Prackenbach-Neuhäusl,Bayern,Bavaria
+7351,Feldberg/Mecklenburg,Mecklenburg-Vorpommern,Mecklenburg-Western Pomerania
+7364,Jeßnitz,Sachsen-Anhalt,Saxony-Anhalt
+7367,Alfeld,Niedersachsen,Lower Saxony
+7368,Eisenach,Thüringen,Thuringia
+7369,Feuchtwangen-Heilbronn,Bayern,Bavaria
+7370,Waldmünchen,Bayern,Bavaria
+7373,Borkum-Flugplatz,Niedersachsen,Lower Saxony
+7374,Ahaus,Nordrhein-Westfalen,North Rhine-Westphalia
+7389,Heckelberg,Brandenburg,Brandenburg
+7393,Hoyerswerda,Sachsen,Saxony
+7394,Wunsiedel-Schönbrunn,Bayern,Bavaria
+7395,Gottfrieding,Bayern,Bavaria
+7396,Hoherodskopf/Vogelsberg,Hessen,Hesse
+7403,Leutkirch-Herlazhofen,Baden-Württemberg,Baden-Württemberg
+7410,Neu-Ulrichstein,Hessen,Hesse
+7412,Neuhütten/Spessart,Bayern,Bavaria
+7419,Langenwetzendorf-Göttendorf,Thüringen,Thuringia
+7420,Naumburg/Saale-Kreipitzsch,Sachsen-Anhalt,Saxony-Anhalt
+7424,Piding,Bayern,Bavaria
+7427,Padenstedt (Pony-Park),Schleswig-Holstein,Schleswig-Holstein
+7428,Veilsdorf,Thüringen,Thuringia
+7431,Oberhaching-Laufzorn,Bayern,Bavaria
+7432,Wittingen-Vorhop,Niedersachsen,Lower Saxony
+13670,Duisburg-Baerl,Nordrhein-Westfalen,North Rhine-Westphalia
+13674,Waibstadt,Baden-Württemberg,Baden-Württemberg
+13675,Hameln-Hastenbeck,Niedersachsen,Lower Saxony
+13696,Waltrop-Abdinghof,Nordrhein-Westfalen,North Rhine-Westphalia
+13700,Gevelsberg-Oberbröking,Nordrhein-Westfalen,North Rhine-Westphalia
+13710,Landshut-Reithof,Bayern,Bavaria
+13711,Krölpa-Rockendorf,Thüringen,Thuringia
+13713,Meinerzhagen-Redlendorf,Nordrhein-Westfalen,North Rhine-Westphalia
+13776,Hildesheim-Drispenstedt,Niedersachsen,Lower Saxony
+13777,Helmstedt-Emmerstedt,Niedersachsen,Lower Saxony
+13965,Balingen-Bronnhaupten,Baden-Württemberg,Baden-Württemberg
+14138,Falkenberg (Grenzschichtmessfeld),Brandenburg,Brandenburg
+15000,Aachen-Orsbach,Nordrhein-Westfalen,North Rhine-Westphalia
+15207,Schauenburg-Elgershausen,Hessen,Hesse
+15444,Ulm-Mähringen,Baden-Württemberg,Baden-Württemberg
+15555,Kaufbeuren-Oberbeuren,Bayern,Bavaria
+15813,Lingen-Baccum,Niedersachsen,Lower Saxony
+19171,Hasenkrug-Hardebek,Schleswig-Holstein,Schleswig-Holstein
+19172,Wacken,Schleswig-Holstein,Schleswig-Holstein
+19207,Gülzow-Prüzen,Mecklenburg-Vorpommern,Mecklenburg-Western Pomerania
+19856,Schönau am Königssee,Bayern,Bavaria
+20098,Seebach (Nationalpark Schwarzwald),Baden-Württemberg,Baden-Württemberg

@@ -1,0 +1,538 @@
+# Schema: DWD 10-Minute Air Temperature — Metadata
+# Version: 1.2
+# Last Updated: 2025-12-07
+
+id: dwd_10min_air_temperature_metadata
+title: DWD 10-Minute Air Temperature — Station Metadata
+description: >
+  Station metadata with temporal normalization. Each row represents the complete
+  state of a station during a non-overlapping time interval. Multiple rows per
+  station when properties change over time. Original German text preserved with
+  English translations provided. Intervals extended to cover orphan raw data
+  with null-filled metadata rows.
+
+schema:
+  # =============================================================================
+  # KEYS
+  # =============================================================================
+  - name: stations_id
+    type: int32
+    required: true
+    description: DWD station numeric identifier
+
+  - name: valid_from
+    type: timestamp[s]
+    required: true
+    description: Start of validity interval (inclusive)
+
+  - name: valid_to
+    type: timestamp[s]
+    required: true
+    description: End of validity interval (inclusive)
+
+  # =============================================================================
+  # STATION IDENTITY (from Metadaten_Stationsname_Betreibername)
+  # =============================================================================
+  - name: station_name
+    type: string
+    required: false
+    description: Station name
+
+  - name: operator
+    type: string
+    required: false
+    description: Station operator
+
+  # =============================================================================
+  # GEOGRAPHY (from Metadaten_Geographie)
+  # =============================================================================
+  - name: latitude
+    type: float32
+    required: false
+    description: Geographic latitude (degrees)
+
+  - name: longitude
+    type: float32
+    required: false
+    description: Geographic longitude (degrees)
+
+  - name: elevation_m
+    type: float32
+    required: false
+    description: Station elevation (meters above sea level)
+
+  # =============================================================================
+  # BUNDESLAND (added by ClimaStation)
+  # =============================================================================
+  - name: bundesland
+    type: string
+    required: false
+    description: Federal state in German
+
+  - name: bundesland_en
+    type: string
+    required: false
+    description: Federal state in English
+
+  # =============================================================================
+  # INSTRUMENT: TT_10 - Air Temperature 2m (from Metadaten_Geraete_Lufttemperatur)
+  # =============================================================================
+  - name: device_tt_10_de
+    type: string
+    required: false
+    description: Device type for tt_10 - German (Geraetetyp Name)
+
+  - name: device_tt_10_en
+    type: string
+    required: false
+    description: Device type for tt_10 - English
+
+  - name: sensor_height_tt_10
+    type: float32
+    required: false
+    description: Sensor height above ground in meters (Geberhoehe ueber Grund)
+
+  - name: method_tt_10_de
+    type: string
+    required: false
+    description: Measurement method - German (Messverfahren)
+
+  - name: method_tt_10_en
+    type: string
+    required: false
+    description: Measurement method - English
+
+  # =============================================================================
+  # INSTRUMENT: TM5_10 - Air Temperature 5cm (from Metadaten_Geraete_Momentane_Temperatur_In_5cm)
+  # =============================================================================
+  - name: device_tm5_10_de
+    type: string
+    required: false
+    description: Device type for tm5_10 - German (Geraetetyp Name)
+
+  - name: device_tm5_10_en
+    type: string
+    required: false
+    description: Device type for tm5_10 - English
+
+  - name: sensor_height_tm5_10
+    type: float32
+    required: false
+    description: Sensor height above ground in meters (Geberhoehe ueber Grund)
+
+  - name: method_tm5_10_de
+    type: string
+    required: false
+    description: Measurement method - German (Messverfahren)
+
+  - name: method_tm5_10_en
+    type: string
+    required: false
+    description: Measurement method - English
+
+  # =============================================================================
+  # INSTRUMENT: RF_10 - Relative Humidity (from Metadaten_Geraete_Rel_Feuchte)
+  # =============================================================================
+  - name: device_rf_10_de
+    type: string
+    required: false
+    description: Device type for rf_10 - German (Geraetetyp Name)
+
+  - name: device_rf_10_en
+    type: string
+    required: false
+    description: Device type for rf_10 - English
+
+  - name: sensor_height_rf_10
+    type: float32
+    required: false
+    description: Sensor height above ground in meters (Geberhoehe ueber Grund)
+
+  - name: method_rf_10_de
+    type: string
+    required: false
+    description: Measurement method - German (Messverfahren)
+
+  - name: method_rf_10_en
+    type: string
+    required: false
+    description: Measurement method - English
+
+  # =============================================================================
+  # PARAMETER: PP_10 - Air Pressure (from Metadaten_Parameter)
+  # =============================================================================
+  - name: description_pp_10_de
+    type: string
+    required: false
+    description: Parameter description - German (Parameterbeschreibung)
+
+  - name: description_pp_10_en
+    type: string
+    required: false
+    description: Parameter description - English
+
+  - name: unit_pp_10
+    type: string
+    required: false
+    description: Unit (Einheit)
+
+  - name: data_source_pp_10_de
+    type: string
+    required: false
+    description: Data source - German (Datenquelle)
+
+  - name: data_source_pp_10_en
+    type: string
+    required: false
+    description: Data source - English
+
+  - name: time_reference_pp_10
+    type: string
+    required: false
+    description: Original time reference from DWD (MEZ or UTC) - for provenance
+
+  - name: notes_pp_10_de
+    type: string
+    required: false
+    description: Special notes - German (Besonderheiten)
+
+  - name: notes_pp_10_en
+    type: string
+    required: false
+    description: Special notes - English
+
+  - name: literature_pp_10_de
+    type: string
+    required: false
+    description: Literature reference - German (Literaturhinweis)
+
+  - name: literature_pp_10_en
+    type: string
+    required: false
+    description: Literature reference - English
+
+  # =============================================================================
+  # PARAMETER: TT_10 - Air Temperature 2m (from Metadaten_Parameter)
+  # =============================================================================
+  - name: description_tt_10_de
+    type: string
+    required: false
+    description: Parameter description - German (Parameterbeschreibung)
+
+  - name: description_tt_10_en
+    type: string
+    required: false
+    description: Parameter description - English
+
+  - name: unit_tt_10
+    type: string
+    required: false
+    description: Unit (Einheit)
+
+  - name: data_source_tt_10_de
+    type: string
+    required: false
+    description: Data source - German (Datenquelle)
+
+  - name: data_source_tt_10_en
+    type: string
+    required: false
+    description: Data source - English
+
+  - name: time_reference_tt_10
+    type: string
+    required: false
+    description: Original time reference from DWD (MEZ or UTC) - for provenance
+
+  - name: notes_tt_10_de
+    type: string
+    required: false
+    description: Special notes - German (Besonderheiten)
+
+  - name: notes_tt_10_en
+    type: string
+    required: false
+    description: Special notes - English
+
+  - name: literature_tt_10_de
+    type: string
+    required: false
+    description: Literature reference - German (Literaturhinweis)
+
+  - name: literature_tt_10_en
+    type: string
+    required: false
+    description: Literature reference - English
+
+  # =============================================================================
+  # PARAMETER: TM5_10 - Air Temperature 5cm (from Metadaten_Parameter)
+  # =============================================================================
+  - name: description_tm5_10_de
+    type: string
+    required: false
+    description: Parameter description - German (Parameterbeschreibung)
+
+  - name: description_tm5_10_en
+    type: string
+    required: false
+    description: Parameter description - English
+
+  - name: unit_tm5_10
+    type: string
+    required: false
+    description: Unit (Einheit)
+
+  - name: data_source_tm5_10_de
+    type: string
+    required: false
+    description: Data source - German (Datenquelle)
+
+  - name: data_source_tm5_10_en
+    type: string
+    required: false
+    description: Data source - English
+
+  - name: time_reference_tm5_10
+    type: string
+    required: false
+    description: Original time reference from DWD (MEZ or UTC) - for provenance
+
+  - name: notes_tm5_10_de
+    type: string
+    required: false
+    description: Special notes - German (Besonderheiten)
+
+  - name: notes_tm5_10_en
+    type: string
+    required: false
+    description: Special notes - English
+
+  - name: literature_tm5_10_de
+    type: string
+    required: false
+    description: Literature reference - German (Literaturhinweis)
+
+  - name: literature_tm5_10_en
+    type: string
+    required: false
+    description: Literature reference - English
+
+  # =============================================================================
+  # PARAMETER: RF_10 - Relative Humidity (from Metadaten_Parameter)
+  # =============================================================================
+  - name: description_rf_10_de
+    type: string
+    required: false
+    description: Parameter description - German (Parameterbeschreibung)
+
+  - name: description_rf_10_en
+    type: string
+    required: false
+    description: Parameter description - English
+
+  - name: unit_rf_10
+    type: string
+    required: false
+    description: Unit (Einheit)
+
+  - name: data_source_rf_10_de
+    type: string
+    required: false
+    description: Data source - German (Datenquelle)
+
+  - name: data_source_rf_10_en
+    type: string
+    required: false
+    description: Data source - English
+
+  - name: time_reference_rf_10
+    type: string
+    required: false
+    description: Original time reference from DWD (MEZ or UTC) - for provenance
+
+  - name: notes_rf_10_de
+    type: string
+    required: false
+    description: Special notes - German (Besonderheiten)
+
+  - name: notes_rf_10_en
+    type: string
+    required: false
+    description: Special notes - English
+
+  - name: literature_rf_10_de
+    type: string
+    required: false
+    description: Literature reference - German (Literaturhinweis)
+
+  - name: literature_rf_10_en
+    type: string
+    required: false
+    description: Literature reference - English
+
+  # =============================================================================
+  # PARAMETER: TD_10 - Dew Point (from Metadaten_Parameter)
+  # =============================================================================
+  - name: description_td_10_de
+    type: string
+    required: false
+    description: Parameter description - German (Parameterbeschreibung)
+
+  - name: description_td_10_en
+    type: string
+    required: false
+    description: Parameter description - English
+
+  - name: unit_td_10
+    type: string
+    required: false
+    description: Unit (Einheit)
+
+  - name: data_source_td_10_de
+    type: string
+    required: false
+    description: Data source - German (Datenquelle)
+
+  - name: data_source_td_10_en
+    type: string
+    required: false
+    description: Data source - English
+
+  - name: time_reference_td_10
+    type: string
+    required: false
+    description: Original time reference from DWD (MEZ or UTC) - for provenance
+
+  - name: notes_td_10_de
+    type: string
+    required: false
+    description: Special notes - German (Besonderheiten)
+
+  - name: notes_td_10_en
+    type: string
+    required: false
+    description: Special notes - English
+
+  - name: literature_td_10_de
+    type: string
+    required: false
+    description: Literature reference - German (Literaturhinweis)
+
+  - name: literature_td_10_en
+    type: string
+    required: false
+    description: Literature reference - English
+
+  # =============================================================================
+  # PROCESSING METADATA (added by ClimaStation)
+  # =============================================================================
+  - name: source_zip
+    type: string
+    required: true
+    description: ZIP file containing the metadata files
+
+  - name: source_modified_at
+    type: timestamp[s]
+    required: false
+    description: Last modification date of the source ZIP file
+
+  - name: ingested_at
+    type: timestamp[s]
+    required: true
+    description: When this row was created
+
+  - name: schema_version
+    type: string
+    required: true
+    description: Version of the schema used (e.g., "1.0")
+
+  - name: parser_version
+    type: string
+    required: true
+    description: Version of the parser that created this row
+
+  - name: row_hash
+    type: string
+    required: false
+    description: Hash of the original data (detect if DWD changes source files)
+
+source_mapping:
+  # Metadaten_Geographie
+  Stations_id: stations_id
+  von_datum: valid_from
+  bis_datum: valid_to
+  Stationshoehe: elevation_m
+  Geogr.Breite: latitude
+  Geogr.Laenge: longitude
+
+  # Metadaten_Stationsname_Betreibername
+  Stationsname: station_name
+  Betreibername: operator
+
+  # Metadaten_Geraete_Lufttemperatur
+  Geraetetyp Name: device_tt_10_de
+  Geberhoehe ueber Grund [m]: sensor_height_tt_10
+  Messverfahren: method_tt_10_de
+
+  # Metadaten_Geraete_Momentane_Temperatur_In_5cm
+  # Same fields as above, mapped to tm5_10 variants
+
+  # Metadaten_Geraete_Rel_Feuchte
+  # Same fields as above, mapped to rf_10 variants
+
+  # Metadaten_Parameter (per parameter)
+  Parameterbeschreibung: description_*_de
+  Einheit: unit_*
+  Datenquelle: data_source_*_de
+  Zusatz-Info: time_reference_*
+  Besonderheiten: notes_*_de
+  Literaturhinweis: literature_*_de
+
+constraints:
+  primary_key: [stations_id, valid_from]
+  no_overlapping_intervals: true
+
+interval_generation:
+  description: >
+    Metadata intervals are created by merging time boundaries from BOTH
+    DWD metadata files AND raw data files. This ensures all raw data
+    is covered by a metadata interval.
+  process:
+    - step: 1
+      action: Scan all raw data to find date ranges per station
+    - step: 2
+      action: Parse DWD metadata files to get their time boundaries
+    - step: 3
+      action: Merge both sets of boundaries into unified intervals
+    - step: 4
+      action: For intervals outside DWD metadata range, fill all metadata fields with null
+  example:
+    scenario: "Raw data starts April 28, DWD metadata starts April 29"
+    result:
+      - interval: "April 28 - April 28"
+        metadata_fields: "all null (orphan data)"
+      - interval: "April 29 - December 31"
+        metadata_fields: "values from DWD files"
+
+join_pattern:
+  description: >
+    To join raw data with metadata, use timestamp_utc from raw data
+    with valid_from and valid_to from metadata.
+  example: |
+    SELECT r.*, m.station_name, m.latitude, m.longitude
+    FROM raw r
+    JOIN metadata m
+      ON r.stations_id = m.stations_id
+      AND r.timestamp_utc BETWEEN m.valid_from AND m.valid_to
+
+notes:
+  - Intervals created by merging time boundaries from metadata files AND raw data files
+  - Intervals covering orphan raw data have all metadata fields set to null
+  - Fields are null when no DWD data exists for that interval
+  - time_reference_* columns preserved for provenance (documents what DWD originally used)
+  - English translations (_en columns) provided by ClimaStation parser
+  - bundesland derived from station coordinates or DWD station lists
+  - row_hash computed from original German text fields only
+  - No instrument files exist for pp_10 (pressure) and td_10 (dew point is calculated)
+  - Use timestamp_utc from raw data for joins with valid_from/valid_to
+  - Total columns: 81

@@ -1,0 +1,268 @@
+# Schema: DWD 10-Minute Air Temperature — Aggregates
+# Version: 1.0
+# Last Updated: 2025-12-07
+
+id: dwd_10min_air_temperature_aggregates
+title: DWD 10-Minute Air Temperature — Aggregates
+description: >
+  Pre-computed statistics for web UI visualization. Internal only — not available
+  for user download. Computed from raw data where metadata_matched = true.
+  One Parquet file per resolution.
+
+files:
+  - path: aggregates/hourly.parquet
+    resolution: hourly
+    period_length: 1 hour
+    max_readings_per_period: 6
+
+  - path: aggregates/daily.parquet
+    resolution: daily
+    period_length: 1 day
+    max_readings_per_period: 144
+
+  - path: aggregates/weekly.parquet
+    resolution: weekly
+    period_length: 7 days (ISO week, Monday = first day)
+    max_readings_per_period: 1008
+
+  - path: aggregates/monthly.parquet
+    resolution: monthly
+    period_length: 1 calendar month
+    max_readings_per_period: ~4320
+
+  - path: aggregates/quarterly.parquet
+    resolution: quarterly
+    period_length: 3 calendar months (Q1=Jan-Mar, Q2=Apr-Jun, Q3=Jul-Sep, Q4=Oct-Dec)
+    max_readings_per_period: ~13104
+
+  - path: aggregates/yearly.parquet
+    resolution: yearly
+    period_length: 1 calendar year
+    max_readings_per_period: ~52560
+
+schema:
+  # =============================================================================
+  # KEYS
+  # =============================================================================
+  - name: stations_id
+    type: int32
+    required: true
+    description: DWD station numeric identifier
+
+  - name: period_start
+    type: timestamp[s]
+    required: true
+    description: Start of aggregation period (UTC, inclusive)
+
+  - name: period_end
+    type: timestamp[s]
+    required: true
+    description: End of aggregation period (UTC, inclusive)
+
+  # =============================================================================
+  # PP_10 — Air Pressure
+  # =============================================================================
+  - name: pp_10_mean
+    type: float32
+    required: false
+    description: Mean air pressure at station altitude (hPa)
+
+  - name: pp_10_min
+    type: float32
+    required: false
+    description: Minimum air pressure at station altitude (hPa)
+
+  - name: pp_10_max
+    type: float32
+    required: false
+    description: Maximum air pressure at station altitude (hPa)
+
+  - name: pp_10_count
+    type: int32
+    required: true
+    description: Number of valid readings in period
+
+  # =============================================================================
+  # TT_10 — Air Temperature 2m
+  # =============================================================================
+  - name: tt_10_mean
+    type: float32
+    required: false
+    description: Mean air temperature 2m above ground (°C)
+
+  - name: tt_10_min
+    type: float32
+    required: false
+    description: Minimum air temperature 2m above ground (°C)
+
+  - name: tt_10_max
+    type: float32
+    required: false
+    description: Maximum air temperature 2m above ground (°C)
+
+  - name: tt_10_count
+    type: int32
+    required: true
+    description: Number of valid readings in period
+
+  # =============================================================================
+  # TM5_10 — Air Temperature 5cm
+  # =============================================================================
+  - name: tm5_10_mean
+    type: float32
+    required: false
+    description: Mean air temperature 5cm above ground (°C)
+
+  - name: tm5_10_min
+    type: float32
+    required: false
+    description: Minimum air temperature 5cm above ground (°C)
+
+  - name: tm5_10_max
+    type: float32
+    required: false
+    description: Maximum air temperature 5cm above ground (°C)
+
+  - name: tm5_10_count
+    type: int32
+    required: true
+    description: Number of valid readings in period
+
+  # =============================================================================
+  # RF_10 — Relative Humidity
+  # =============================================================================
+  - name: rf_10_mean
+    type: float32
+    required: false
+    description: Mean relative humidity (%)
+
+  - name: rf_10_min
+    type: float32
+    required: false
+    description: Minimum relative humidity (%)
+
+  - name: rf_10_max
+    type: float32
+    required: false
+    description: Maximum relative humidity (%)
+
+  - name: rf_10_count
+    type: int32
+    required: true
+    description: Number of valid readings in period
+
+  # =============================================================================
+  # TD_10 — Dew Point
+  # =============================================================================
+  - name: td_10_mean
+    type: float32
+    required: false
+    description: Mean dew point temperature (°C)
+
+  - name: td_10_min
+    type: float32
+    required: false
+    description: Minimum dew point temperature (°C)
+
+  - name: td_10_max
+    type: float32
+    required: false
+    description: Maximum dew point temperature (°C)
+
+  - name: td_10_count
+    type: int32
+    required: true
+    description: Number of valid readings in period
+
+constraints:
+  primary_key: [stations_id, period_start]
+  timezone: UTC
+  quality_levels: all (no filtering by quality_level)
+
+computation:
+  source: raw.parquet files
+  filter: metadata_matched = true (orphan rows excluded)
+  
+  period_boundaries:
+    description: >
+      Periods are defined by calendar boundaries in UTC. Partial periods at the
+      start or end of a station's data are included — the count field shows
+      how many readings contributed.
+    rules:
+      - resolution: hourly
+        period_start: "Truncate to hour (e.g., 14:00:00)"
+        period_end: "period_start + 59 minutes 59 seconds"
+      - resolution: daily
+        period_start: "Truncate to day 00:00:00"
+        period_end: "period_start + 23:59:59"
+      - resolution: weekly
+        period_start: "Monday 00:00:00 of ISO week"
+        period_end: "Sunday 23:59:59 of ISO week"
+      - resolution: monthly
+        period_start: "First day of month 00:00:00"
+        period_end: "Last day of month 23:59:59"
+      - resolution: quarterly
+        period_start: "First day of quarter 00:00:00 (Jan 1, Apr 1, Jul 1, Oct 1)"
+        period_end: "Last day of quarter 23:59:59 (Mar 31, Jun 30, Sep 30, Dec 31)"
+      - resolution: yearly
+        period_start: "January 1 00:00:00"
+        period_end: "December 31 23:59:59"
+
+  statistics:
+    mean: "Average of non-null values"
+    min: "Minimum of non-null values"
+    max: "Maximum of non-null values"
+    count: "Number of non-null values (always present, even if 0)"
+
+  null_handling:
+    description: >
+      If all readings in a period are null for a given parameter, mean/min/max
+      are null and count is 0. If no readings exist at all for a period
+      (no rows in raw data), no aggregate row is created for that period.
+
+example:
+  description: "Station 3, first hours of data (UTC)"
+  raw_data:
+    - timestamp_utc: "1993-04-28 11:30:00"
+      tt_10: 24.9
+    - timestamp_utc: "1993-04-28 11:40:00"
+      tt_10: 24.9
+    - timestamp_utc: "1993-04-28 11:50:00"
+      tt_10: 25.5
+    - timestamp_utc: "1993-04-28 12:00:00"
+      tt_10: 25.8
+    - timestamp_utc: "1993-04-28 12:10:00"
+      tt_10: 25.8
+    - timestamp_utc: "1993-04-28 12:20:00"
+      tt_10: 25.7
+    - timestamp_utc: "1993-04-28 12:30:00"
+      tt_10: 26.0
+    - timestamp_utc: "1993-04-28 12:40:00"
+      tt_10: 26.1
+    - timestamp_utc: "1993-04-28 12:50:00"
+      tt_10: 27.0
+  
+  hourly_aggregates:
+    - stations_id: 3
+      period_start: "1993-04-28 11:00:00"
+      period_end: "1993-04-28 11:59:59"
+      tt_10_mean: 25.1
+      tt_10_min: 24.9
+      tt_10_max: 25.5
+      tt_10_count: 3  # Partial hour — only 3 readings
+    - stations_id: 3
+      period_start: "1993-04-28 12:00:00"
+      period_end: "1993-04-28 12:59:59"
+      tt_10_mean: 26.1
+      tt_10_min: 25.7
+      tt_10_max: 27.0
+      tt_10_count: 6  # Full hour — 6 readings
+
+notes:
+  - Aggregates are internal only — used for web UI visualization
+  - Users cannot download aggregates directly; they download raw data
+  - Partial periods are valid; count shows completeness
+  - All quality levels included (no filtering)
+  - Orphan rows (metadata_matched=false) are excluded
+  - All timestamps in UTC
+  - Total columns: 23

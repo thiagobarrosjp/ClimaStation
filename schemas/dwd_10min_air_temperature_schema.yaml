@@ -1,0 +1,161 @@
+# Schema: DWD 10-Minute Air Temperature — Raw Data
+# Version: 1.2
+# Last Updated: 2025-12-07
+
+id: dwd_10min_air_temperature
+title: DWD 10-Minute Air Temperature — Raw Data
+description: >
+  Near-surface air temperature measurements at 10-minute intervals
+  from DWD climate stations. One Parquet file per station.
+
+schema:
+  # =============================================================================
+  # KEYS
+  # =============================================================================
+  - name: stations_id
+    type: int32
+    required: true
+    description: DWD station numeric identifier
+
+  - name: timestamp_mez
+    type: timestamp[s]
+    required: true
+    description: Observation timestamp in MEZ (UTC+1, fixed offset, no DST)
+
+  - name: timestamp_utc
+    type: timestamp[s]
+    required: true
+    description: Observation timestamp in UTC
+
+  # =============================================================================
+  # QUALITY
+  # =============================================================================
+  - name: quality_level
+    type: int8
+    required: true
+    description: DWD quality control level (1-10)
+
+  # =============================================================================
+  # MEASUREMENTS
+  # =============================================================================
+  - name: pp_10
+    type: float32
+    required: false
+    description: Air pressure at station altitude (hPa)
+
+  - name: tt_10
+    type: float32
+    required: false
+    description: Air temperature 2m above ground (°C)
+
+  - name: tm5_10
+    type: float32
+    required: false
+    description: Air temperature 5cm above ground (°C)
+
+  - name: rf_10
+    type: float32
+    required: false
+    description: Relative humidity (%)
+
+  - name: td_10
+    type: float32
+    required: false
+    description: Dew point temperature (°C)
+
+  # =============================================================================
+  # DATA QUALITY FLAGS (added by ClimaStation)
+  # =============================================================================
+  - name: metadata_matched
+    type: bool
+    required: true
+    description: >
+      True if DWD metadata exists for this timestamp, false if orphan.
+      Orphan rows have raw data but no corresponding metadata interval in DWD files.
+      These rows are excluded from aggregate calculations.
+
+  # =============================================================================
+  # PROCESSING METADATA (added by ClimaStation)
+  # =============================================================================
+  - name: source_zip
+    type: string
+    required: true
+    description: ZIP file from which this row was extracted
+
+  - name: source_modified_at
+    type: timestamp[s]
+    required: false
+    description: Last modification date of the source ZIP file
+
+  - name: ingested_at
+    type: timestamp[s]
+    required: true
+    description: When this row was created
+
+  - name: schema_version
+    type: string
+    required: true
+    description: Version of the schema used (e.g., "1.0")
+
+  - name: parser_version
+    type: string
+    required: true
+    description: Version of the parser that created this row
+
+  - name: row_hash
+    type: string
+    required: false
+    description: Hash of the original data (detect if DWD changes source files)
+
+source_mapping:
+  # DWD header variants → our column names
+  STATIONS_ID: stations_id
+  Stations_ID: stations_id
+  MESS_DATUM: [timestamp_mez, timestamp_utc]  # Parser converts to both
+  QN: quality_level
+  PP_10: pp_10
+  TT_10: tt_10
+  TM5_10: tm5_10
+  RF_10: rf_10
+  TD_10: td_10
+
+constraints:
+  primary_key: [stations_id, timestamp_utc]
+  missing_value_handling: null
+  duplicate_handling: fail
+
+timestamp_conversion:
+  description: >
+    DWD timestamps are in MEZ (UTC+1) before 2000-01-01 and in UTC after.
+    Parser converts MESS_DATUM to both timestamp_mez and timestamp_utc.
+  rules:
+    - era: "before 2000-01-01"
+      original_reference: MEZ
+      timestamp_mez: "original value"
+      timestamp_utc: "original value - 1 hour"
+    - era: "2000-01-01 and after"
+      original_reference: UTC
+      timestamp_mez: "original value + 1 hour"
+      timestamp_utc: "original value"
+  note: >
+    MEZ is a fixed offset (UTC+1). No daylight saving correction needed.
+
+orphan_handling:
+  description: >
+    Raw data rows may exist outside the time intervals defined in DWD metadata files.
+    This is a known DWD data quality issue (e.g., raw data starts April 28 but 
+    metadata starts April 29).
+  behavior:
+    - Raw data is always preserved (no data loss)
+    - metadata_matched = false for orphan rows
+    - Orphan rows are excluded from aggregate calculations
+    - Metadata file extended to cover orphan dates with null-filled rows
+    - Warning logged during processing
+
+notes:
+  - DWD uses -999 for missing values; parser converts to null
+  - Quality levels 1-3 common for this dataset; other datasets go up to 10
+  - One Parquet file per station (e.g., station_00003/raw.parquet)
+  - Use timestamp_utc for joins with metadata (valid_from, valid_to)
+  - Rows with metadata_matched=false have no DWD metadata available
+  - Total columns: 16

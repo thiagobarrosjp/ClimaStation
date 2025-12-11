@@ -1,0 +1,48 @@
+{
+  "_metadata": {
+    "description": "German to English translations for DWD metadata values",
+    "version": "1.0",
+    "last_updated": "2025-12-09"
+  },
+
+  "devices": {
+    "PT 100 (Luft)": "PT 100 (Air)",
+    "PT 100 (Erdboden)": "PT 100 (Ground)",
+    "HYGROMER MP100": "HYGROMER MP100",
+    "Feuchtesonde HMP45D": "Humidity sensor HMP45D"
+  },
+
+  "methods": {
+    "Temperaturmessung, elektr.": "Electrical temperature measurement",
+    "Feuchtemessung, elektr.": "Electrical humidity measurement"
+  },
+
+  "parameter_descriptions": {
+    "Luftdruck in Stationshoehe der voran. 10 min": "Air pressure at station altitude for preceding 10 min",
+    "relative Feucht in 2m Hoehe": "Relative humidity at 2m height",
+    "Taupunkttemperatur in 2m Hoehe": "Dew point temperature at 2m height",
+    "Momentane Temperatur in 5 cm Hoehe 10min": "Instantaneous temperature at 5cm height 10min",
+    "momentane Lufttemperatur in 2m Hoehe": "Instantaneous air temperature at 2m height"
+  },
+
+  "data_sources": {
+    "10-Minutenwerte von automatischen Stationen der 1. Generation (MIRIAM/AFMS2, ESAU-Daten bis 31.12.1999 (Zeitbezug ist MEZ)": "10-minute values from automatic stations 1st generation (MIRIAM/AFMS2, ESAU data until 31.12.1999, time reference MEZ)",
+    "10-Minutenwerte von automatischen Stationen der 1. Generation (MIRIAM/AFMS2, ESAU-Daten ab 01.01.2000 (Zeitbezug ist UTC)": "10-minute values from automatic stations 1st generation (MIRIAM/AFMS2, ESAU data from 01.01.2000, time reference UTC)",
+    "aus Messnetz2000": "from Messnetz2000"
+  },
+
+  "units": {
+    "hpa": "hPa",
+    "°C": "°C",
+    "%": "%"
+  },
+
+  "operators": {
+    "DWD": "DWD"
+  },
+
+  "time_references": {
+    "HHMM MEZ": "MEZ",
+    "HHMM UTC": "UTC"
+  }
+}
